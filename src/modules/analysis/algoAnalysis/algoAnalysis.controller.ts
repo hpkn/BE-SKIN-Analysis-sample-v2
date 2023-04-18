@@ -27,7 +27,6 @@ export class AlgoAnalysisController {
     @UploadedFile() image: Express.Multer.File,
     @Res() res: Response,
   ) {
-    console.log(data);
     if (!image)
       return res.send({
         status: 40002,

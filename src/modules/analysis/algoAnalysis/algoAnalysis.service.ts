@@ -135,8 +135,8 @@ export class AlgoAnalysisService {
       );
     }
 
-    const originalImage = fs.readFileSync(image.path, { encoding: 'base64' });
-    console.log(originalImage);
+    const originalImage = image.buffer.toString('base64');
+    // console.log(originalImage);
 
     data.task = this.getTaskByAlgoType(data.type);
     const task = client.createTask(data.task.taskName);
@@ -194,9 +194,9 @@ export class AlgoAnalysisService {
     try {
       const insert = this.database.executeQuery(
         `
-          INSERT INTO images (batch_id, url, sys_url, hash, type_image_id, args) 
-          values (${batch_id}, '${url}', '${sys_url}', '${hash}', ${type_image_id}, '${args}')
-        `,
+                  INSERT INTO images (batch_id, url, sys_url, hash, type_image_id, args) 
+                  values (${batch_id}, '${url}', '${sys_url}', '${hash}', ${type_image_id}, '${args}')
+                  `,
       );
       return (await insert).length;
     } catch (e) {
