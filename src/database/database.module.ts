@@ -1,10 +1,15 @@
-import { Global, Injectable, Module, OnApplicationShutdown, } from '@nestjs/common';
+import {
+  Global,
+  Injectable,
+  Module,
+  OnApplicationShutdown,
+} from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import {DatabaseOptions} from './databaseOptions';
+import { DatabaseOptions } from './databaseOptions';
 import { Pool } from 'pg';
-import {DatabaseService} from './database.service';
+import { DatabaseService } from './database.service';
 import { ConfigService } from '@nestjs/config';
-import { config } from 'dotenv'; 
+import { config } from 'dotenv';
 import { MyLogger } from 'src/config/Logger/logger.service';
 
 config();
@@ -27,7 +32,8 @@ const databasePoolFactory = async () => {
   providers: [
     {
       provide: 'DATABASE_POOL',
-      useFactory: databasePoolFactory
+      inject: [ConfigService],
+      useFactory: databasePoolFactory,
     },
     DatabaseService,
   ],
@@ -36,11 +42,11 @@ const databasePoolFactory = async () => {
 export class DatabaseModule implements OnApplicationShutdown {
   private readonly logger = new MyLogger(DatabaseModule.name);
 
-  constructor(private moduleRef: ModuleRef) {}
+  constructor(private readonly moduleRef: ModuleRef) {}
 
   onApplicationShutdown(signal?: string) {
     this.logger.log(`Shotting down ${signal}`);
     const pool = this.moduleRef.get('DATABASE_POOL') as Pool;
-    return pool.end
+    return pool.end;
   }
 }

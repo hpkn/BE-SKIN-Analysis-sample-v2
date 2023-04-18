@@ -2,7 +2,7 @@ import { Inject, Injectable } from '@nestjs/common';
 import { Pool, QueryResult } from 'pg';
 import { MyLogger } from 'src/config/Logger/logger.service';
 import { CONNECTION_POOL } from './database.module-definition';
- 
+
 @Injectable()
 export class DatabaseService {
   private readonly logger = new MyLogger(DatabaseService.name);
@@ -13,8 +13,7 @@ export class DatabaseService {
     this.logger.debug(`Executing query: ${queryText} (${values})`);
     return this.pool.query(queryText, values).then((result: QueryResult) => {
       this.logger.debug(`Executed query, result size ${result.rows.length}`);
-      // console.log(result);
-      return result;
+      return result.rows;
     });
   }
 

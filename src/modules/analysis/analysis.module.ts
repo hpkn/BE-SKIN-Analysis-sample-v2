@@ -1,50 +1,32 @@
 import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { DatabaseService } from 'src/database/database.service';
 import { DataSavingController } from './dataSaving/dataSaving.controller';
 import { DataSavingService } from './dataSaving/dataSaving.service';
-import { config } from 'dotenv';
-import { Pool } from 'pg';
+import { DatabaseService } from 'src/database/database.service';
 import { FileUploadService } from 'src/common/FileUpload/fileUpload.service';
-import { HistoryController } from './history/history.controller';
-import { HistoryService } from './history/history.service';
-import { ImagesController } from './images/images.controller';
-import { ImagesService } from './images/images.service';
+import { DatabaseModule } from 'src/database/database.module';
+import { AlgoAnalysisController } from './algoAnalysis/algoAnalysis.controller';
+import { AlgoAnalysisService } from './algoAnalysis/algoAnalysis.service';
+import { KeratinService } from '../algorithms/keratin/keratin.service';
+import { BatchAnalysisController } from './batchAnalysis/batchAnalysis.controller';
+import { BatchAnalysisService } from './batchAnalysis/batchAnalysis.service';
+import { PoresService } from '../algorithms/pores/pores.service';
 
-config();
-
-const configService = new ConfigService();
-
-const databasePoolFactory = async () => {
-  return new Pool({
-    user: configService.get('POSTGRES_USER'),
-    host: configService.get('POSTGRES_HOST'),
-    database: configService.get('POSTGRES_DB'),
-    password: configService.get('POSTGRES_PASSWORD'),
-    port: configService.get('POSTGRES_PORT'),
-  });
-};
 @Module({
-  imports: [],
+  imports: [DatabaseModule],
   controllers: [
     DataSavingController,
-    HistoryController,
-    ImagesController
+    AlgoAnalysisController,
+    BatchAnalysisController,
   ],
   providers: [
-    ConfigService, 
+    ConfigService,
+    FileUploadService,
     DataSavingService,
-    DatabaseService,
-    FileUploadService,  
-    HistoryService,
-    ImagesService, 
-    
-    {
-      provide: 'DATABASE_POOL',
-      useFactory: databasePoolFactory,
-    },
-    
-    // 'DATABASE_POOL'
+    AlgoAnalysisService,
+    KeratinService,
+    BatchAnalysisService,
+    PoresService,
   ],
 })
 export class AnalysisModule {}
