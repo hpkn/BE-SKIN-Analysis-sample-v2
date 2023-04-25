@@ -9,7 +9,7 @@ import { FileUploadService } from '../../../common/FileUpload/fileUpload.service
 import { BatchAnalysisService } from 'src/modules/analysis/batchAnalysis/batchAnalysis.service';
 
 @Injectable()
-export class KeratinService {
+export class SkinToneDiorService {
     constructor(
         private database: DatabaseService,
         private S3Image: FileUploadService,
@@ -19,10 +19,9 @@ export class KeratinService {
     analysis(data: AlgoAnalysisDTO, taskResponse: any) {
         // console.log("taskResponse", taskResponse)
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
-        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
+        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'skintone_dior');
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
+        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'skintone_dior');
 
         taskResponse = {
             ver: taskResponse.ver,
@@ -35,10 +34,7 @@ export class KeratinService {
                 id: analyzedImageArgs.hash,
                 url: analyzedImageArgs.url,
             },
-            maskImage: {
-                id: maskImageArgs.hash,
-                url: maskImageArgs.url,
-            },
+
             originalImage: {
                 id: originalImageArgs.hash,
                 url: originalImageArgs.url,
@@ -52,20 +48,16 @@ export class KeratinService {
 
     async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
-        const maskImage = Buffer.from(taskResponse.mask, 'base64');
         const originalImageSave = Buffer.from(originalImage, 'base64');
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
-        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
+        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'skintone');
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
+        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'skintone');
 
         await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
-        await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
         await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
 
         delete taskResponse.img;
-        delete taskResponse.mask;
         delete taskResponse.err;
 
         taskResponse = {
@@ -95,24 +87,8 @@ export class KeratinService {
                     analyzedImageArgs.url,
                     analyzedImageArgs.sys_url,
                     analyzedImageArgs.hash,
-                    11,
+                    6,
                     18,
-                    JSON.stringify({
-                        nth_analysis: imageRecords,
-                    }),
-                    null,
-                ],
-            },
-            {
-                // maskImgae
-
-                variables: [
-                    data.batch_id,
-                    maskImageArgs.url,
-                    maskImageArgs.sys_url,
-                    maskImageArgs.hash,
-                    11,
-                    15,
                     JSON.stringify({
                         nth_analysis: imageRecords,
                     }),
@@ -125,7 +101,7 @@ export class KeratinService {
                     originalImageArgs.url,
                     originalImageArgs.sys_url,
                     originalImageArgs.hash,
-                    11,
+                    6,
                     21,
                     JSON.stringify({
                         nth_analysis: imageRecords,
@@ -138,20 +114,6 @@ export class KeratinService {
         for (let i = 0; i < queries.length; i++) {
             this.database.executeQuery(saveSql, queries[i].variables);
         }
-        const retObj: any = {
-            analyzedImage: {
-                id: analyzedImageArgs.hash,
-                url: analyzedImageArgs.url,
-            },
-            maskImage: {
-                id: maskImageArgs.hash,
-                url: maskImageArgs.url,
-            },
-            originalImage: {
-                id: originalImageArgs.hash,
-                url: originalImageArgs.url,
-            },
-        };
 
         return 'saved';
     }

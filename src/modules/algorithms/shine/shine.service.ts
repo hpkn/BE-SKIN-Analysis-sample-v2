@@ -9,7 +9,7 @@ import { FileUploadService } from '../../../common/FileUpload/fileUpload.service
 import { BatchAnalysisService } from 'src/modules/analysis/batchAnalysis/batchAnalysis.service';
 
 @Injectable()
-export class KeratinService {
+export class ShineService {
     constructor(
         private database: DatabaseService,
         private S3Image: FileUploadService,
@@ -19,10 +19,10 @@ export class KeratinService {
     analysis(data: AlgoAnalysisDTO, taskResponse: any) {
         // console.log("taskResponse", taskResponse)
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
-        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
+        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'shine');
+        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'shine');
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
+        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'shine');
 
         taskResponse = {
             ver: taskResponse.ver,
@@ -55,10 +55,10 @@ export class KeratinService {
         const maskImage = Buffer.from(taskResponse.mask, 'base64');
         const originalImageSave = Buffer.from(originalImage, 'base64');
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
-        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
+        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'shine');
+        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'shine');
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
+        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'shine');
 
         await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
         await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
@@ -87,7 +87,7 @@ export class KeratinService {
         await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
         const saveSql =
             'INSERT INTO measurements (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores) values ($1, $2, $3, $4, $5, $6, $7, $8)';
-        // const saveArgsSql = 'INSERT INTO keratin (batch_id, args) data ($1, $2)';
+        // const saveArgsSql = 'INSERT INTO shine (batch_id, args) data ($1, $2)';
         const queries = [
             {
                 variables: [
@@ -95,7 +95,7 @@ export class KeratinService {
                     analyzedImageArgs.url,
                     analyzedImageArgs.sys_url,
                     analyzedImageArgs.hash,
-                    11,
+                    10,
                     18,
                     JSON.stringify({
                         nth_analysis: imageRecords,
@@ -111,7 +111,7 @@ export class KeratinService {
                     maskImageArgs.url,
                     maskImageArgs.sys_url,
                     maskImageArgs.hash,
-                    11,
+                    10,
                     15,
                     JSON.stringify({
                         nth_analysis: imageRecords,
@@ -138,20 +138,6 @@ export class KeratinService {
         for (let i = 0; i < queries.length; i++) {
             this.database.executeQuery(saveSql, queries[i].variables);
         }
-        const retObj: any = {
-            analyzedImage: {
-                id: analyzedImageArgs.hash,
-                url: analyzedImageArgs.url,
-            },
-            maskImage: {
-                id: maskImageArgs.hash,
-                url: maskImageArgs.url,
-            },
-            originalImage: {
-                id: originalImageArgs.hash,
-                url: originalImageArgs.url,
-            },
-        };
 
         return 'saved';
     }

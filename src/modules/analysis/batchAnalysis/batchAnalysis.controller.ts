@@ -1,13 +1,4 @@
-import {
-  Controller,
-  Body,
-  Query,
-  Get,
-  Post,
-  UseInterceptors,
-  UploadedFiles,
-  Res,
-} from '@nestjs/common';
+import { Controller, Body, Query, Get, Post, UseInterceptors, UploadedFiles, Res, Param } from '@nestjs/common';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { BatchAnalysisService } from './batchAnalysis.service';
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -16,29 +7,24 @@ import { FileUploadService } from 'src/common/FileUpload/fileUpload.service';
 
 @Controller('analysis')
 export class BatchAnalysisController {
-  constructor(
-    private readonly batchAnalysis: BatchAnalysisService,
-    private readonly fileUpload: FileUploadService,
-  ) {}
+    constructor(private readonly batchAnalysis: BatchAnalysisService, private readonly fileUpload: FileUploadService) {}
 
-  @Post('/getBatchId')
-  async getBatchId(@Query('customer_id') query: any, @Res() res: Response) {
-    try {
-      let { customer_id } = query;
+    @Get('/requestBatchId')
+    async getBatchId(@Query() param: any, @Res() res: Response) {
+        try {
+            let { customer_id } = param;
 
-      let insertObjet = null;
-      const insert = await this.batchAnalysis.insertInAnalysis(
-        customer_id,
-        insertObjet,
-      );
+            console.log('here param', param);
+            const insert = await this.batchAnalysis.insertInAnalysis(customer_id);
 
-      return res.status(200).json({
-        status: 200,
-        service: 'getBatchId',
-        batch_id: insert,
-      });
-    } catch (e) {
-      throw new Error(e);
+            return res.status(200).json({
+                status: 200,
+                service: 'requestBatchId',
+                body: { batch_id: insert },
+            });
+        } catch (e) {
+            throw new Error(e);
+        }
     }
-  }
 }
+

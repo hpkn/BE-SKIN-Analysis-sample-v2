@@ -1,0 +1,208 @@
+import { Injectable, Inject, HttpException } from '@nestjs/common';
+import { GetcustomerHistoryDTO } from 'src/common/Dto/customer/analysisHistory/analysisHistory.dto';
+import { DatabaseService } from 'src/database/database.service';
+import * as celery from 'celery-node';
+import { v4 as uuidv4 } from 'uuid';
+import { AlgoAnalysisDTO } from 'src/common/Dto/analysis/algoAnalysis.dto';
+import fs from 'fs';
+import { FileUploadService } from '../../../common/FileUpload/fileUpload.service';
+import { BatchAnalysisService } from 'src/modules/analysis/batchAnalysis/batchAnalysis.service';
+
+@Injectable()
+export class WrinklesService {
+    constructor(
+        private database: DatabaseService,
+        private S3Image: FileUploadService,
+        private batchAnalysis: BatchAnalysisService,
+    ) {}
+
+    analysis(data: AlgoAnalysisDTO, taskResponse: any) {
+        // console.log("taskResponse", taskResponse)
+
+        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'wrinkles');
+
+        const maskImageArgsYellow = this.S3Image.getImageArgs('maskImageYellow', data.task.algoName, 'wrinkles');
+        const maskImageArgsOrange = this.S3Image.getImageArgs('maskImageOrange', data.task.algoName, 'wrinkles');
+        const maskImageArgsGreen = this.S3Image.getImageArgs('maskImageGreen', data.task.algoName, 'wrinkles');
+        const maskImageArgsBlack = this.S3Image.getImageArgs('maskImageBlack', data.task.algoName, 'wrinkles');
+        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'wrinkles');
+
+        taskResponse = {
+            ver: taskResponse.ver,
+            score: taskResponse.score,
+            raw: taskResponse.raw,
+        };
+
+        const retObj: any = {
+            originalImage: {
+                id: originalImageArgs.hash,
+                url: originalImageArgs.url,
+            },
+            analyzedImage: {
+                id: analyzedImageArgs.hash,
+                url: analyzedImageArgs.url,
+            },
+            maskImageYellow: {
+                id: maskImageArgsYellow.hash,
+                url: maskImageArgsYellow.url,
+            },
+            maskImageOrange: {
+                id: maskImageArgsOrange.hash,
+                url: maskImageArgsOrange.url,
+            },
+            maskImageGreen: {
+                id: maskImageArgsGreen.hash,
+                url: maskImageArgsGreen.url,
+            },
+            maskImageBlack: {
+                id: maskImageArgsBlack.hash,
+                url: maskImageArgsBlack.url,
+            },
+        };
+
+        taskResponse = { ...taskResponse, ...retObj };
+
+        return taskResponse;
+    }
+
+    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any) {
+        const analyzedImage = Buffer.from(taskResponse.img, 'base64');
+        const maskImageYellow = Buffer.from(taskResponse.mask_Y, 'base64');
+        const maskImageOrange = Buffer.from(taskResponse.mask_O, 'base64');
+        const maskImageGreen = Buffer.from(taskResponse.mask_G, 'base64');
+        const maskImageBlack = Buffer.from(taskResponse.mask_P, 'base64');
+        const originalImageSave = Buffer.from(originalImage, 'base64');
+
+        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'wrinkles');
+
+        const maskImageArgsYellow = this.S3Image.getImageArgs('maskImageYellow', data.task.algoName, 'wrinkles');
+        const maskImageArgsOrange = this.S3Image.getImageArgs('maskImageOrange', data.task.algoName, 'wrinkles');
+        const maskImageArgsGreen = this.S3Image.getImageArgs('maskImageGreen', data.task.algoName, 'wrinkles');
+        const maskImageArgsBlack = this.S3Image.getImageArgs('maskImageBlack', data.task.algoName, 'wrinkles');
+        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'wrinkles');
+
+        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
+        await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
+        await this.S3Image.uploadImage(maskImageYellow, maskImageArgsYellow.sys_url);
+        await this.S3Image.uploadImage(maskImageOrange, maskImageArgsOrange.sys_url);
+        await this.S3Image.uploadImage(maskImageGreen, maskImageArgsGreen.sys_url);
+        await this.S3Image.uploadImage(maskImageBlack, maskImageArgsBlack.sys_url);
+
+        delete taskResponse.img;
+        delete taskResponse.mask_Y;
+        delete taskResponse.mask_O;
+        delete taskResponse.mask_G;
+        delete taskResponse.mask_P;
+        delete taskResponse.err;
+
+        const environment = {
+            deviceModel: data.deviceModel,
+            deviceOS: data.deviceOS,
+            nth_analysis: imageRecords,
+            lat: data.lat,
+            long: data.long,
+            temperature: data.temperature,
+            humidity: data.humidity,
+            uv_index: data.uv_index,
+            positionNumber: data.positionNumber,
+        };
+
+        await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
+        const saveSql =
+            'INSERT INTO measurements (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores) values ($1, $2, $3, $4, $5, $6, $7, $8)';
+        // const saveArgsSql = 'INSERT INTO keratin (batch_id, args) data ($1, $2)';
+        const queries = [
+            {
+                variables: [
+                    data.batch_id,
+                    analyzedImageArgs.url,
+                    analyzedImageArgs.sys_url,
+                    analyzedImageArgs.hash,
+                    4,
+                    18,
+                    JSON.stringify({
+                        nth_analysis: imageRecords,
+                    }),
+                    null,
+                ],
+            },
+            {
+                variables: [
+                    data.batch_id,
+                    originalImageArgs.url,
+                    originalImageArgs.sys_url,
+                    originalImageArgs.hash,
+                    4,
+                    21,
+                    JSON.stringify({
+                        nth_analysis: imageRecords,
+                    }),
+                    JSON.stringify(taskResponse),
+                ],
+            },
+            {
+                variables: [
+                    data.batch_id,
+                    maskImageArgsYellow.url,
+                    maskImageArgsYellow.sys_url,
+                    maskImageArgsYellow.hash,
+                    4,
+                    11,
+                    JSON.stringify({
+                        nth_analysis: imageRecords,
+                    }),
+                    JSON.stringify(taskResponse),
+                ],
+            },
+            {
+                variables: [
+                    data.batch_id,
+                    maskImageArgsOrange.url,
+                    maskImageArgsOrange.sys_url,
+                    maskImageArgsOrange.hash,
+                    4,
+                    7,
+                    JSON.stringify({
+                        nth_analysis: imageRecords,
+                    }),
+                    JSON.stringify(taskResponse),
+                ],
+            },
+            {
+                variables: [
+                    data.batch_id,
+                    maskImageArgsGreen.url,
+                    maskImageArgsGreen.sys_url,
+                    maskImageArgsGreen.hash,
+                    4,
+                    13,
+                    JSON.stringify({
+                        nth_analysis: imageRecords,
+                    }),
+                    JSON.stringify(taskResponse),
+                ],
+            },
+            {
+                variables: [
+                    data.batch_id,
+                    maskImageArgsBlack.url,
+                    maskImageArgsBlack.sys_url,
+                    maskImageArgsBlack.hash,
+                    4,
+                    20,
+                    JSON.stringify({
+                        nth_analysis: imageRecords,
+                    }),
+                    JSON.stringify(taskResponse),
+                ],
+            },
+        ];
+
+        for (let i = 0; i < queries.length; i++) {
+            this.database.executeQuery(saveSql, queries[i].variables);
+        }
+
+        return 'saved';
+    }
+}
+
