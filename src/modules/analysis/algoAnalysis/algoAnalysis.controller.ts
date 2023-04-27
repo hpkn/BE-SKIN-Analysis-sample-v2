@@ -38,7 +38,7 @@ export class AlgoAnalysisController {
                 type: 'BadRequestError',
                 message: 'No file!',
             });
-        console.log('here', data);
+        // console.log('here', data);
         const imageRecords = uuidv4();
         const client = celery.createClient('redis://localhost', 'redis://');
         let algoList = [
@@ -64,8 +64,6 @@ export class AlgoAnalysisController {
 
         const task = client.createTask(data.task.taskName);
 
-        console.log(task);
-        // console.log(task)
         let result: any;
 
         if (data.task.taskName === 'CNDP_SkinTone') {
@@ -93,11 +91,10 @@ export class AlgoAnalysisController {
             resolve(res.send({ status: 200, message: 'Success', body: result_ }));
         });
 
-        // const saving = await this.AlgoAnalysis.finalSave(data, image, imageRecords, taskResponse);
+        const saving = await this.AlgoAnalysis.finalSave(data, image, imageRecords, taskResponse);
         let promise2 = new Promise(function (resolve, resject) {
-            resolve('saving');
+            resolve(saving);
         });
-        console.log(result_);
 
         promise1
             .then(function (value) {

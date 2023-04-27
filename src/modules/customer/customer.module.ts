@@ -5,10 +5,12 @@ import { AnanalysisHistoryService } from './AnalysisHistory/analysisHistory.serv
 import { DatabaseModule } from 'src/database/database.module';
 import { FileUploadService } from 'src/common/FileUpload/fileUpload.service';
 import { ConfigService } from 'aws-sdk';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
-  imports: [DatabaseModule],
-  controllers: [AnanalysisHistoryController],
-  providers: [AnanalysisHistoryService, FileUploadService, ConfigService],
+    imports: [DatabaseModule],
+    controllers: [AnanalysisHistoryController],
+    providers: [AnanalysisHistoryService, FileUploadService, ConfigService],
 })
 export class CustomerModule {}
+

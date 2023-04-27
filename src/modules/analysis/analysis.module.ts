@@ -24,9 +24,15 @@ import { SensitivityScabsService } from '../algorithms/sensitivityScabs/sensitiv
 import { SensitivityRednessService } from '../algorithms/sensitivityRedness/sensitivityRedness.service';
 import { SensitivtyScalingService } from '../algorithms/sensitivtyScaling/sensitivtyScaling.service';
 import { FitzSGService } from '../algorithms/fitzSG/fitzSG.service';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
-    imports: [DatabaseModule],
+    imports: [
+        DatabaseModule,
+        BullModule.registerQueue({
+            name: 'dataSaving',
+        }),
+    ],
     controllers: [DataSavingController, AlgoAnalysisController, BatchAnalysisController],
     providers: [
         ConfigService,
@@ -48,6 +54,7 @@ import { FitzSGService } from '../algorithms/fitzSG/fitzSG.service';
         SensitivityRednessService,
         SensitivtyScalingService,
         FitzSGService,
+        // UploadProcessor,
     ],
 })
 export class AnalysisModule {}

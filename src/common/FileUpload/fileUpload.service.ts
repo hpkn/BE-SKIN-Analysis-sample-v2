@@ -30,6 +30,7 @@ export class FileUploadService {
                 queueSize: 4, // optional concurrency configuration
                 leavePartsOnError: false, // optional manually handle dropped parts
                 params: params,
+                partSize: 1,
             });
 
             parallelUploads3.on('httpUploadProgress', (progress) => {

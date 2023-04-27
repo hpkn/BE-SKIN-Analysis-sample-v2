@@ -7,6 +7,7 @@ import { AlgoAnalysisDTO } from 'src/common/Dto/analysis/algoAnalysis.dto';
 import fs from 'fs';
 import { FileUploadService } from '../../../common/FileUpload/fileUpload.service';
 import { BatchAnalysisService } from 'src/modules/analysis/batchAnalysis/batchAnalysis.service';
+import _ from 'lodash';
 
 @Injectable()
 export class WrinklesService {
@@ -31,7 +32,44 @@ export class WrinklesService {
             ver: taskResponse.ver,
             score: taskResponse.score,
             raw: taskResponse.raw,
+
+            score_Y: taskResponse.score_Y,
+            score_O: taskResponse.score_O,
+            score_G: taskResponse.score_G,
+            score_P: taskResponse.score_P,
+            yArea: taskResponse.yArea,
+            oArea: taskResponse.oArea,
+            gArea: taskResponse.gArea,
+            pArea: taskResponse.pArea,
+            r1: taskResponse.r1,
+            r2: taskResponse.r2,
+            r3: taskResponse.r3,
+            r4: taskResponse.r4,
+            r5: taskResponse.r5,
+            r6: taskResponse.r6,
+            r7: taskResponse.r7,
+            r8: taskResponse.r8,
+            r9: taskResponse.r9,
         };
+        // const keyRemove = 'img';
+        // const keyRemove1 = 'mask_Y';
+        // const keyRemove2 = 'mask_O';
+        // const keyRemove3 = 'mask_G';
+        // const keyRemove4 = 'mask_P';
+        // const keyRemove5 = 'err';
+
+        // const newObject = _.omit(taskResponse, ['img', 'mask_Y', 'mask_O', 'mask_G', 'mask_P', 'err']);
+
+        // const { [keyRemove]: _, ...newObj } = taskResponse;
+
+        // console.log('kkkkkkk', newObject);
+
+        // delete taskResponse.img;
+        // delete taskResponse.mask_Y;
+        // delete taskResponse.mask_O;
+        // delete taskResponse.mask_G;
+        // delete taskResponse.mask_P;
+        // delete taskResponse.err;
 
         const retObj: any = {
             originalImage: {
@@ -71,7 +109,7 @@ export class WrinklesService {
         const maskImageOrange = Buffer.from(taskResponse.mask_O, 'base64');
         const maskImageGreen = Buffer.from(taskResponse.mask_G, 'base64');
         const maskImageBlack = Buffer.from(taskResponse.mask_P, 'base64');
-        const originalImageSave = Buffer.from(originalImage, 'base64');
+        const originalImageSave = originalImage;
 
         const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'wrinkles');
 
@@ -80,7 +118,7 @@ export class WrinklesService {
         const maskImageArgsGreen = this.S3Image.getImageArgs('maskImageGreen', data.task.algoName, 'wrinkles');
         const maskImageArgsBlack = this.S3Image.getImageArgs('maskImageBlack', data.task.algoName, 'wrinkles');
         const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'wrinkles');
-
+        console.log('all savessssss');
         await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
         await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
         await this.S3Image.uploadImage(maskImageYellow, maskImageArgsYellow.sys_url);
@@ -88,12 +126,12 @@ export class WrinklesService {
         await this.S3Image.uploadImage(maskImageGreen, maskImageArgsGreen.sys_url);
         await this.S3Image.uploadImage(maskImageBlack, maskImageArgsBlack.sys_url);
 
-        delete taskResponse.img;
-        delete taskResponse.mask_Y;
-        delete taskResponse.mask_O;
-        delete taskResponse.mask_G;
-        delete taskResponse.mask_P;
-        delete taskResponse.err;
+        // delete taskResponse.img;
+        // delete taskResponse.mask_Y;
+        // delete taskResponse.mask_O;
+        // delete taskResponse.mask_G;
+        // delete taskResponse.mask_P;
+        // delete taskResponse.err;
 
         const environment = {
             deviceModel: data.deviceModel,
@@ -108,6 +146,7 @@ export class WrinklesService {
         };
 
         await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
+
         const saveSql =
             'INSERT INTO measurements (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores) values ($1, $2, $3, $4, $5, $6, $7, $8)';
         // const saveArgsSql = 'INSERT INTO keratin (batch_id, args) data ($1, $2)';
@@ -197,7 +236,7 @@ export class WrinklesService {
                 ],
             },
         ];
-
+        console.log(queries.length);
         for (let i = 0; i < queries.length; i++) {
             this.database.executeQuery(saveSql, queries[i].variables);
         }
