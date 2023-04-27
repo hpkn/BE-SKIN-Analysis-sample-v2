@@ -306,4 +306,17 @@ export class PoresService {
 
         return taskResponse;
     }
+
+    imageArgs(data: AlgoAnalysisDTO) {
+        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
+        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
+
+        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
+
+        return {
+            analyzedImageArgs: analyzedImageArgs,
+            maskImageArgs: maskImageArgs,
+            originalImageArgs: originalImageArgs,
+        };
+    }
 }

@@ -26,13 +26,29 @@ export class WrinklesService {
         const maskImageArgsGreen = imageArgs.maskImageArgsGreen;
         const maskImageArgsBlack = imageArgs.maskImageArgsBlack;
         const originalImageArgs = imageArgs.originalImageArgs;
-
         taskResponse = {
             ver: taskResponse.ver,
             score: taskResponse.score,
             raw: taskResponse.raw,
-        };
 
+            score_Y: taskResponse.score_Y,
+            score_O: taskResponse.score_O,
+            score_G: taskResponse.score_G,
+            score_P: taskResponse.score_P,
+            yArea: taskResponse.yArea,
+            oArea: taskResponse.oArea,
+            gArea: taskResponse.gArea,
+            pArea: taskResponse.pArea,
+            r1: taskResponse.r1,
+            r2: taskResponse.r2,
+            r3: taskResponse.r3,
+            r4: taskResponse.r4,
+            r5: taskResponse.r5,
+            r6: taskResponse.r6,
+            r7: taskResponse.r7,
+            r8: taskResponse.r8,
+            r9: taskResponse.r9,
+        };
         const retObj: any = {
             originalImage: {
                 id: originalImageArgs.hash,
@@ -202,5 +218,18 @@ export class WrinklesService {
         }
 
         return 'saved';
+    }
+
+    imageArgs(data: AlgoAnalysisDTO) {
+        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
+        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
+
+        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
+
+        return {
+            analyzedImageArgs: analyzedImageArgs,
+            maskImageArgs: maskImageArgs,
+            originalImageArgs: originalImageArgs,
+        };
     }
 }
