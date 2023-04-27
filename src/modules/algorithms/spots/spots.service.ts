@@ -17,8 +17,6 @@ export class SpotsService {
     ) {}
 
     analysis(data: AlgoAnalysisDTO, taskResponse: any) {
-        console.log('2222222222222222222222222222222', data);
-
         const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'spots');
         const analyzedImageArgsYellow = this.S3Image.getImageArgs('analyzedImageYellow', data.task.algoName, 'spots');
         const analyzedImageArgsOrange = this.S3Image.getImageArgs('analyzedImageOrange', data.task.algoName, 'spots');
@@ -28,7 +26,6 @@ export class SpotsService {
         const maskImageArgsGreen = this.S3Image.getImageArgs('maskImageGreen', data.task.algoName, 'spots');
         const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'spots');
 
-        console.log('here', taskResponse);
         taskResponse = {
             ver: taskResponse.ver,
             score: taskResponse.score,
@@ -256,6 +253,19 @@ export class SpotsService {
         }
 
         return 'saved';
+    }
+
+    imageArgs(data: AlgoAnalysisDTO) {
+        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
+        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
+
+        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
+
+        return {
+            analyzedImageArgs: analyzedImageArgs,
+            maskImageArgs: maskImageArgs,
+            originalImageArgs: originalImageArgs,
+        };
     }
 }
 

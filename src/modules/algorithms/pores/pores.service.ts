@@ -24,7 +24,6 @@ export class PoresService {
         const maskImageArgsS = this.S3Image.getImageArgs('maskImageSmall', data.task.algoName, 'pores');
         const maskImageArgsM = this.S3Image.getImageArgs('maskImageMedium', data.task.algoName, 'pores');
         const maskImageArgsB = this.S3Image.getImageArgs('maskImageBig', data.task.algoName, 'pores');
-
         const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'pores');
 
         taskResponse = {
@@ -323,6 +322,19 @@ export class PoresService {
         taskResponse = { ...taskResponse, ...retObj };
 
         return taskResponse;
+    }
+
+    imageArgs(data: AlgoAnalysisDTO) {
+        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
+        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
+
+        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
+
+        return {
+            analyzedImageArgs: analyzedImageArgs,
+            maskImageArgs: maskImageArgs,
+            originalImageArgs: originalImageArgs,
+        };
     }
 }
 

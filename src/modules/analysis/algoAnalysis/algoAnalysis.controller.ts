@@ -9,6 +9,7 @@ import {
     Param,
     Query,
     HttpException,
+    HttpCode,
 } from '@nestjs/common';
 import * as celery from 'celery-node';
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
@@ -18,12 +19,13 @@ import { AlgoAnalysisService } from './algoAnalysis.service';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { AlgoAnalysisDTO } from 'src/common/Dto/analysis/algoAnalysis.dto';
 import { v4 as uuidv4 } from 'uuid';
+import { promises } from 'dns';
 
 @Controller('analysis')
 export class AlgoAnalysisController {
     constructor(private readonly AlgoAnalysis: AlgoAnalysisService) {}
-
     @Post('')
+    @HttpCode(200)
     @UseInterceptors(FileInterceptor('image'))
     async getcustomerHistory(
         @Body() data: AlgoAnalysisDTO,
@@ -36,7 +38,7 @@ export class AlgoAnalysisController {
                 type: 'BadRequestError',
                 message: 'No file!',
             });
-
+        console.log('here', data);
         const imageRecords = uuidv4();
         const client = celery.createClient('redis://localhost', 'redis://');
         let algoList = [
@@ -87,16 +89,32 @@ export class AlgoAnalysisController {
         }
 
         const result_ = await this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse);
+        let promise1 = new Promise(function (resolve, reject) {
+            resolve(res.send({ status: 200, message: 'Success', body: result_ }));
+        });
 
-        res.send({ status: 200, message: 'Success', body: result_ });
+        // const saving = await this.AlgoAnalysis.finalSave(data, image, imageRecords, taskResponse);
+        let promise2 = new Promise(function (resolve, resject) {
+            resolve('saving');
+        });
+        console.log(result_);
+
+        promise1
+            .then(function (value) {
+                return promise2;
+            })
+            .catch((e) => {
+                throw new Error(e);
+            });
+        // return;
         // console.timeEnd('celery');
 
-        console.time('saving');
-        const saving = await this.AlgoAnalysis.finalSave(data, image, imageRecords, taskResponse);
+        // console.time('saving');
+        // // const saving = await this.AlgoAnalysis.finalSave(data, image, imageRecords, taskResponse);
 
-        console.timeEnd('saving');
+        // console.timeEnd('saving');
 
-        return saving;
+        // return;
     }
 }
 
