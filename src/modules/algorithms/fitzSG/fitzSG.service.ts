@@ -46,7 +46,7 @@ export class FitzSGService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any) {
+    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
         // const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const originalImageSave = Buffer.from(originalImage, 'base64');
 
@@ -118,4 +118,3 @@ export class FitzSGService {
         return 'saved';
     }
 }
-

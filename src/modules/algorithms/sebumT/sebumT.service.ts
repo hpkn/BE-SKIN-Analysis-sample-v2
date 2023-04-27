@@ -16,12 +16,12 @@ export class SebumTService {
         private batchAnalysis: BatchAnalysisService,
     ) {}
 
-    analysis(data: AlgoAnalysisDTO, taskResponse: any) {
+    analysis(data: AlgoAnalysisDTO, taskResponse: any, imageArgs: any) {
         // console.log("taskResponse", taskResponse)
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'sebumT');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'sebumT');
+        const originalImageArgs = imageArgs.originalImageArgs;
 
         taskResponse = {
             ver: taskResponse.ver,
@@ -118,4 +118,3 @@ export class SebumTService {
         return 'saved';
     }
 }
-

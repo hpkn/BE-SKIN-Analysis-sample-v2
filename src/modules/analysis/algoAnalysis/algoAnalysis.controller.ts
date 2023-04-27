@@ -85,18 +85,18 @@ export class AlgoAnalysisController {
                 error: taskResponse.err,
             });
         }
+        const imageArg = this.AlgoAnalysis.handleImageArg(data);
 
-        const result_ = await this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse);
+        const result_ = await this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse, imageArg);
 
         res.send({ status: 200, message: 'Success', body: result_ });
         // console.timeEnd('celery');
 
         console.time('saving');
-        const saving = await this.AlgoAnalysis.finalSave(data, image, imageRecords, taskResponse);
+        const saving = await this.AlgoAnalysis.finalSave(data, image, imageRecords, taskResponse, imageArg);
 
         console.timeEnd('saving');
 
         return saving;
     }
 }
-

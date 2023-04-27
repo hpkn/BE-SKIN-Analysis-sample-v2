@@ -16,13 +16,13 @@ export class ShineService {
         private batchAnalysis: BatchAnalysisService,
     ) {}
 
-    analysis(data: AlgoAnalysisDTO, taskResponse: any) {
+    analysis(data: AlgoAnalysisDTO, taskResponse: any, imageArgs: any) {
         // console.log("taskResponse", taskResponse)
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'shine');
-        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'shine');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
+        const maskImageArgs = imageArgs.maskImageArgs;
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'shine');
+        const originalImageArgs = imageArgs.originalImageArgs;
 
         taskResponse = {
             ver: taskResponse.ver,
@@ -50,16 +50,15 @@ export class ShineService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any) {
+    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const maskImage = Buffer.from(taskResponse.mask, 'base64');
         const originalImageSave = Buffer.from(originalImage, 'base64');
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'shine');
-        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'shine');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
+        const maskImageArgs = imageArgs.maskImageArgs;
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'shine');
-
+        const originalImageArgs = imageArgs.originalImageArgs;
         await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
         await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
         await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
@@ -142,4 +141,3 @@ export class ShineService {
         return 'saved';
     }
 }
-

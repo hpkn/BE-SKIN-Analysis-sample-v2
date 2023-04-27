@@ -16,16 +16,16 @@ export class WrinklesService {
         private batchAnalysis: BatchAnalysisService,
     ) {}
 
-    analysis(data: AlgoAnalysisDTO, taskResponse: any) {
+    analysis(data: AlgoAnalysisDTO, taskResponse: any, imageArgs: any) {
         // console.log("taskResponse", taskResponse)
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'wrinkles');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
 
-        const maskImageArgsYellow = this.S3Image.getImageArgs('maskImageYellow', data.task.algoName, 'wrinkles');
-        const maskImageArgsOrange = this.S3Image.getImageArgs('maskImageOrange', data.task.algoName, 'wrinkles');
-        const maskImageArgsGreen = this.S3Image.getImageArgs('maskImageGreen', data.task.algoName, 'wrinkles');
-        const maskImageArgsBlack = this.S3Image.getImageArgs('maskImageBlack', data.task.algoName, 'wrinkles');
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'wrinkles');
+        const maskImageArgsYellow = imageArgs.maskImageArgsYellow;
+        const maskImageArgsOrange = imageArgs.maskImageArgsOrange;
+        const maskImageArgsGreen = imageArgs.maskImageArgsGreen;
+        const maskImageArgsBlack = imageArgs.maskImageArgsBlack;
+        const originalImageArgs = imageArgs.originalImageArgs;
 
         taskResponse = {
             ver: taskResponse.ver,
@@ -65,7 +65,7 @@ export class WrinklesService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any) {
+    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const maskImageYellow = Buffer.from(taskResponse.mask_Y, 'base64');
         const maskImageOrange = Buffer.from(taskResponse.mask_O, 'base64');
@@ -73,14 +73,13 @@ export class WrinklesService {
         const maskImageBlack = Buffer.from(taskResponse.mask_P, 'base64');
         const originalImageSave = Buffer.from(originalImage, 'base64');
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'wrinkles');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
 
-        const maskImageArgsYellow = this.S3Image.getImageArgs('maskImageYellow', data.task.algoName, 'wrinkles');
-        const maskImageArgsOrange = this.S3Image.getImageArgs('maskImageOrange', data.task.algoName, 'wrinkles');
-        const maskImageArgsGreen = this.S3Image.getImageArgs('maskImageGreen', data.task.algoName, 'wrinkles');
-        const maskImageArgsBlack = this.S3Image.getImageArgs('maskImageBlack', data.task.algoName, 'wrinkles');
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'wrinkles');
-
+        const maskImageArgsYellow = imageArgs.maskImageArgsYellow;
+        const maskImageArgsOrange = imageArgs.maskImageArgsOrange;
+        const maskImageArgsGreen = imageArgs.maskImageArgsGreen;
+        const maskImageArgsBlack = imageArgs.maskImageArgsBlack;
+        const originalImageArgs = imageArgs.originalImageArgs;
         await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
         await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
         await this.S3Image.uploadImage(maskImageYellow, maskImageArgsYellow.sys_url);
@@ -205,4 +204,3 @@ export class WrinklesService {
         return 'saved';
     }
 }
-

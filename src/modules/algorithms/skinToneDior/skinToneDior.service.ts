@@ -16,12 +16,12 @@ export class SkinToneDiorService {
         private batchAnalysis: BatchAnalysisService,
     ) {}
 
-    analysis(data: AlgoAnalysisDTO, taskResponse: any) {
+    analysis(data: AlgoAnalysisDTO, taskResponse: any, imageArgs: any) {
         // console.log("taskResponse", taskResponse)
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'skintone_dior');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'skintone_dior');
+        const originalImageArgs = imageArgs.originalImageArgs;
 
         taskResponse = {
             ver: taskResponse.ver,
@@ -46,14 +46,12 @@ export class SkinToneDiorService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any) {
+    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const originalImageSave = Buffer.from(originalImage, 'base64');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'skintone');
-
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'skintone');
-
+        const originalImageArgs = imageArgs.originalImageArgs;
         await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
         await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
 
@@ -118,4 +116,3 @@ export class SkinToneDiorService {
         return 'saved';
     }
 }
-

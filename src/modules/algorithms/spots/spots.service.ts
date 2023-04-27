@@ -16,17 +16,15 @@ export class SpotsService {
         private batchAnalysis: BatchAnalysisService,
     ) {}
 
-    analysis(data: AlgoAnalysisDTO, taskResponse: any) {
-        console.log('2222222222222222222222222222222', data);
-
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'spots');
-        const analyzedImageArgsYellow = this.S3Image.getImageArgs('analyzedImageYellow', data.task.algoName, 'spots');
-        const analyzedImageArgsOrange = this.S3Image.getImageArgs('analyzedImageOrange', data.task.algoName, 'spots');
-        const analyzedImageArgsGreen = this.S3Image.getImageArgs('analyzedImageGreen', data.task.algoName, 'spots');
-        const maskImageArgsYellow = this.S3Image.getImageArgs('maskImageYellow', data.task.algoName, 'spots');
-        const maskImageArgsOrange = this.S3Image.getImageArgs('maskImageOrange', data.task.algoName, 'spots');
-        const maskImageArgsGreen = this.S3Image.getImageArgs('maskImageGreen', data.task.algoName, 'spots');
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'spots');
+    analysis(data: AlgoAnalysisDTO, taskResponse: any, imageArg: any) {
+        const analyzedImageArgs = imageArg.analyzedImageArgs;
+        const analyzedImageArgsYellow = imageArg.analyzedImageArgsYellow;
+        const analyzedImageArgsOrange = imageArg.analyzedImageArgsOrange;
+        const analyzedImageArgsGreen = imageArg.analyzedImageArgsGreen;
+        const maskImageArgsYellow = imageArg.maskImageArgsYellow;
+        const maskImageArgsOrange = imageArg.maskImageArgsOrange;
+        const maskImageArgsGreen = imageArg.maskImageArgsGreen;
+        const originalImageArgs = imageArg.originalImageArgs;
 
         console.log('here', taskResponse);
         taskResponse = {
@@ -75,7 +73,7 @@ export class SpotsService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any) {
+    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArg: any) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const analyzedImageYellow = Buffer.from(taskResponse.yellow, 'base64');
         const analyzedImageOrange = Buffer.from(taskResponse.orange, 'base64');
@@ -85,14 +83,14 @@ export class SpotsService {
         const maskImageGreen = Buffer.from(taskResponse.mask_G, 'base64');
         const originalImageSave = Buffer.from(originalImage, 'base64');
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'spots');
-        const analyzedImageArgsYellow = this.S3Image.getImageArgs('analyzedImageYellow', data.task.algoName, 'spots');
-        const analyzedImageArgsOrange = this.S3Image.getImageArgs('analyzedImageOrange', data.task.algoName, 'spots');
-        const analyzedImageArgsGreen = this.S3Image.getImageArgs('analyzedImageGreen', data.task.algoName, 'spots');
-        const maskImageArgsYellow = this.S3Image.getImageArgs('maskImageYellow', data.task.algoName, 'spots');
-        const maskImageArgsOrange = this.S3Image.getImageArgs('maskImageOrange', data.task.algoName, 'spots');
-        const maskImageArgsGreen = this.S3Image.getImageArgs('maskImageGreen', data.task.algoName, 'spots');
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'spots');
+        const analyzedImageArgs = imageArg.analyzedImageArgs;
+        const analyzedImageArgsYellow = imageArg.analyzedImageArgsYellow;
+        const analyzedImageArgsOrange = imageArg.analyzedImageArgsOrange;
+        const analyzedImageArgsGreen = imageArg.analyzedImageArgsGreen;
+        const maskImageArgsYellow = imageArg.maskImageArgsYellow;
+        const maskImageArgsOrange = imageArg.maskImageArgsOrange;
+        const maskImageArgsGreen = imageArg.maskImageArgsGreen;
+        const originalImageArgs = imageArg.originalImageArgs;
 
         await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
         await this.S3Image.uploadImage(analyzedImageYellow, analyzedImageArgsYellow.sys_url);
@@ -258,4 +256,3 @@ export class SpotsService {
         return 'saved';
     }
 }
-

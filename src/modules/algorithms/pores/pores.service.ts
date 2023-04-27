@@ -16,16 +16,15 @@ export class PoresService {
         private batchAnalysis: BatchAnalysisService,
     ) {}
 
-    async analysis(data: AlgoAnalysisDTO, taskResponse: any) {
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'pores');
-        const analyzedImageArgsS = this.S3Image.getImageArgs('analyzedImageSmall', data.task.algoName, 'pores');
-        const analyzedImageArgsM = this.S3Image.getImageArgs('analyzedImageMedium', data.task.algoName, 'pores');
-        const analyzedImageArgsB = this.S3Image.getImageArgs('analyzedImageBig', data.task.algoName, 'pores');
-        const maskImageArgsS = this.S3Image.getImageArgs('maskImageSmall', data.task.algoName, 'pores');
-        const maskImageArgsM = this.S3Image.getImageArgs('maskImageMedium', data.task.algoName, 'pores');
-        const maskImageArgsB = this.S3Image.getImageArgs('maskImageBig', data.task.algoName, 'pores');
-
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'pores');
+    async analysis(data: AlgoAnalysisDTO, taskResponse: any, imageArgs: any) {
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
+        const analyzedImageArgsS = imageArgs.analyzedImageArgsS;
+        const analyzedImageArgsM = imageArgs.analyzedImageArgsM;
+        const analyzedImageArgsB = imageArgs.analyzedImageArgsB;
+        const maskImageArgsS = imageArgs.maskImageArgsS;
+        const maskImageArgsM = imageArgs.maskImageArgsM;
+        const maskImageArgsB = imageArgs.maskImageArgsB;
+        const originalImageArgs = imageArgs.originalImageArgs;
 
         taskResponse = {
             ver: taskResponse.ver,
@@ -73,7 +72,7 @@ export class PoresService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any) {
+    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const analyzedImageS = Buffer.from(taskResponse.img_S, 'base64');
         const analyzedImageM = Buffer.from(taskResponse.img_M, 'base64');
@@ -81,20 +80,17 @@ export class PoresService {
         const maskImageS = Buffer.from(taskResponse.mask_S, 'base64');
         const maskImageM = Buffer.from(taskResponse.mask_M, 'base64');
         const maskImageB = Buffer.from(taskResponse.mask_B, 'base64');
-
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'pores');
-        const analyzedImageArgsS = this.S3Image.getImageArgs('analyzedImageSmall', data.task.algoName, 'pores');
-        const analyzedImageArgsM = this.S3Image.getImageArgs('analyzedImageMedium', data.task.algoName, 'pores');
-        const analyzedImageArgsB = this.S3Image.getImageArgs('analyzedImageBig', data.task.algoName, 'pores');
-        const maskImageArgsS = this.S3Image.getImageArgs('maskImageSmall', data.task.algoName, 'pores');
-        const maskImageArgsM = this.S3Image.getImageArgs('maskImageMedium', data.task.algoName, 'pores');
-        const maskImageArgsB = this.S3Image.getImageArgs('maskImageBig', data.task.algoName, 'pores');
-
         const originalImageSave = Buffer.from(originalImage, 'base64');
 
-        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'pores');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
+        const analyzedImageArgsS = imageArgs.analyzedImageArgsS;
+        const analyzedImageArgsM = imageArgs.analyzedImageArgsM;
+        const analyzedImageArgsB = imageArgs.analyzedImageArgsB;
+        const maskImageArgsS = imageArgs.maskImageArgsS;
+        const maskImageArgsM = imageArgs.maskImageArgsM;
+        const maskImageArgsB = imageArgs.maskImageArgsB;
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'pores');
+        const originalImageArgs = imageArgs.originalImageArgs;
 
         await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
 
@@ -205,21 +201,7 @@ export class PoresService {
                     null,
                 ],
             },
-            {
-                // maskImgae
-                variables: [
-                    data.batch_id,
-                    maskImageArgs.url,
-                    maskImageArgs.sys_url,
-                    maskImageArgs.hash,
-                    1,
-                    15,
-                    JSON.stringify({
-                        nth_analysis: imageRecords,
-                    }),
-                    null,
-                ],
-            },
+
             {
                 // maskImageSmall
                 variables: [
@@ -269,9 +251,9 @@ export class PoresService {
                 //Original
                 variables: [
                     data.batch_id,
-                    maskImageArgs.url,
-                    maskImageArgs.sys_url,
-                    maskImageArgs.hash,
+                    originalImageArgs.url,
+                    originalImageArgs.sys_url,
+                    originalImageArgs.hash,
                     1,
                     21,
                     JSON.stringify({
@@ -325,4 +307,3 @@ export class PoresService {
         return taskResponse;
     }
 }
-
