@@ -77,7 +77,7 @@ export class AlgoAnalysisController {
         const taskResponse = await result?.get();
 
         if (taskResponse.err) {
-            console.log(taskResponse.err, 'cndp-skin');
+            // console.log(taskResponse.err, 'cndp-skin');
             return res.send({
                 status: 40004,
                 service: `analysis - ${data.task.taskName}`,
@@ -85,13 +85,14 @@ export class AlgoAnalysisController {
                 error: taskResponse.err,
             });
         }
+        const imageArg = this.AlgoAnalysis.handleImageArg(data);
 
-        const result_ = await this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse);
+        const result_ = await this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse, imageArg);
         let promise1 = new Promise(function (resolve, reject) {
             resolve(res.send({ status: 200, message: 'Success', body: result_ }));
         });
 
-        const saving = await this.AlgoAnalysis.finalSave(data, image, imageRecords, taskResponse);
+        const saving = await this.AlgoAnalysis.finalSave(data, image, imageRecords, taskResponse, imageArg);
         let promise2 = new Promise(function (resolve, resject) {
             resolve(saving);
         });
@@ -100,18 +101,71 @@ export class AlgoAnalysisController {
             .then(function (value) {
                 return promise2;
             })
-            .catch((e) => {
-                throw new Error(e);
+            .catch((error) => {
+                return res.send({
+                    status: 500,
+                    type: 'InternalServerError',
+                    message: 'Internal server error.',
+                    error: error.message,
+                });
             });
-        // return;
-        // console.timeEnd('celery');
+    }
 
-        // console.time('saving');
-        // // const saving = await this.AlgoAnalysis.finalSave(data, image, imageRecords, taskResponse);
+    @Get('/getAnalysisData/:batch_id')
+    async getAnalysisData(@Param('batch_id') batch_id: number, @Res() res: Response) {
+        try {
+            // let { batch_id } = query;
 
-        // console.timeEnd('saving');
+            const result = await this.AlgoAnalysis.getAnalysisData(batch_id);
 
-        // return;
+            const image = await this.AlgoAnalysis.getImageByBatch(batch_id);
+
+            // console.log(image);
+            result['images'] = image;
+            return res.status(200).json({
+                status: 200,
+                service: 'getAnalysisData',
+                body: result,
+            });
+        } catch (error) {
+            console.log(error);
+            return res.send({
+                status: 500,
+                type: 'InternalServerError',
+                message: 'Internal server error.',
+                error: error.message,
+            });
+        }
+    }
+
+    @Post('/history')
+    async userAnalysisHistory(@Query() param: any, @Res() res: Response) {
+        try {
+            let { per, page } = param;
+            let offset = (page - 1) * per;
+
+            const result: any = [];
+            // await this.AlgoAnalysis.getAnalysisData(batch_id);
+
+            const image: any = [];
+            //  await this.AlgoAnalysis.getImageByBatch(batch_id);
+
+            // console.log(image);
+            result['images'] = image;
+            return res.status(200).json({
+                status: 200,
+                service: 'getAnalysisData',
+                body: result,
+            });
+        } catch (error) {
+            console.log(error);
+            return res.send({
+                status: 500,
+                type: 'InternalServerError',
+                message: 'Internal server error.',
+                error: error.message,
+            });
+        }
     }
 }
 

@@ -17,17 +17,14 @@ export class WrinklesService {
         private batchAnalysis: BatchAnalysisService,
     ) {}
 
-    analysis(data: AlgoAnalysisDTO, taskResponse: any) {
-        // console.log("taskResponse", taskResponse)
+    analysis(data: AlgoAnalysisDTO, taskResponse: any, imageArgs: any) {
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'wrinkles');
-
-        const maskImageArgsYellow = this.S3Image.getImageArgs('maskImageYellow', data.task.algoName, 'wrinkles');
-        const maskImageArgsOrange = this.S3Image.getImageArgs('maskImageOrange', data.task.algoName, 'wrinkles');
-        const maskImageArgsGreen = this.S3Image.getImageArgs('maskImageGreen', data.task.algoName, 'wrinkles');
-        const maskImageArgsBlack = this.S3Image.getImageArgs('maskImageBlack', data.task.algoName, 'wrinkles');
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'wrinkles');
-
+        const maskImageArgsYellow = imageArgs.maskImageArgsYellow;
+        const maskImageArgsOrange = imageArgs.maskImageArgsOrange;
+        const maskImageArgsGreen = imageArgs.maskImageArgsGreen;
+        const maskImageArgsBlack = imageArgs.maskImageArgsBlack;
+        const originalImageArgs = imageArgs.originalImageArgs;
         taskResponse = {
             ver: taskResponse.ver,
             score: taskResponse.score,
@@ -51,26 +48,6 @@ export class WrinklesService {
             r8: taskResponse.r8,
             r9: taskResponse.r9,
         };
-        // const keyRemove = 'img';
-        // const keyRemove1 = 'mask_Y';
-        // const keyRemove2 = 'mask_O';
-        // const keyRemove3 = 'mask_G';
-        // const keyRemove4 = 'mask_P';
-        // const keyRemove5 = 'err';
-
-        // const newObject = _.omit(taskResponse, ['img', 'mask_Y', 'mask_O', 'mask_G', 'mask_P', 'err']);
-
-        // const { [keyRemove]: _, ...newObj } = taskResponse;
-
-        // console.log('kkkkkkk', newObject);
-
-        // delete taskResponse.img;
-        // delete taskResponse.mask_Y;
-        // delete taskResponse.mask_O;
-        // delete taskResponse.mask_G;
-        // delete taskResponse.mask_P;
-        // delete taskResponse.err;
-
         const retObj: any = {
             originalImage: {
                 id: originalImageArgs.hash,
@@ -103,7 +80,7 @@ export class WrinklesService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any) {
+    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const maskImageYellow = Buffer.from(taskResponse.mask_Y, 'base64');
         const maskImageOrange = Buffer.from(taskResponse.mask_O, 'base64');
@@ -111,20 +88,13 @@ export class WrinklesService {
         const maskImageBlack = Buffer.from(taskResponse.mask_P, 'base64');
         const originalImageSave = originalImage;
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'wrinkles');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
 
-        const maskImageArgsYellow = this.S3Image.getImageArgs('maskImageYellow', data.task.algoName, 'wrinkles');
-        const maskImageArgsOrange = this.S3Image.getImageArgs('maskImageOrange', data.task.algoName, 'wrinkles');
-        const maskImageArgsGreen = this.S3Image.getImageArgs('maskImageGreen', data.task.algoName, 'wrinkles');
-        const maskImageArgsBlack = this.S3Image.getImageArgs('maskImageBlack', data.task.algoName, 'wrinkles');
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'wrinkles');
-        console.log('all savessssss');
-        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
-        await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
-        await this.S3Image.uploadImage(maskImageYellow, maskImageArgsYellow.sys_url);
-        await this.S3Image.uploadImage(maskImageOrange, maskImageArgsOrange.sys_url);
-        await this.S3Image.uploadImage(maskImageGreen, maskImageArgsGreen.sys_url);
-        await this.S3Image.uploadImage(maskImageBlack, maskImageArgsBlack.sys_url);
+        const maskImageArgsYellow = imageArgs.maskImageArgsYellow;
+        const maskImageArgsOrange = imageArgs.maskImageArgsOrange;
+        const maskImageArgsGreen = imageArgs.maskImageArgsGreen;
+        const maskImageArgsBlack = imageArgs.maskImageArgsBlack;
+        const originalImageArgs = imageArgs.originalImageArgs;
 
         // delete taskResponse.img;
         // delete taskResponse.mask_Y;
@@ -236,10 +206,16 @@ export class WrinklesService {
                 ],
             },
         ];
-        console.log(queries.length);
         for (let i = 0; i < queries.length; i++) {
             this.database.executeQuery(saveSql, queries[i].variables);
         }
+
+        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
+        await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
+        await this.S3Image.uploadImage(maskImageYellow, maskImageArgsYellow.sys_url);
+        await this.S3Image.uploadImage(maskImageOrange, maskImageArgsOrange.sys_url);
+        await this.S3Image.uploadImage(maskImageGreen, maskImageArgsGreen.sys_url);
+        await this.S3Image.uploadImage(maskImageBlack, maskImageArgsBlack.sys_url);
 
         return 'saved';
     }

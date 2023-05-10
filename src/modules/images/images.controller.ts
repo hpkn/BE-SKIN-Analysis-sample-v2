@@ -12,9 +12,9 @@ export class ImagesController {
     @Get('/:hash')
     async getOriginalImage(@Param('hash') hash: string, @Res() res: Response) {
         const sysUrl = await this.ImagesService.getImage(hash);
-        console.log('wewewewewee', sysUrl[0]['sys_url']);
+
         const image = await this.fileUpload.getImagesFromCloud(sysUrl[0]['sys_url']);
-        // console.log(image.Body);
+
         res.writeHead(200, { 'Content-Type': 'image/jpeg' });
         res.write(image, 'binary');
         res.end(null, 'binary');

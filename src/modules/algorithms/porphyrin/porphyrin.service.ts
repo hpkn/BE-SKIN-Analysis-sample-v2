@@ -16,19 +16,25 @@ export class PorphyrinService {
         private batchAnalysis: BatchAnalysisService,
     ) {}
 
-    async analysis(data: AlgoAnalysisDTO, taskResponse: any) {
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'porphyrin');
-        const analyzedImageRedArgs = this.S3Image.getImageArgs('analyzedImageRed', data.task.algoName, 'porphyrin');
-        const analyzedImageGreenArgs = this.S3Image.getImageArgs('analyzedImageGreen', data.task.algoName, 'porphyrin');
-        const maskRImageArgs = this.S3Image.getImageArgs('maskImageR', data.task.algoName, 'porphyrin');
-        const maskGImageArgs = this.S3Image.getImageArgs('maskImageG', data.task.algoName, 'porphyrin');
+    async analysis(data: AlgoAnalysisDTO, taskResponse: any, imageArgs: any) {
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
+        const analyzedImageRedArgs = imageArgs.analyzedImageRedArgs;
+        const analyzedImageGreenArgs = imageArgs.analyzedImageGreenArgs;
+        const maskRImageArgs = imageArgs.maskRImageArgs;
+        const maskGImageArgs = imageArgs.maskGImageArgs;
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'porphyrin');
+        const originalImageArgs = imageArgs.originalImageArgs;
 
         taskResponse = {
             ver: taskResponse.ver,
             score: taskResponse.score,
             raw: taskResponse.raw,
+            indexTotal: taskResponse.indexTotal,
+            num_Total: taskResponse.num_Total,
+            indexRed: taskResponse.indexRed,
+            num_Red: taskResponse.num_Red,
+            indexGreen: taskResponse.indexGreen,
+            num_Green: taskResponse.num_Green,
         };
 
         const retObj: any = {
@@ -63,30 +69,22 @@ export class PorphyrinService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any) {
+    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const analyzedImageRed = Buffer.from(taskResponse.red, 'base64');
         const analyzedImageGreen = Buffer.from(taskResponse.green, 'base64');
         const maskRImage = Buffer.from(taskResponse.mask_R, 'base64');
         const maskGImage = Buffer.from(taskResponse.mask_G, 'base64');
 
-        const originalImageSave = Buffer.from(originalImage, 'base64');
+        const originalImageSave = originalImage;
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'porphyrin');
-        const analyzedImageRedArgs = this.S3Image.getImageArgs('analyzedImageRed', data.task.algoName, 'porphyrin');
-        const analyzedImageGreenArgs = this.S3Image.getImageArgs('analyzedImageGreen', data.task.algoName, 'porphyrin');
-        const maskRImageArgs = this.S3Image.getImageArgs('maskImageR', data.task.algoName, 'porphyrin');
-        const maskGImageArgs = this.S3Image.getImageArgs('maskImageG', data.task.algoName, 'porphyrin');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
+        const analyzedImageRedArgs = imageArgs.analyzedImageRedArgs;
+        const analyzedImageGreenArgs = imageArgs.analyzedImageGreenArgs;
+        const maskRImageArgs = imageArgs.maskRImageArgs;
+        const maskGImageArgs = imageArgs.maskGImageArgs;
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'porphyrin');
-
-        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
-        await this.S3Image.uploadImage(analyzedImageRed, analyzedImageRedArgs.sys_url);
-        await this.S3Image.uploadImage(analyzedImageGreen, analyzedImageGreenArgs.sys_url);
-
-        await this.S3Image.uploadImage(maskRImage, maskRImageArgs.sys_url);
-        await this.S3Image.uploadImage(maskGImage, maskGImageArgs.sys_url);
-        await this.S3Image.uploadImage(originalImage, originalImageArgs.sys_url);
+        const originalImageArgs = imageArgs.originalImageArgs;
 
         taskResponse = {
             ver: taskResponse.ver,
@@ -225,21 +223,14 @@ export class PorphyrinService {
             },
         };
         taskResponse = { ...taskResponse, ...retObj };
+        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
+        await this.S3Image.uploadImage(analyzedImageRed, analyzedImageRedArgs.sys_url);
+        await this.S3Image.uploadImage(analyzedImageGreen, analyzedImageGreenArgs.sys_url);
 
+        await this.S3Image.uploadImage(maskRImage, maskRImageArgs.sys_url);
+        await this.S3Image.uploadImage(maskGImage, maskGImageArgs.sys_url);
+        await this.S3Image.uploadImage(originalImage, originalImageArgs.sys_url);
         return taskResponse;
-    }
-
-    imageArgs(data: AlgoAnalysisDTO) {
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
-        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
-
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
-
-        return {
-            analyzedImageArgs: analyzedImageArgs,
-            maskImageArgs: maskImageArgs,
-            originalImageArgs: originalImageArgs,
-        };
     }
 }
 

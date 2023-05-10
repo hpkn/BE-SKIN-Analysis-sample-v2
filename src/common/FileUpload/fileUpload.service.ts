@@ -17,64 +17,30 @@ export class FileUploadService {
     ) {}
 
     async uploadImage(fileContent: Buffer, fileName: string) {
+        // const params = {
+        //     Bucket: this.configService.get('AWS_BUCKET_NAME'),
+        //     Key: this.configService.get('AWS_PATH') + `${fileName}.jpg`,
+        //     Body: fileContent,
+        const s3 = new S3({ region: this.configService.get('AWS_REGION') });
         const params = {
             Bucket: this.configService.get('AWS_BUCKET_NAME'),
             Key: this.configService.get('AWS_PATH') + `${fileName}.jpg`,
             Body: fileContent,
         };
 
-        try {
-            const parallelUploads3 = new Upload({
-                client: new S3Client({ region: this.configService.get('AWS_REGION') }),
-                //   tags: [...], // optional tags
-                queueSize: 4, // optional concurrency configuration
-                leavePartsOnError: false, // optional manually handle dropped parts
-                params: params,
-                partSize: 1,
+        return new Promise((resolve, reject) => {
+            s3.upload(params, (err: unknown, data: ManagedUpload.SendData) => {
+                if (err) {
+                    reject(err);
+                }
+                resolve(data);
             });
-
-            parallelUploads3.on('httpUploadProgress', (progress) => {
-                console.log(progress);
-            });
-            await parallelUploads3.done();
-            return true;
-        } catch (e) {
-            console.log(e);
-        }
+        });
+        // return true;
+        // } catch (e) {
+        //     console.log(e);
+        // }
     }
-
-    // async getImageCloudS3(key: any): Promise<GetObjectOutput> {
-    //     // this.logger.log(`retrieving: ${key} object`);
-    //     const params = {
-    //         Bucket: this.configService.get('AWS_BUCKET_NAME'),
-    //         Key: this.configService.get('AWS_PATH') + key,
-    //     };
-
-    //     const s3Client = new S3({ region: this.configService.get('AWS_REGION') });
-    //     const command = new GetObjectCommand(params);
-
-    //     // try {
-    //     let response: any = await s3Client.send(command);
-    //     // console.log(response);
-    //     const { Body } = response;
-    //     // console.log('bosydydydy', Body);
-    //     return Body;
-    //     // } catch (error) {
-    //     //     // console.log(error);
-    //     //     throw error;
-    //     // }
-
-    //     // const params = { Bucket: this.configService.get('AWS_BUCKET_NAME'), Key: key };
-    //     // const s3 = new S3();
-    //     // return new Promise((resolve, reject) => {
-    //     //     s3.getObject(params, function (err, data) {
-    //     //     if (err) {
-    //     //         reject(err);
-    //     //     }
-    //     //     resolve(data);
-    //     //     });
-    //     // });
-    // }
 
     async getImageCloudS3(key: string): Promise<GetObjectOutput> {
         const params = {

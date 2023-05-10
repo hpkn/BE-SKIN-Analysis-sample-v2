@@ -16,13 +16,13 @@ export class KeratinService {
         private batchAnalysis: BatchAnalysisService,
     ) {}
 
-    analysis(data: AlgoAnalysisDTO, taskResponse: any) {
+    analysis(data: AlgoAnalysisDTO, taskResponse: any, imageArgs: any) {
         // console.log("taskResponse", taskResponse)
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
-        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
+        const maskImageArgs = imageArgs.maskImageArgs;
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
+        const originalImageArgs = imageArgs.originalImageArgs;
 
         taskResponse = {
             ver: taskResponse.ver,
@@ -50,19 +50,15 @@ export class KeratinService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any) {
+    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const maskImage = Buffer.from(taskResponse.mask, 'base64');
         const originalImageSave = Buffer.from(originalImage, 'base64');
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
-        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
+        const maskImageArgs = imageArgs.maskImageArgs;
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
-
-        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
-        await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
-        await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
+        const originalImageArgs = imageArgs.originalImageArgs;
 
         delete taskResponse.img;
         delete taskResponse.mask;
@@ -153,20 +149,11 @@ export class KeratinService {
             },
         };
 
+        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
+        await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
+        await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
+
         return 'saved';
-    }
-
-    imageArgs(data: AlgoAnalysisDTO) {
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
-        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
-
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
-
-        return {
-            analyzedImageArgs: analyzedImageArgs,
-            maskImageArgs: maskImageArgs,
-            originalImageArgs: originalImageArgs,
-        };
     }
 }
 

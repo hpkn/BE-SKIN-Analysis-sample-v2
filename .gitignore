@@ -392,9 +392,11 @@ Network Trash Folder
 Temporary Items
 .apdisk
 
-=======
 # Local
 .env
 dist
 log
+
+
+ecosystem.config.js
 

@@ -16,18 +16,18 @@ export class SkintoneService {
         private batchAnalysis: BatchAnalysisService,
     ) {}
 
-    analysis(data: AlgoAnalysisDTO, taskResponse: any) {
+    analysis(data: AlgoAnalysisDTO, taskResponse: any, imageArgs: any) {
         // console.log("taskResponse", taskResponse)
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'skintone');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'skintone');
+        const originalImageArgs = imageArgs.originalImageArgs;
 
-        taskResponse = {
-            ver: taskResponse.ver,
-            score: taskResponse.score,
-            raw: taskResponse.raw,
-        };
+        // taskResponse = {
+        //     ver: taskResponse.ver,
+        //     score: taskResponse.score,
+        //     raw: taskResponse.raw,
+        // };
 
         const retObj: any = {
             analyzedImage: {
@@ -46,16 +46,13 @@ export class SkintoneService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any) {
+    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const originalImageSave = Buffer.from(originalImage, 'base64');
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'skintone');
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'skintone');
-
-        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
-        await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
+        const originalImageArgs = imageArgs.originalImageArgs;
 
         delete taskResponse.img;
         delete taskResponse.err;
@@ -76,7 +73,6 @@ export class SkintoneService {
             positionNumber: data.positionNumber,
         };
 
-        await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
         const saveSql =
             'INSERT INTO measurements (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores) values ($1, $2, $3, $4, $5, $6, $7, $8)';
         // const saveArgsSql = 'INSERT INTO keratin (batch_id, args) data ($1, $2)';
@@ -114,21 +110,11 @@ export class SkintoneService {
         for (let i = 0; i < queries.length; i++) {
             this.database.executeQuery(saveSql, queries[i].variables);
         }
+        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
+        await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
+        await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
 
         return 'saved';
-    }
-
-    imageArgs(data: AlgoAnalysisDTO) {
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
-        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
-
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
-
-        return {
-            analyzedImageArgs: analyzedImageArgs,
-            maskImageArgs: maskImageArgs,
-            originalImageArgs: originalImageArgs,
-        };
     }
 }
 

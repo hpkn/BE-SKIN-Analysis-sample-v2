@@ -16,20 +16,24 @@ export class SpotsService {
         private batchAnalysis: BatchAnalysisService,
     ) {}
 
-    analysis(data: AlgoAnalysisDTO, taskResponse: any) {
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'spots');
-        const analyzedImageArgsYellow = this.S3Image.getImageArgs('analyzedImageYellow', data.task.algoName, 'spots');
-        const analyzedImageArgsOrange = this.S3Image.getImageArgs('analyzedImageOrange', data.task.algoName, 'spots');
-        const analyzedImageArgsGreen = this.S3Image.getImageArgs('analyzedImageGreen', data.task.algoName, 'spots');
-        const maskImageArgsYellow = this.S3Image.getImageArgs('maskImageYellow', data.task.algoName, 'spots');
-        const maskImageArgsOrange = this.S3Image.getImageArgs('maskImageOrange', data.task.algoName, 'spots');
-        const maskImageArgsGreen = this.S3Image.getImageArgs('maskImageGreen', data.task.algoName, 'spots');
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'spots');
+    analysis(data: AlgoAnalysisDTO, taskResponse: any, imageArg: any) {
+        const analyzedImageArgs = imageArg.analyzedImageArgs;
+        const analyzedImageArgsYellow = imageArg.analyzedImageArgsYellow;
+        const analyzedImageArgsOrange = imageArg.analyzedImageArgsOrange;
+        const analyzedImageArgsGreen = imageArg.analyzedImageArgsGreen;
+        const maskImageArgsYellow = imageArg.maskImageArgsYellow;
+        const maskImageArgsOrange = imageArg.maskImageArgsOrange;
+        const maskImageArgsGreen = imageArg.maskImageArgsGreen;
+        const originalImageArgs = imageArg.originalImageArgs;
 
         taskResponse = {
             ver: taskResponse.ver,
             score: taskResponse.score,
             raw: taskResponse.raw,
+            indexT: taskResponse.indexT,
+            indexY: taskResponse.indexY,
+            indexO: taskResponse.indexO,
+            indexG: taskResponse.indexG,
         };
 
         const retObj: any = {
@@ -72,7 +76,7 @@ export class SpotsService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any) {
+    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArg: any) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const analyzedImageYellow = Buffer.from(taskResponse.yellow, 'base64');
         const analyzedImageOrange = Buffer.from(taskResponse.orange, 'base64');
@@ -80,29 +84,16 @@ export class SpotsService {
         const maskImageYellow = Buffer.from(taskResponse.mask_Y, 'base64');
         const maskImageOrange = Buffer.from(taskResponse.mask_O, 'base64');
         const maskImageGreen = Buffer.from(taskResponse.mask_G, 'base64');
-        const originalImageSave = Buffer.from(originalImage, 'base64');
+        const originalImageSave = originalImage;
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'spots');
-        const analyzedImageArgsYellow = this.S3Image.getImageArgs('analyzedImageYellow', data.task.algoName, 'spots');
-        const analyzedImageArgsOrange = this.S3Image.getImageArgs('analyzedImageOrange', data.task.algoName, 'spots');
-        const analyzedImageArgsGreen = this.S3Image.getImageArgs('analyzedImageGreen', data.task.algoName, 'spots');
-        const maskImageArgsYellow = this.S3Image.getImageArgs('maskImageYellow', data.task.algoName, 'spots');
-        const maskImageArgsOrange = this.S3Image.getImageArgs('maskImageOrange', data.task.algoName, 'spots');
-        const maskImageArgsGreen = this.S3Image.getImageArgs('maskImageGreen', data.task.algoName, 'spots');
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'spots');
-
-        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
-        await this.S3Image.uploadImage(analyzedImageYellow, analyzedImageArgsYellow.sys_url);
-        await this.S3Image.uploadImage(analyzedImageOrange, analyzedImageArgsOrange.sys_url);
-
-        await this.S3Image.uploadImage(analyzedImageGreen, analyzedImageArgsGreen.sys_url);
-
-        await this.S3Image.uploadImage(maskImageYellow, maskImageArgsYellow.sys_url);
-
-        await this.S3Image.uploadImage(maskImageOrange, maskImageArgsOrange.sys_url);
-        await this.S3Image.uploadImage(maskImageGreen, maskImageArgsGreen.sys_url);
-
-        await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
+        const analyzedImageArgs = imageArg.analyzedImageArgs;
+        const analyzedImageArgsYellow = imageArg.analyzedImageArgsYellow;
+        const analyzedImageArgsOrange = imageArg.analyzedImageArgsOrange;
+        const analyzedImageArgsGreen = imageArg.analyzedImageArgsGreen;
+        const maskImageArgsYellow = imageArg.maskImageArgsYellow;
+        const maskImageArgsOrange = imageArg.maskImageArgsOrange;
+        const maskImageArgsGreen = imageArg.maskImageArgsGreen;
+        const originalImageArgs = imageArg.originalImageArgs;
 
         delete taskResponse.img;
         delete taskResponse.yellow;
@@ -129,7 +120,6 @@ export class SpotsService {
             positionNumber: data.positionNumber,
         };
 
-        await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
         const saveSql =
             'INSERT INTO measurements (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores) values ($1, $2, $3, $4, $5, $6, $7, $8)';
         // const saveArgsSql = 'INSERT INTO spots (batch_id, args) data ($1, $2)';
@@ -252,20 +242,21 @@ export class SpotsService {
             this.database.executeQuery(saveSql, queries[i].variables);
         }
 
+        await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
+        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
+        await this.S3Image.uploadImage(analyzedImageYellow, analyzedImageArgsYellow.sys_url);
+        await this.S3Image.uploadImage(analyzedImageOrange, analyzedImageArgsOrange.sys_url);
+
+        await this.S3Image.uploadImage(analyzedImageGreen, analyzedImageArgsGreen.sys_url);
+
+        await this.S3Image.uploadImage(maskImageYellow, maskImageArgsYellow.sys_url);
+
+        await this.S3Image.uploadImage(maskImageOrange, maskImageArgsOrange.sys_url);
+        await this.S3Image.uploadImage(maskImageGreen, maskImageArgsGreen.sys_url);
+
+        await this.S3Image.uploadImage(originalImageSave, originalImageArgs.sys_url);
+
         return 'saved';
-    }
-
-    imageArgs(data: AlgoAnalysisDTO) {
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
-        const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
-
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
-
-        return {
-            analyzedImageArgs: analyzedImageArgs,
-            maskImageArgs: maskImageArgs,
-            originalImageArgs: originalImageArgs,
-        };
     }
 }
 
