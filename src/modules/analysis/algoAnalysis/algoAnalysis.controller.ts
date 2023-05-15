@@ -111,6 +111,82 @@ export class AlgoAnalysisController {
             });
     }
 
+    // SkinTone
+    // @Post('skintone-chowis')
+    // @HttpCode(200)
+    // @UseInterceptors(FileInterceptor('image'))
+    // async skinToneAnalysis(
+    //     @Body() data: AlgoAnalysisDTO,
+    //     @UploadedFile() image1: Express.Multer.File,
+    //     @UploadedFile() image2: Express.Multer.File,
+    //     @Res() res: Response,
+    // ) {
+    //     console.log(image1, image2);
+    //     if (!image1 || !image2)
+    //         return res.send({
+    //             status: 40002,
+    //             type: 'BadRequestError',
+    //             message: 'No file!',
+    //         });
+    //     // console.log('here', data);
+    //     const imageRecords = uuidv4();
+    //     const client = celery.createClient('redis://localhost', 'redis://');
+
+    //     const originalImageFirst = image1.buffer.toString('base64');
+    //     const originalImageSecond = image2.buffer.toString('base64');
+
+    //     data.task.taskName = 'skintone';
+    //     data.task = this.AlgoAnalysis.getTaskByAlgoType('skintone');
+
+    //     const task = client.createTask(data.task.taskName);
+
+    //     let result = task.applyAsync([
+    //         originalImageFirst,
+    //         originalImageSecond,
+    //         '/home/ubuntu/repositories/cfa-python/CNDP/files/chart.png',
+    //     ]);
+
+    //     const taskResponse = await result?.get();
+
+    //     if (taskResponse.err) {
+    //         // console.log(taskResponse.err, 'cndp-skin');
+    //         return res.send({
+    //             status: 40004,
+    //             service: `analysis - ${data.task.taskName}`,
+    //             message: 'Internal server error.',
+    //             error: taskResponse.err,
+    //         });
+    //     }
+    //     const imageArg = this.AlgoAnalysis.handleImageArg(data);
+
+    //     const originalImageFirstArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName);
+
+    //     const originalImageSecondArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName);
+
+    //     const result_ = await this.skintone.analysis(data, taskResponse, originalImageFirstArgs);
+    //     let promise1 = new Promise(function (resolve, reject) {
+    //         resolve(res.send({ status: 200, message: 'Success', body: result_ }));
+    //     });
+
+    //     const saving = await this.skintone.saveData(data, image, imageRecords, taskResponse, imageArg);
+    //     let promise2 = new Promise(function (resolve, resject) {
+    //         resolve(saving);
+    //     });
+
+    //     promise1
+    //         .then(function (value) {
+    //             return promise2;
+    //         })
+    //         .catch((error) => {
+    //             return res.send({
+    //                 status: 500,
+    //                 type: 'InternalServerError',
+    //                 message: 'Internal server error.',
+    //                 error: error.message,
+    //             });
+    //         });
+    // }
+
     @Get('/getAnalysisData/:batch_id')
     async getAnalysisData(@Param('batch_id') batch_id: number, @Res() res: Response) {
         try {
@@ -138,24 +214,77 @@ export class AlgoAnalysisController {
         }
     }
 
-    @Post('/history')
-    async userAnalysisHistory(@Query() param: any, @Res() res: Response) {
+    @Post('/history/')
+    async userAnalysisHistory(@Query() param: any, @Res() res: Response, @Body() body: any) {
+        console.log('here analysis');
+        let { per, page } = param;
+
+        let { customer_id } = body;
+
+        this.AlgoAnalysis.userAnalysisHistory(customer_id, per, page)
+            .then((data) => {
+                return res.status(200).json({
+                    status: 200,
+                    msg: 'Success',
+                    service: 'getUserAnalysisHistory',
+                    body: {
+                        rest_items: data?.length,
+                        current_page: page,
+                        analysis_list: data,
+                    },
+                });
+            })
+            .catch((error) => {
+                console.log(error);
+                return res.send({
+                    status: 500,
+                    type: 'InternalServerError',
+                    message: 'Internal server error.',
+                    error: error.message,
+                });
+            });
+    }
+
+    @Post('/history/image')
+    async userAnalysisImageHistory(@Query() param: any, @Res() res: Response, @Body() body: any) {
+        console.log('here analysis');
+        let { per, page } = param;
+
+        let { customer_id } = body;
         try {
-            let { per, page } = param;
-            let offset = (page - 1) * per;
+            const data = await this.AlgoAnalysis.userAnalysisImageHistory(customer_id, per, page);
 
-            const result: any = [];
-            // await this.AlgoAnalysis.getAnalysisData(batch_id);
-
-            const image: any = [];
-            //  await this.AlgoAnalysis.getImageByBatch(batch_id);
-
-            // console.log(image);
-            result['images'] = image;
             return res.status(200).json({
                 status: 200,
-                service: 'getAnalysisData',
-                body: result,
+                msg: 'Success',
+                service: 'getUserAnalysisImageHistory',
+                body: data,
+            });
+        } catch (error) {
+            console.log(error);
+            return res.send({
+                status: 500,
+                type: 'InternalServerError',
+                message: 'Internal server error.',
+                error: error.message,
+            });
+        }
+    }
+
+    @Post('/history/result')
+    async userAnalysisImageHistoryWithBatchId(@Query() param: any, @Res() res: Response, @Body() body: any) {
+        console.log('here analysis');
+        let { per, page } = param;
+
+        // let { customer_id } = body;
+        try {
+            // const data = await this.AlgoAnalysis.userAnalysisImageHistory(customer_id, per, page);
+
+            return res.status(200).json({
+                status: 200,
+                msg: 'Success',
+                service: 'getUserAnalysisImageHistory',
+                // body: data,
             });
         } catch (error) {
             console.log(error);

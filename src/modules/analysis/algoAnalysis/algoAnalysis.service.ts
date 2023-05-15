@@ -1,4 +1,4 @@
-import { Injectable, Inject, HttpException } from '@nestjs/common';
+import { Injectable, Inject, HttpException, ConsoleLogger } from '@nestjs/common';
 import { GetcustomerHistoryDTO } from 'src/common/Dto/customer/analysisHistory/analysisHistory.dto';
 import { DatabaseService } from 'src/database/database.service';
 import * as celery from 'celery-node';
@@ -20,6 +20,7 @@ import { SensitivityScabsService } from 'src/modules/algorithms/sensitivityScabs
 import { SensitivityRednessService } from 'src/modules/algorithms/sensitivityRedness/sensitivityRedness.service';
 import { SensitivtyScalingService } from 'src/modules/algorithms/sensitivtyScaling/sensitivtyScaling.service';
 import { FitzSGService } from 'src/modules/algorithms/fitzSG/fitzSG.service';
+import { promises } from 'dns';
 
 @Injectable()
 export class AlgoAnalysisService {
@@ -75,7 +76,7 @@ export class AlgoAnalysisService {
         }
     }
 
-    async handleAnalysis(data: AlgoAnalysisDTO, taskResponse: any, imageArgs: any) {
+    handleAnalysis(data: AlgoAnalysisDTO, taskResponse: any, imageArgs: any) {
         try {
             switch (data.type) {
                 case 'keratin':
@@ -388,9 +389,9 @@ export class AlgoAnalysisService {
         try {
             const insert = this.database.executeQuery(
                 `
-                  INSERT INTO images (batch_id, url, sys_url, hash, type_image_id, args) 
-                  values (${batch_id}, '${url}', '${sys_url}', '${hash}', ${type_image_id}, '${args}')
-                  `,
+                    INSERT INTO images (batch_id,  url, sys  url, hash, type_image_id, args) 
+                    values (${batch_id}, '${url}', '${sys_url}', '${hash}', ${type_image_id}, '${args}')
+                    `,
             );
             return (await insert).length;
         } catch (e) {
@@ -417,6 +418,7 @@ export class AlgoAnalysisService {
             const mesureId = await this.database.executeQuery(
                 `SELECT 
                     analysis.batch_id,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'keratin' ), 2 ) AS keratin_score,
                     ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'pores' ), 2 ) AS pores_score,
                     ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sensitivityredness' ), 2 ) AS sensitivity_redness_score,
                     ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'spots' ), 2 ) AS spots_score,
@@ -477,6 +479,184 @@ export class AlgoAnalysisService {
         } catch (e) {
             throw new Error(e);
         }
+    }
+
+    async getAnalysisByBatchId(batch_id: number) {
+        const result = await this.database.executeQuery(
+            `SELECT 
+                    analysis.batch_id,
+                    to_timestamp(cast(analysis.created_time as TEXT), 'YYYY-MM-DD HH24:MI:SS') AS date,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'keratin' ), 2 ) AS keratin_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'pores' ), 2 ) AS pores_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sensitivityredness' ), 2 ) AS sensitivity_redness_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'spots' ), 2 ) AS spots_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'wrinkles' ), 2 ) AS wrinkles_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'porphiryn' ), 2 ) AS porphiryn_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'moisture' ), 2 ) AS moisture_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sebum' ), 2 ) AS sebum_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'shine' ), 2 ) AS shine_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'skintone' ), 2 ) AS skintone_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sensitivity_scabs' ), 2 ) AS sensitivity_scabs_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sensitivity_scaling' ), 2 ) AS sensitivity_scaling_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'moisture_u' ), 2 ) AS moisture_u_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'moisture_t' ), 2 ) AS moisture_t_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sebum_u' ), 2 ) AS sebum_u_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sebum_t' ), 2 ) AS sebum_t_score 
+                FROM analysis
+                    LEFT JOIN answers_to_questions ON analysis.batch_id = answers_to_questions.batch_id
+                    LEFT JOIN measurements ON analysis.batch_id = measurements.batch_id
+                    LEFT JOIN type_measurements ON type_measurement_id = type_measurements."id" 
+                WHERE
+                    analysis.batch_id = $1 
+                    AND type_image_id = 21    
+                GROUP BY analysis.batch_id`,
+            [batch_id],
+        );
+        return result;
+    }
+
+    //get all batch_id of customer
+
+    async getCustomerBatchID(customer_id: number, per: number, page: number): Promise<any[]> {
+        let offset = (page - 1) * per;
+
+        let batchIds: any;
+        if (!per || !page) {
+            batchIds = await this.database.executeQuery(
+                `SELECT batch_id FROM analysis WHERE customer_id = '${customer_id}'`,
+            );
+        } else {
+            batchIds = await this.database.executeQuery(
+                `SELECT batch_id FROM analysis WHERE customer_id = '${customer_id}' LIMIT ${per} OFFSET ${offset}`,
+            );
+        }
+
+        return batchIds;
+    }
+
+    async userAnalysisHistory(customer_id: number, per: number, page: number): Promise<any[]> {
+        let batchIds = await this.getCustomerBatchID(customer_id, per, page);
+
+        const promises: Promise<any>[] = [];
+        // geting result
+        for (const batchId of batchIds) {
+            promises.push(this.getAnalysisByBatchId(batchId['batch_id']));
+        }
+
+        try {
+            const resultObj = await Promise.all(promises);
+            // remooving empty object
+            const nonEmptyResults = resultObj.filter((result) => result.length > 0);
+            return nonEmptyResults;
+            // console.log('nonEmptyResults', nonEmptyResults);
+
+            // return resultObj;
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+
+        // await this.getAnalysisByBatchId
+    }
+
+    async getImageData(batch_id: number) {
+        const result = await this.database.executeQuery(
+            `
+            SELECT  url,
+            CASE 
+                WHEN type_measurement_id = 1 THEN 'pores'
+                WHEN type_measurement_id = 2 THEN 'sensitivityscaling'
+                WHEN type_measurement_id = 3 THEN 'porphyrin'
+                WHEN type_measurement_id = 4 THEN 'wrinkles'
+                WHEN type_measurement_id = 5 THEN 'sebumU'
+                WHEN type_measurement_id = 6 THEN 'skintone'
+                WHEN type_measurement_id = 8 THEN 'spots'
+                WHEN type_measurement_id = 9 THEN 'sebumT'
+                WHEN type_measurement_id = 10 THEN 'shine'
+                WHEN type_measurement_id = 11 THEN 'keratin'
+                WHEN type_measurement_id = 12 THEN 'sensitivityredness'
+                WHEN type_measurement_id = 14 THEN 'sensitivityscabs'
+                WHEN type_measurement_id = 15 THEN 'sebum'
+                WHEN type_measurement_id = 16 THEN 'moistureT'
+                WHEN type_measurement_id = 17 THEN 'moistureU'
+            END AS analysis_type,
+            type_images.name as type,
+            to_json ( scores ) ->> 'score' as score, 
+            hash,
+            created_time
+            FROM measurements record
+            LEFT JOIN type_images ON type_images.ID = record.type_image_id 
+            WHERE batch_id = $1 AND ( type_image_id = 18 OR type_image_id = 21);
+            `,
+            [batch_id],
+        );
+        return result;
+    }
+
+    async userAnalysisImageHistory(customer_id: number, per: number, page: number) {
+        let batchIds = await this.getCustomerBatchID(customer_id, per, page);
+
+        // const promises: Promise<any>[] = [];
+        // // geting result
+        // for (const batchId of batchIds) {
+        //     console.log('===>', batchId['batch_id']);
+        //     promises.push(this.getImageData(batchId['batch_id']));
+        // }
+
+        try {
+            // const resultObj = await Promise.all(promises);
+
+            console.log(batchIds);
+            const image: any[] = [];
+            for (let i = 0; i < batchIds.length; i++) {
+                const rows = await this.getImageData(batchIds[i]['batch_id']);
+                if (rows.length > 0) {
+                    image.push({
+                        batch_id: Number(batchIds[i]['batch_id']),
+                        customer_id: customer_id,
+                        images: [...rows],
+                    });
+                }
+            }
+            return image;
+        } catch (error) {
+            console.log(error);
+            throw error;
+        }
+    }
+
+    async userAnalysisImageHistoryWithBatchId(batch_id: number) {
+        const result = await this.database.executeQuery(
+            `
+            SELECT  url,
+            CASE 
+                WHEN type_measurement_id = 1 THEN 'pores'
+                WHEN type_measurement_id = 2 THEN 'sensitivityscaling'
+                WHEN type_measurement_id = 3 THEN 'porphyrin'
+                WHEN type_measurement_id = 4 THEN 'wrinkles'
+                WHEN type_measurement_id = 5 THEN 'sebumU'
+                WHEN type_measurement_id = 6 THEN 'skintone'
+                WHEN type_measurement_id = 8 THEN 'spots'
+                WHEN type_measurement_id = 9 THEN 'sebumT'
+                WHEN type_measurement_id = 10 THEN 'shine'
+                WHEN type_measurement_id = 11 THEN 'keratin'
+                WHEN type_measurement_id = 12 THEN 'sensitivityredness'
+                WHEN type_measurement_id = 14 THEN 'sensitivityscabs'
+                WHEN type_measurement_id = 15 THEN 'sebum'
+                WHEN type_measurement_id = 16 THEN 'moistureT'
+                WHEN type_measurement_id = 17 THEN 'moistureU'
+            END AS analysis_type,
+            type_images.name as type,
+            to_json ( scores ) ->> 'score' as score, 
+            hash,
+            created_time
+            FROM measurements record
+            LEFT JOIN type_images ON type_images.ID = record.type_image_id 
+            WHERE batch_id = $1 AND ( type_image_id = 18 OR type_image_id = 21);
+            `,
+            [batch_id],
+        );
+        return result;
     }
 }
 
