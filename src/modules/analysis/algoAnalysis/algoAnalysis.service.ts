@@ -1,4 +1,4 @@
-import { Injectable, Inject, HttpException, ConsoleLogger } from '@nestjs/common';
+import { Injectable, Inject, HttpException, ConsoleLogger, BadRequestException } from '@nestjs/common';
 import { GetcustomerHistoryDTO } from 'src/common/Dto/customer/analysisHistory/analysisHistory.dto';
 import { DatabaseService } from 'src/database/database.service';
 import * as celery from 'celery-node';
@@ -21,6 +21,7 @@ import { SensitivityRednessService } from 'src/modules/algorithms/sensitivityRed
 import { SensitivtyScalingService } from 'src/modules/algorithms/sensitivtyScaling/sensitivtyScaling.service';
 import { FitzSGService } from 'src/modules/algorithms/fitzSG/fitzSG.service';
 import { promises } from 'dns';
+import { OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
 
 @Injectable()
 export class AlgoAnalysisService {
@@ -142,8 +143,8 @@ export class AlgoAnalysisService {
                 return this.spots.saveData(data, taskResponse, imageRecords, originalImage, imageArgs);
             case 'skintone':
                 return this.skintone.saveData(data, taskResponse, imageRecords, originalImage, imageArgs);
-            case 'skintone_dior':
-                return this.skintone_dior.saveData(data, taskResponse, imageRecords, originalImage, imageArgs);
+            // case 'skintone_dior':
+            //     return this.skintone_dior.saveData(data, taskResponse, imageRecords, originalImage, imageArgs);
             case 'wrinkles':
                 return this.wrinkles.saveData(data, taskResponse, imageRecords, originalImage, imageArgs);
             case 'sensitivityscabs':
@@ -364,6 +365,221 @@ export class AlgoAnalysisService {
         }
     }
 
+    //Data Offline Saving
+
+    saveOfflineData(data: OfflineDatasDTO, imageRecords: any, imageArgs: any) {
+        try {
+            switch (data.type) {
+                case 'keratin':
+                    return this.keratin.offlineSaveData(data, imageRecords, imageArgs);
+
+                case 'pores':
+                    return this.pores.offlineSaveData(data, imageRecords, imageArgs);
+                case 'porphyrin':
+                    return this.porphyrin.offlineSaveData(data, imageRecords, imageArgs);
+                case 'sebum':
+                    return this.sebum.offlineSaveData(data, imageRecords, imageArgs);
+                // case 'sebumT':
+                //     return this.sebumT.analysis(data, taskResponse);
+                case 'shine':
+                    return this.shine.offlineSaveData(data, imageRecords, imageArgs);
+                case 'spots':
+                    return this.spots.offlineSaveData(data, imageRecords, imageArgs);
+                case 'skintone':
+                    return this.skintone.offlineSaveData(data, imageRecords, imageArgs);
+                // case 'skintone_dior':
+                //     return this.skintone_dior.offlineSaveData(data, imageRecords, imageArgs);
+                case 'wrinkles':
+                    return this.wrinkles.offlineSaveData(data, imageRecords, imageArgs);
+                case 'sensitivityscabs':
+                    return this.sensitivityScabs.offlineSaveData(data, imageRecords, imageArgs);
+                case 'sensitivityscaling':
+                    return this.sensitivityScaling.offlineSaveData(data, imageRecords, imageArgs);
+                case 'sensitivityredness':
+                    return this.sensitivityredness.offlineSaveData(data, imageRecords, imageArgs);
+                // case 'fitzSG':
+                //     return this.fitzSG.analysis(data, imageRecords, imageArgs);
+                default:
+                    throw new BadRequestException({
+                        status: 400,
+                        message: 'Analysis Type is incorrect',
+                    });
+            }
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    // offline image args
+    handleofflineImageArg(data: any) {
+        let analyzedImageArgs;
+
+        let originalImageArgs;
+
+        switch (data.type) {
+            case 'keratin':
+                analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'keratin');
+
+                originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'keratin');
+                return {
+                    analyzedImageArgs: analyzedImageArgs,
+
+                    originalImageArgs: originalImageArgs,
+                };
+            case 'pores':
+                analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'pores');
+
+                originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'pores');
+                return {
+                    analyzedImageArgs: analyzedImageArgs,
+                    originalImageArgs: originalImageArgs,
+                };
+            case 'porphyrin':
+                analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'porphyrin');
+
+                originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'porphyrin');
+                return {
+                    analyzedImageArgs: analyzedImageArgs,
+
+                    originalImageArgs: originalImageArgs,
+                };
+            case 'sebum':
+                analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sebum');
+
+                originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'sebum');
+
+                return {
+                    analyzedImageArgs: analyzedImageArgs,
+
+                    originalImageArgs: originalImageArgs,
+                };
+            // case 'sebumT':
+            //     return this.sebumT.saveData(data, taskResponse, imageRecords, originalImage);
+            case 'shine':
+                analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'shine');
+
+                originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'shine');
+                return {
+                    analyzedImageArgs: analyzedImageArgs,
+                    originalImageArgs: originalImageArgs,
+                };
+            case 'spots':
+                analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'spots');
+
+                originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'spots');
+                return {
+                    analyzedImageArgs: analyzedImageArgs,
+                    originalImageArgs: originalImageArgs,
+                };
+            case 'skintone':
+                analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'skintone');
+
+                originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'skintone');
+
+                return { analyzedImageArgs: analyzedImageArgs, originalImageArgs: originalImageArgs };
+            case 'skintone_dior':
+                analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'skintone');
+
+                originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'skintone');
+
+                return { analyzedImageArgs: analyzedImageArgs, originalImageArgs: originalImageArgs };
+
+            case 'wrinkles':
+                analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'wrinkles');
+                originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'wrinkles');
+                return {
+                    analyzedImageArgs: analyzedImageArgs,
+
+                    originalImageArgs: originalImageArgs,
+                };
+            case 'sensitivityscabs':
+                analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sensitivityscabs');
+
+                originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'sensitivityscabs');
+
+                return {
+                    analyzedImageArgs: analyzedImageArgs,
+                    originalImageArgs: originalImageArgs,
+                };
+            case 'sensitivityscaling':
+                analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sensitivityscabs');
+                originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'sensitivityscabs');
+
+                return {
+                    analyzedImageArgs: analyzedImageArgs,
+
+                    originalImageArgs: originalImageArgs,
+                };
+            case 'sensitivityredness':
+                analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sensitivityscabs');
+
+                originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'sensitivityscabs');
+
+                return {
+                    analyzedImageArgs: analyzedImageArgs,
+
+                    originalImageArgs: originalImageArgs,
+                };
+            case 'fitzSG':
+                return;
+            default:
+                throw new Error('No such analysis type');
+        }
+    }
+
+    // OfflinesaveDataImage
+    async saveOfflineImage(data: OfflineDatasDTO, originalImage: any, analyzedImage: any, imageArgs: any) {
+        try {
+            switch (data.type) {
+                case 'keratin':
+                    return this.keratin.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
+
+                case 'pores':
+                    return this.pores.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
+                case 'porphyrin':
+                    return this.porphyrin.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
+                case 'sebum':
+                    return this.sebum.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
+                // case 'sebumT':
+                //     return this.sebumT.analysis(data, taskResponse);
+                case 'shine':
+                    return this.shine.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
+                case 'spots':
+                    return this.spots.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
+                case 'skintone':
+                    return this.skintone.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
+                // case 'skintone_dior':
+                //     return this.skintone_dior.offlineSaveData(originalImage, analyzedImage, imageArgs);
+                case 'wrinkles':
+                    return this.wrinkles.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
+                case 'sensitivityscabs':
+                    return this.sensitivityScabs.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
+                case 'sensitivityscaling':
+                    return this.sensitivityScaling.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
+                case 'sensitivityredness':
+                    return this.sensitivityredness.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
+                // case 'fitzSG':
+                //     return this.fitzSG.analysis(originalImage, analyzedImage, imageArgs);
+                default:
+                    throw new BadRequestException({
+                        status: 400,
+                        message: 'Analysis Type is incorrect',
+                    });
+            }
+        } catch (e) {
+            console.log(e);
+        }
+    }
+    async SaveDataFinal(data: OfflineDatasDTO, imageRecords: any, imageArg: any) {
+        try {
+            let args = await this.saveOfflineData(data, imageRecords, imageArg);
+
+            return 'saved';
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
     async finalSave(
         data: AlgoAnalysisDTO,
         image: Express.Multer.File,
@@ -512,7 +728,7 @@ export class AlgoAnalysisService {
                 GROUP BY analysis.batch_id`,
             [batch_id],
         );
-        return result;
+        return result[0];
     }
 
     //get all batch_id of customer
@@ -546,8 +762,8 @@ export class AlgoAnalysisService {
         try {
             const resultObj = await Promise.all(promises);
             // remooving empty object
-            const nonEmptyResults = resultObj.filter((result) => result.length > 0);
-            return nonEmptyResults;
+            // const nonEmptyResults = resultObj.filter((result) => result.length > 0);
+            return resultObj;
             // console.log('nonEmptyResults', nonEmptyResults);
 
             // return resultObj;
@@ -658,5 +874,8 @@ export class AlgoAnalysisService {
         );
         return result;
     }
+
+    // MoistureU
+    moistureU() {}
 }
 

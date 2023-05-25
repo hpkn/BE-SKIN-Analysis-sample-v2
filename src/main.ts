@@ -42,7 +42,8 @@ async function bootstrap() {
         new ValidationPipe({
             whitelist: true,
             exceptionFactory: (e) => {
-                throw new HttpException(e[0].constraints[0], HttpStatus.BAD_REQUEST);
+                console.log(e);
+                throw new HttpException(e[0].constraints, HttpStatus.BAD_REQUEST);
             },
         }),
     );

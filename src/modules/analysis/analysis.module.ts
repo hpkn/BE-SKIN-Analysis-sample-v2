@@ -1,19 +1,14 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-// import { DataSavingController } from './dataSaving/dataSaving.controller';
-import { DataSavingService } from './dataSaving/dataSaving.service';
-import { DatabaseService } from 'src/database/database.service';
 import { FileUploadService } from 'src/common/FileUpload/fileUpload.service';
 import { DatabaseModule } from 'src/database/database.module';
 import { AlgoAnalysisController } from './algoAnalysis/algoAnalysis.controller';
 import { AlgoAnalysisService } from './algoAnalysis/algoAnalysis.service';
 import { KeratinService } from '../algorithms/keratin/keratin.service';
-import { BatchAnalysisController } from './batchAnalysis/batchAnalysis.controller';
 import { BatchAnalysisService } from './batchAnalysis/batchAnalysis.service';
 import { PoresService } from '../algorithms/pores/pores.service';
 import { PorphyrinService } from '../algorithms/porphyrin/porphyrin.service';
 import { SebumService } from '../algorithms/sebum/sebum.service';
-import { DataSavingController } from './dataSaving/dataSaving.controller';
 import { SebumTService } from '../algorithms/sebumT/sebumT.service';
 import { ShineService } from '../algorithms/shine/shine.service';
 import { SpotsService } from '../algorithms/spots/spots.service';
@@ -25,6 +20,10 @@ import { SensitivityRednessService } from '../algorithms/sensitivityRedness/sens
 import { SensitivtyScalingService } from '../algorithms/sensitivtyScaling/sensitivtyScaling.service';
 import { FitzSGService } from '../algorithms/fitzSG/fitzSG.service';
 import { BullModule } from '@nestjs/bull';
+import { MoistureUService } from '../algorithms/moistureU/moistureU.service';
+import { MoistureTService } from '../algorithms/moistureT/moistureT.service';
+import { SebumUService } from '../algorithms/sebumU/sebumU.service';
+import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
 
 @Module({
     imports: [
@@ -33,11 +32,10 @@ import { BullModule } from '@nestjs/bull';
             name: 'dataSaving',
         }),
     ],
-    controllers: [DataSavingController, AlgoAnalysisController, BatchAnalysisController],
+    controllers: [AlgoAnalysisController],
     providers: [
         ConfigService,
         FileUploadService,
-        DataSavingService,
         AlgoAnalysisService,
         KeratinService,
         BatchAnalysisService,
@@ -54,8 +52,19 @@ import { BullModule } from '@nestjs/bull';
         SensitivityRednessService,
         SensitivtyScalingService,
         FitzSGService,
+        MoistureUService,
+        MoistureTService,
+        SebumUService,
         // UploadProcessor,
     ],
 })
-export class AnalysisModule {}
+export class AnalysisModule {
+    // Auth Middleware
+    configure(consumer: MiddlewareConsumer) {
+        consumer
+            .apply(AuthMiddleware)
+            // .exclude({ path: 'analysis', method: RequestMethod.POST })
+            .forRoutes('analysis');
+    }
+}
 

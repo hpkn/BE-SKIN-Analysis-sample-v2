@@ -5,25 +5,43 @@ import {
     Post,
     UseInterceptors,
     UploadedFile,
+    UploadedFiles,
     Res,
     Param,
     Query,
     HttpException,
     HttpCode,
+    UseGuards,
 } from '@nestjs/common';
 import * as celery from 'celery-node';
-import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
-import { query, Request, response, Response } from 'express';
-import { GetcustomerHistoryDTO } from 'src/common/Dto/customer/analysisHistory/analysisHistory.dto';
+import { Response } from 'express';
 import { AlgoAnalysisService } from './algoAnalysis.service';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import { AlgoAnalysisDTO } from 'src/common/Dto/analysis/algoAnalysis.dto';
+import { MoistureUDTO } from 'src/common/Dto/analysis/moistureU.dto';
 import { v4 as uuidv4 } from 'uuid';
-import { promises } from 'dns';
+import { MoistureUService } from 'src/modules/algorithms/moistureU/moistureU.service';
+import { MoistureTService } from 'src/modules/algorithms/moistureT/moistureT.service';
+import { FileUploadService } from 'src/common/FileUpload/fileUpload.service';
+import { SebumUService } from 'src/modules/algorithms/sebumU/sebumU.service';
+import { SebumTService } from 'src/modules/algorithms/sebumT/sebumT.service';
+import { SkinToneDiorService } from 'src/modules/algorithms/skinToneDior/skinToneDior.service';
+import { OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
+import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
+import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 
 @Controller('analysis')
 export class AlgoAnalysisController {
-    constructor(private readonly AlgoAnalysis: AlgoAnalysisService) {}
+    constructor(
+        private readonly AlgoAnalysis: AlgoAnalysisService,
+        private readonly moisture_u: MoistureUService,
+        private readonly moisture_t: MoistureTService,
+        private readonly sebum_u: SebumUService,
+        private readonly sebum_t: SebumTService,
+        private readonly S3Image: FileUploadService,
+        private readonly diorTone: SkinToneDiorService,
+        private readonly batchAnalysis: BatchAnalysisService,
+    ) {}
     @Post('')
     @HttpCode(200)
     @UseInterceptors(FileInterceptor('image'))
@@ -38,7 +56,8 @@ export class AlgoAnalysisController {
                 type: 'BadRequestError',
                 message: 'No file!',
             });
-        // console.log('here', data);
+
+        data.batch_id = Number(data.batch_id);
         const imageRecords = uuidv4();
         const client = celery.createClient('redis://localhost', 'redis://');
         let algoList = [
@@ -67,9 +86,15 @@ export class AlgoAnalysisController {
         let result: any;
 
         if (data.task.taskName === 'CNDP_SkinTone') {
-            result = task.applyAsync([originalImage, '/home/ubuntu/repositories/cfa-python/CNDP/files/chart.png']);
+            result = task.applyAsync([
+                originalImage,
+                '/home/ubuntu/backendtestuser/repositories/cfa-python/CNDP/files/chart.png',
+            ]);
         } else if (data.task.taskName === 'CNDP_FitzSG') {
-            result = task.applyAsync([originalImage, '/home/ubuntu/repositories/cfa-python/CNDP/files/chart.png']);
+            result = task.applyAsync([
+                originalImage,
+                '/home/ubuntu/backendtestuser/repositories/cfa-python/CNDP/files/chart.png',
+            ]);
         } else {
             result = task.applyAsync([originalImage]);
         }
@@ -111,82 +136,7 @@ export class AlgoAnalysisController {
             });
     }
 
-    // SkinTone
-    // @Post('skintone-chowis')
-    // @HttpCode(200)
-    // @UseInterceptors(FileInterceptor('image'))
-    // async skinToneAnalysis(
-    //     @Body() data: AlgoAnalysisDTO,
-    //     @UploadedFile() image1: Express.Multer.File,
-    //     @UploadedFile() image2: Express.Multer.File,
-    //     @Res() res: Response,
-    // ) {
-    //     console.log(image1, image2);
-    //     if (!image1 || !image2)
-    //         return res.send({
-    //             status: 40002,
-    //             type: 'BadRequestError',
-    //             message: 'No file!',
-    //         });
-    //     // console.log('here', data);
-    //     const imageRecords = uuidv4();
-    //     const client = celery.createClient('redis://localhost', 'redis://');
-
-    //     const originalImageFirst = image1.buffer.toString('base64');
-    //     const originalImageSecond = image2.buffer.toString('base64');
-
-    //     data.task.taskName = 'skintone';
-    //     data.task = this.AlgoAnalysis.getTaskByAlgoType('skintone');
-
-    //     const task = client.createTask(data.task.taskName);
-
-    //     let result = task.applyAsync([
-    //         originalImageFirst,
-    //         originalImageSecond,
-    //         '/home/ubuntu/repositories/cfa-python/CNDP/files/chart.png',
-    //     ]);
-
-    //     const taskResponse = await result?.get();
-
-    //     if (taskResponse.err) {
-    //         // console.log(taskResponse.err, 'cndp-skin');
-    //         return res.send({
-    //             status: 40004,
-    //             service: `analysis - ${data.task.taskName}`,
-    //             message: 'Internal server error.',
-    //             error: taskResponse.err,
-    //         });
-    //     }
-    //     const imageArg = this.AlgoAnalysis.handleImageArg(data);
-
-    //     const originalImageFirstArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName);
-
-    //     const originalImageSecondArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName);
-
-    //     const result_ = await this.skintone.analysis(data, taskResponse, originalImageFirstArgs);
-    //     let promise1 = new Promise(function (resolve, reject) {
-    //         resolve(res.send({ status: 200, message: 'Success', body: result_ }));
-    //     });
-
-    //     const saving = await this.skintone.saveData(data, image, imageRecords, taskResponse, imageArg);
-    //     let promise2 = new Promise(function (resolve, resject) {
-    //         resolve(saving);
-    //     });
-
-    //     promise1
-    //         .then(function (value) {
-    //             return promise2;
-    //         })
-    //         .catch((error) => {
-    //             return res.send({
-    //                 status: 500,
-    //                 type: 'InternalServerError',
-    //                 message: 'Internal server error.',
-    //                 error: error.message,
-    //             });
-    //         });
-    // }
-
+    @UseGuards(AuthMiddleware)
     @Get('/getAnalysisData/:batch_id')
     async getAnalysisData(@Param('batch_id') batch_id: number, @Res() res: Response) {
         try {
@@ -294,6 +244,393 @@ export class AlgoAnalysisController {
                 message: 'Internal server error.',
                 error: error.message,
             });
+        }
+    }
+
+    @Post('/moistureU')
+    async moistureU(@Query() param: any, @Res() res: Response, @Body() body: MoistureUDTO) {
+        try {
+            this.moisture_u.saveData(body);
+
+            return res.status(201).send({
+                status: 200,
+                service: 'Analysis CNDP SKIN Moisture U',
+                body: {
+                    batch_id: Number(body.batch_id),
+                    args: {
+                        score: body.score,
+                        raw: body.raw,
+                    },
+                },
+            });
+        } catch (error) {
+            console.log(error);
+            return res.send({
+                status: 500,
+                type: 'InternalServerError',
+                message: 'Internal server error.',
+                error: error.message,
+            });
+        }
+    }
+
+    @Post('/moistureT')
+    async moistureT(@Query() param: any, @Res() res: Response, @Body() body: MoistureUDTO) {
+        try {
+            this.moisture_t.saveData(body);
+
+            return res.status(201).send({
+                status: 200,
+                service: 'Analysis CNDP SKIN Moisture U',
+                body: {
+                    batch_id: Number(body.batch_id),
+                    args: {
+                        score: body.score,
+                        raw: body.raw,
+                    },
+                },
+            });
+        } catch (error) {
+            console.log(error);
+            return res.send({
+                status: 500,
+                type: 'InternalServerError',
+                message: 'Internal server error.',
+                error: error.message,
+            });
+        }
+    }
+
+    @Post('/sebumU')
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'originalImage', maxCount: 1 },
+            { name: 'analyzedImage', maxCount: 1 },
+        ]),
+    )
+    async sebumU(
+        @Query() param: any,
+        @Res() res: Response,
+        @Body() body: MoistureUDTO,
+        @UploadedFiles()
+        file: { originalImage: Express.Multer.File[]; analyzedImage: Express.Multer.File[] },
+    ) {
+        if (!file['originalImage'][0] || !file['analyzedImage'][0])
+            return res.send({ status: 40002, type: 'BadRequestError', message: 'There is no necassary image file!' });
+
+        const originalImage = file.originalImage[0].buffer;
+        const analyzedImage = file.analyzedImage[0].buffer;
+
+        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', '', 'sebumU');
+
+        const originalImageArgs = this.S3Image.getImageArgs('originalImage', '', 'sebumU');
+
+        await this.sebum_u.saveData(body, analyzedImageArgs, originalImageArgs);
+
+        let promise1 = new Promise(function (resolve, reject) {
+            resolve(
+                res.send({
+                    status: 200,
+                    service: 'Analysis CNDP SKIN Sebum U',
+                    body: {
+                        batch_id: Number(body.batch_id),
+                        args: {
+                            score: body.score,
+                            raw: body.raw,
+                        },
+                    },
+                    originalImage: {
+                        id: originalImageArgs.hash,
+                        url: originalImageArgs.url,
+                    },
+                    analyzedImage: {
+                        id: analyzedImageArgs.hash,
+                        url: analyzedImageArgs.url,
+                    },
+                }),
+            );
+        });
+
+        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
+        const saving = await this.S3Image.uploadImage(originalImage, originalImageArgs.sys_url);
+        let promise2 = new Promise(function (resolve, resject) {
+            resolve(saving);
+        });
+
+        promise1
+            .then(function (value) {
+                return promise2;
+            })
+            .catch((error) => {
+                return res.send({
+                    status: 500,
+                    type: 'InternalServerError',
+                    message: 'Internal server error.',
+                    error: error.message,
+                });
+            });
+    }
+
+    @Post('/sebumT')
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'originalImage', maxCount: 1 },
+            { name: 'analyzedImage', maxCount: 1 },
+        ]),
+    )
+    async sebumT(
+        @Query() param: any,
+        @Res() res: Response,
+        @Body() body: MoistureUDTO,
+        @UploadedFiles()
+        file: { originalImage: Express.Multer.File[]; analyzedImage: Express.Multer.File[] },
+    ) {
+        if (!file['originalImage'][0] || !file['analyzedImage'][0])
+            return res.send({ status: 40002, type: 'BadRequestError', message: 'There is no necassary image file!' });
+
+        const originalImage = file.originalImage[0].buffer;
+        const analyzedImage = file.analyzedImage[0].buffer;
+
+        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', '', 'sebumU');
+
+        const originalImageArgs = this.S3Image.getImageArgs('originalImage', '', 'sebumU');
+
+        await this.sebum_t.saveData(body, analyzedImageArgs, originalImageArgs);
+
+        let promise1 = new Promise(function (resolve, reject) {
+            resolve(
+                res.send({
+                    status: 200,
+                    service: 'Analysis CNDP SKIN Sebum T',
+                    body: {
+                        batch_id: Number(body.batch_id),
+                        args: {
+                            score: body.score,
+                            raw: body.raw,
+                        },
+                    },
+                    originalImage: {
+                        id: originalImageArgs.hash,
+                        url: originalImageArgs.url,
+                    },
+                    analyzedImage: {
+                        id: analyzedImageArgs.hash,
+                        url: analyzedImageArgs.url,
+                    },
+                }),
+            );
+        });
+
+        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
+        const saving = await this.S3Image.uploadImage(originalImage, originalImageArgs.sys_url);
+        let promise2 = new Promise(function (resolve, resject) {
+            resolve(saving);
+        });
+
+        promise1
+            .then(function (value) {
+                return promise2;
+            })
+            .catch((error) => {
+                return res.send({
+                    status: 500,
+                    type: 'InternalServerError',
+                    message: 'Internal server error.',
+                    error: error.message,
+                });
+            });
+    }
+
+    @Post('/skintone-dior')
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'image1', maxCount: 1 },
+            { name: 'image2', maxCount: 1 },
+        ]),
+    )
+    async skinToneDior(
+        @Res() res: Response,
+        @Body() body: MoistureUDTO,
+        @UploadedFiles()
+        file: { image1: Express.Multer.File[]; image2: Express.Multer.File[] },
+    ) {
+        try {
+            if (!file['image1'][0] || !file['image2'][0])
+                return res.send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'There is no necassary image file!',
+                });
+
+            body.batch_id = Number(body.batch_id);
+            const imageRecords = uuidv4();
+            const client = celery.createClient('redis://localhost', 'redis://');
+            const originalImageFirst = file.image1[0].buffer.toString('base64');
+            const originalImageSecond = file.image2[0].buffer.toString('base64');
+            body.type = 'skintone_dior';
+            body.task = this.AlgoAnalysis.getTaskByAlgoType('skintone_dior');
+
+            const originalImageFirstArgs = this.S3Image.getImageArgs('originalImage', body.type, body.task);
+
+            const originalImageSecondArgs = this.S3Image.getImageArgs('originalImage', body.type, body.task);
+
+            const task = client.createTask(body.task.taskName);
+
+            let result = task.applyAsync([
+                originalImageFirst,
+                originalImageSecond,
+                '/home/backendtestuser/Repositories/cfa-python/CNDP/files/chart.png',
+            ]);
+
+            const taskResponse = await result.get();
+
+            if (taskResponse.err) {
+                // console.log(taskResponse.err, 'cndp-skin');
+                return res.send({
+                    status: 40004,
+                    service: `analysis - ${body.task.taskName}`,
+                    message: 'Internal server error.',
+                    error: taskResponse.err,
+                });
+            }
+            const result_ = await this.diorTone.analysis(taskResponse, originalImageFirstArgs, originalImageSecondArgs);
+            let promise1 = new Promise(function (resolve, reject) {
+                resolve(res.send({ status: 200, message: 'Success', body: result_ }));
+            });
+
+            const saving = await this.diorTone.saveData(
+                body,
+                imageRecords,
+                taskResponse,
+                originalImageFirst,
+                originalImageSecond,
+                originalImageFirstArgs,
+                originalImageSecondArgs,
+            );
+            let promise2 = new Promise(function (resolve, resject) {
+                resolve(saving);
+            });
+
+            promise1
+                .then(function (value) {
+                    return promise2;
+                })
+                .catch((error) => {
+                    return res.send({
+                        status: 500,
+                        type: 'InternalServerError',
+                        message: 'Internal server error.',
+                        error: error.message,
+                    });
+                });
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    @Post('/offline')
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'originalImage', maxCount: 1 },
+            { name: 'analyzedImage', maxCount: 1 },
+            { name: 'analyzedImageS', maxCount: 1 },
+            { name: 'analyzedImageM', maxCount: 1 },
+            { name: 'analyzedImageB', maxCount: 1 },
+            { name: 'maskImage', maxCount: 1 },
+            { name: 'maskImageS', maxCount: 1 },
+            { name: 'maskImageM', maxCount: 1 },
+            { name: 'maskImageB', maxCount: 1 },
+            { name: 'analyzedImageRed', maxCount: 1 },
+            { name: 'analyzedImageGreen', maxCount: 1 },
+            { name: 'analyzedImageYellow', maxCount: 1 },
+            { name: 'analyzedImageOrange', maxCount: 1 },
+            { name: 'maskImageYellow', maxCount: 1 },
+            { name: 'maskImageOrange', maxCount: 1 },
+            { name: 'maskImageGreen', maxCount: 1 },
+            { name: 'maskImageBlack', maxCount: 1 },
+        ]),
+    )
+    async offline(
+        @Res() res: Response,
+        @Body() data: OfflineDatasDTO,
+        @UploadedFiles()
+        file: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
+    ) {
+        try {
+            if (!file['analyzedImage'][0] || !file['originalImage'][0])
+                return res.send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'There is no necassary image file!',
+                });
+
+            data.batchId = Number(data.batchId);
+            const imageRecords = uuidv4();
+            // data.task.algoName = String(data.type);
+            // console.log(data);
+
+            const analyzedImage = file.analyzedImage[0].buffer;
+            const originalImage = file.originalImage[0].buffer;
+
+            const imageArg = this.AlgoAnalysis.handleofflineImageArg(data);
+            await this.AlgoAnalysis.SaveDataFinal(data, imageRecords, imageArg);
+
+            //upload to DB
+            let promise1 = new Promise(function (resolve, reject) {
+                resolve(
+                    res.send({
+                        status: 200,
+                        service: 'Offline Analysis Data saving',
+                        message: 'Data saved to the cloud',
+                    }),
+                );
+            });
+
+            //Upload Images
+            const saving = await this.AlgoAnalysis.saveOfflineImage(data, analyzedImage, originalImage, imageArg);
+
+            let promise2 = new Promise(function (resolve, resject) {
+                resolve(saving);
+            });
+
+            promise1
+                .then(function (value) {
+                    return promise2;
+                })
+                .catch((error) => {
+                    return res.send({
+                        status: 500,
+                        type: 'InternalServerError',
+                        message: 'Internal server error.',
+                        error: error.message,
+                    });
+                });
+        } catch (e) {
+            console.log(e);
+            return res.send({
+                status: 500,
+                type: 'InternalServerError',
+                message: 'Internal server error.',
+                error: e.message,
+            });
+        }
+    }
+
+    @Get('/requestBatchId')
+    async getBatchId(@Query() param: any, @Res() res: Response) {
+        try {
+            let { customer_id } = param;
+
+            console.log('here param', param);
+            const insert = await this.batchAnalysis.insertInAnalysis(customer_id);
+
+            return res.status(200).json({
+                status: 200,
+                service: 'requestBatchId',
+                body: { batch_id: insert },
+            });
+        } catch (e) {
+            throw new Error(e);
         }
     }
 }

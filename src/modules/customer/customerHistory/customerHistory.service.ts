@@ -116,23 +116,21 @@ export class AnanalysisHistoryService {
     async analysisInfor(batch_id: number) {
         const result = await this.database.executeQuery(
             `
-        SELECT
-          type_measurements."name" AS measurement,
-          batch_id,
-          url as original_image,
-          hash,
-          type_images.NAME AS TYPE,
-          to_json ( scores ) AS args,
-          hash,
-          created_time 
-        FROM
-          measurements record
-          LEFT JOIN type_images ON type_images.ID = record.type_image_id
-          LEFT JOIN type_measurements ON type_measurements.id = record.type_measurement_id 
-        WHERE
-          batch_id = $1 
-          AND ( type_image_id = 21 );
-      `,
+                SELECT
+                    type_measurements."name" AS measurement,
+                    batch_id,
+                    url as original_image,
+                    hash,
+                    type_images.NAME AS TYPE,
+                    to_json ( scores ) AS args,
+                    hash,
+                    created_time 
+                FROM
+                    measurements record
+                    LEFT JOIN type_images ON type_images.ID = record.type_image_id
+                    LEFT JOIN type_measurements ON type_measurements.id = record.type_measurement_id 
+                WHERE batch_id = $1 AND ( type_image_id = 21 );
+            `,
             [batch_id],
         );
         return result;

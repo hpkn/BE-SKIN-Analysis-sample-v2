@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { AnanalysisHistoryController } from './AnalysisHistory/analysisHistory.controller';
-import { AnanalysisHistoryService } from './AnalysisHistory/analysisHistory.service';
+import { AnanalysisHistoryController } from './customerHistory/customerHistory.controller';
+import { AnanalysisHistoryService } from './customerHistory/customerHistory.service';
 
 import { DatabaseModule } from 'src/database/database.module';
 import { FileUploadService } from 'src/common/FileUpload/fileUpload.service';

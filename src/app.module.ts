@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { ImagesModule } from './modules/images/images.module';
@@ -9,6 +9,7 @@ import { AllExceptionsFilter } from './common/exceptions/exceptionHandling/allEx
 import { AnalysisModule } from './modules/analysis/analysis.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { BullModule } from '@nestjs/bull';
+import { AuthMiddleware } from './common/middleWare/authMiddlware/auth.middleware';
 
 @Module({
     imports: [
@@ -41,5 +42,7 @@ import { BullModule } from '@nestjs/bull';
         FileUploaddModule,
     ],
 })
-export class AppModule {}
+export class AppModule {
+    // Auth MiddleWare
+}
 

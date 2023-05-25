@@ -2,7 +2,7 @@ import { Controller, Body, Get, Post, UseInterceptors, UploadedFiles, Res, Param
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { query, Request, response, Response } from 'express';
 import { GetcustomerHistoryDTO } from 'src/common/Dto/customer/analysisHistory/analysisHistory.dto';
-import { AnanalysisHistoryService } from './analysisHistory.service';
+import { AnanalysisHistoryService } from './customerHistory.service';
 
 @Controller('cndpskin')
 export class AnanalysisHistoryController {
