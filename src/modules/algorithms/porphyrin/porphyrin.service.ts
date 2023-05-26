@@ -134,7 +134,6 @@ export class PorphyrinService {
                         nth_analysis: imageRecords,
                     }),
                     JSON.stringify(taskResponse),
-                    ,
                 ],
             },
             {
