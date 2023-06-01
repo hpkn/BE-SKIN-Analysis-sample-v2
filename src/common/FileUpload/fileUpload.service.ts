@@ -5,6 +5,7 @@ import { v4 as uuid } from 'uuid';
 import { GetObjectOutput, ManagedUpload } from 'aws-sdk/clients/s3';
 import { S3Client, GetObjectCommand, CopyObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { S3 } from 'aws-sdk';
+import COS from 'cos-nodejs-sdk-v5';
 
 import { Upload } from '@aws-sdk/lib-storage';
 import * as path from 'path';
@@ -16,47 +17,47 @@ export class FileUploadService {
         private readonly configService: ConfigService, // private readonly logger = new Logger(FileUploadService.name),
     ) {}
 
-    async uploadImage(fileContent: Buffer, fileName: string) {
-        // const params = {
-        //     Bucket: this.configService.get('AWS_BUCKET_NAME'),
-        //     Key: this.configService.get('AWS_PATH') + `${fileName}.jpg`,
-        //     Body: fileContent,
-        const s3 = new S3({ region: this.configService.get('AWS_REGION') });
-        const params = {
-            Bucket: this.configService.get('AWS_BUCKET_NAME'),
-            Key: this.configService.get('AWS_PATH') + `${fileName}.jpg`,
-            Body: fileContent,
-        };
+    // async uploadImage(fileContent: Buffer, fileName: string) {
+    //     // const params = {
+    //     //     Bucket: this.configService.get('AWS_BUCKET_NAME'),
+    //     //     Key: this.configService.get('AWS_PATH') + `${fileName}.jpg`,
+    //     //     Body: fileContent,
+    //     const s3 = new S3({ region: this.configService.get('AWS_REGION') });
+    //     const params = {
+    //         Bucket: this.configService.get('AWS_BUCKET_NAME'),
+    //         Key: this.configService.get('AWS_PATH') + `${fileName}.jpg`,
+    //         Body: fileContent,
+    //     };
 
-        return new Promise((resolve, reject) => {
-            s3.upload(params, (err: unknown, data: ManagedUpload.SendData) => {
-                if (err) {
-                    reject(err);
-                }
-                resolve(data);
-            });
-        });
-        // return true;
-        // } catch (e) {
-        //     console.log(e);
-        // }
-    }
+    //     return new Promise((resolve, reject) => {
+    //         s3.upload(params, (err: unknown, data: ManagedUpload.SendData) => {
+    //             if (err) {
+    //                 reject(err);
+    //             }
+    //             resolve(data);
+    //         });
+    //     });
+    //     // return true;
+    //     // } catch (e) {
+    //     //     console.log(e);
+    //     // }
+    // }
 
-    async getImageCloudS3(key: string): Promise<GetObjectOutput> {
-        const params = {
-            Bucket: this.configService.get('AWS_BUCKET_NAME'),
-            Key: this.configService.get('AWS_PATH') + key,
-        };
-        const s3 = new S3();
-        return new Promise((resolve, reject) => {
-            s3.getObject(params, function (err, data) {
-                if (err) {
-                    reject(err);
-                }
-                resolve(data);
-            });
-        });
-    }
+    // async getImageCloudS3(key: string): Promise<GetObjectOutput> {
+    //     const params = {
+    //         Bucket: this.configService.get('AWS_BUCKET_NAME'),
+    //         Key: this.configService.get('AWS_PATH') + key,
+    //     };
+    //     const s3 = new S3();
+    //     return new Promise((resolve, reject) => {
+    //         s3.getObject(params, function (err, data) {
+    //             if (err) {
+    //                 reject(err);
+    //             }
+    //             resolve(data);
+    //         });
+    //     });
+    // }
 
     getImageArgs(fileUsage: string | null = null, route: string, analysisType: string | null = null) {
         const hash = uuid();
@@ -100,5 +101,50 @@ export class FileUploadService {
             console.log(e);
         }
     }
-}
 
+    async uploadImage(fileContent: Buffer, filename: string) {
+        const cos = new COS({
+            SecretId: this.configService.get('TENCENT_SECRET_ID'),
+            SecretKey: this.configService.get('TENCENT_SECRET_KEY'),
+        });
+        return new Promise((resolve, reject) => {
+            cos.putObject(
+                {
+                    Bucket: this.configService.get('TENCENT_CFA_BUCKET_NAME'),
+                    Region: this.configService.get('TENCENT_REGION'),
+                    Key: filename + '.jpg',
+                    StorageClass: 'STANDARD',
+                    Body: fileContent,
+                },
+                function (err, data) {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(data);
+                },
+            );
+        });
+    }
+
+    async getImageCloudS3(key: string): Promise<COS.GetObjectResult> {
+        const cos = new COS({
+            SecretId: this.configService.get('TENCENT_SECRET_ID'),
+            SecretKey: this.configService.get('TENCENT_SECRET_KEY'),
+        });
+        return new Promise((resolve, reject) => {
+            cos.getObject(
+                {
+                    Bucket: this.configService.get('TENCENT_CFA_BUCKET_NAME'),
+                    Region: this.configService.get('TENCENT_REGION'),
+                    Key: key,
+                },
+                (err, data) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(data);
+                },
+            );
+        });
+    }
+}
