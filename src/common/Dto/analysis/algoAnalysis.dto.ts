@@ -63,4 +63,3 @@ export class AlgoAnalysisDTO {
     // @IsString()
     task: any;
 }
-

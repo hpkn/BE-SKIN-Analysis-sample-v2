@@ -362,6 +362,7 @@ export class AlgoAnalysisController {
                 return promise2;
             })
             .catch((error) => {
+                console.log(error);
                 return res.send({
                     status: 500,
                     type: 'InternalServerError',
@@ -634,4 +635,3 @@ export class AlgoAnalysisController {
         }
     }
 }
-

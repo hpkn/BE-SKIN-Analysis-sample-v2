@@ -634,21 +634,21 @@ export class AlgoAnalysisService {
             const mesureId = await this.database.executeQuery(
                 `SELECT 
                     analysis.batch_id,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'keratin' ), 2 ) AS keratin_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'pores' ), 2 ) AS pores_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sensitivityredness' ), 2 ) AS sensitivity_redness_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'spots' ), 2 ) AS spots_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'wrinkles' ), 2 ) AS wrinkles_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'porphiryn' ), 2 ) AS porphiryn_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sebum' ), 2 ) AS sebum_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'shine' ), 2 ) AS shine_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'skintone' ), 2 ) AS skintone_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sensitivity_scabs' ), 2 ) AS sensitivity_scabs_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sensitivity_scaling' ), 2 ) AS sensitivity_scaling_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'moisture_u' ), 2 ) AS moisture_u_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'moisture_t' ), 2 ) AS moisture_t_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sebum_u' ), 2 ) AS sebum_u_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sebum_t' ), 2 ) AS sebum_t_score 
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 1 ), 2 ) AS pores_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 2 ), 2 ) AS sensitivity_scaling_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 3 ), 2 ) AS porphiryn_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 4 ), 2 ) AS wrinkles_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 5 ), 2 ) AS sebum_u_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 6 ), 2 ) AS skintone_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 8 ), 2 ) AS spots_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 9 ), 2 ) AS sebum_t_score, 
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 10 ), 2 ) AS shine_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 11 ), 2 ) AS keratin_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 12 ), 2 ) AS sensitivity_redness_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 14 ), 2 ) AS sensitivity_scabs_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 15 ), 2 ) AS sebum_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 16 ), 2 ) AS moisture_t_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 17 ), 2 ) AS moisture_u_score
                 FROM analysis
                     LEFT JOIN answers_to_questions ON analysis.batch_id = answers_to_questions.batch_id
                     LEFT JOIN measurements ON analysis.batch_id = measurements.batch_id
@@ -702,22 +702,22 @@ export class AlgoAnalysisService {
             `SELECT 
                     analysis.batch_id,
                     to_timestamp(cast(analysis.created_time as TEXT), 'YYYY-MM-DD HH24:MI:SS') AS date,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'keratin' ), 2 ) AS keratin_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'pores' ), 2 ) AS pores_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sensitivityredness' ), 2 ) AS sensitivity_redness_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'spots' ), 2 ) AS spots_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'wrinkles' ), 2 ) AS wrinkles_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'porphiryn' ), 2 ) AS porphiryn_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'moisture' ), 2 ) AS moisture_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sebum' ), 2 ) AS sebum_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'shine' ), 2 ) AS shine_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'skintone' ), 2 ) AS skintone_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sensitivity_scabs' ), 2 ) AS sensitivity_scabs_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sensitivity_scaling' ), 2 ) AS sensitivity_scaling_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'moisture_u' ), 2 ) AS moisture_u_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'moisture_t' ), 2 ) AS moisture_t_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sebum_u' ), 2 ) AS sebum_u_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurements."name" = 'sebum_t' ), 2 ) AS sebum_t_score 
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 1 ), 2 ) AS pores_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 2 ), 2 ) AS sensitivity_scaling_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 3 ), 2 ) AS porphiryn_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 4 ), 2 ) AS wrinkles_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 5 ), 2 ) AS sebum_u_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 6 ), 2 ) AS skintone_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 8 ), 2 ) AS spots_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 9 ), 2 ) AS sebum_t_score, 
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 10 ), 2 ) AS shine_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 11 ), 2 ) AS keratin_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 12 ), 2 ) AS sensitivity_redness_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 14 ), 2 ) AS sensitivity_scabs_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 15 ), 2 ) AS sebum_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 16 ), 2 ) AS moisture_t_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 17 ), 2 ) AS moisture_u_score,
+                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 18 ), 2 ) AS moisture_score
                 FROM analysis
                     LEFT JOIN answers_to_questions ON analysis.batch_id = answers_to_questions.batch_id
                     LEFT JOIN measurements ON analysis.batch_id = measurements.batch_id
@@ -762,8 +762,9 @@ export class AlgoAnalysisService {
         try {
             const resultObj = await Promise.all(promises);
             // remooving empty object
-            // const nonEmptyResults = resultObj.filter((result) => result.length > 0);
-            return resultObj;
+
+            const nonEmptyResults = resultObj.filter((result) => result !== undefined);
+            return nonEmptyResults;
             // console.log('nonEmptyResults', nonEmptyResults);
 
             // return resultObj;
@@ -878,4 +879,3 @@ export class AlgoAnalysisService {
     // MoistureU
     moistureU() {}
 }
-
