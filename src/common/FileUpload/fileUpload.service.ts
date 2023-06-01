@@ -64,9 +64,9 @@ export class FileUploadService {
         route = 'image' + '/';
         let host: any = '';
         if (this.configService.get('SSL') === true) {
-            host = 'https://' + this.configService.get('HOSTNAME') + ':' + this.configService.get('PORT') + '/';
+            host = this.configService.get('URL') + ':' + this.configService.get('PORT') + '/';
         } else {
-            host = this.configService.get('HOSTNAME') + ':' + this.configService.get('PORT') + '/';
+            host = this.configService.get('URL') + ':' + this.configService.get('PORT') + '/';
         }
         const url = host + route + hash;
         const filename = `${hash}_${fileUsage}.jpg`;
@@ -79,9 +79,9 @@ export class FileUploadService {
         const hash = uuid();
         let host: any = '';
         if (this.configService.get('SSL') === true) {
-            host = this.configService.get('HOSTNAME') + ':' + this.configService.get('PORT');
+            host = this.configService.get('URL') + ':' + this.configService.get('PORT');
         } else {
-            host = this.configService.get('HOSTNAME') + ':' + this.configService.get('PORT');
+            host = this.configService.get('URL') + ':' + this.configService.get('PORT');
         }
         const url = 'https://' + host + route + hash;
         const filename = `${hash}_${fileUsage}.jpg`;
