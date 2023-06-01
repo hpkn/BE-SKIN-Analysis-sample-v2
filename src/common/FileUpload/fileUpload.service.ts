@@ -5,8 +5,8 @@ import { v4 as uuid } from 'uuid';
 import { GetObjectOutput, ManagedUpload } from 'aws-sdk/clients/s3';
 import { S3Client, GetObjectCommand, CopyObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { S3 } from 'aws-sdk';
-import COS from 'cos-nodejs-sdk-v5';
-
+// import COS from 'cos-nodejs-sdk-v5';
+let COS = require('cos-nodejs-sdk-v5');
 import { Upload } from '@aws-sdk/lib-storage';
 import * as path from 'path';
 import { NotFoundException } from '@nestjs/common/exceptions';
@@ -96,6 +96,7 @@ export class FileUploadService {
             if (!sysUrl) throw new NotFoundException('product image was not found');
             const image = await this.getImageCloudS3(`${sysUrl}.jpg`);
 
+            console.log(image);
             return image.Body;
         } catch (e) {
             console.log(e);
@@ -116,7 +117,7 @@ export class FileUploadService {
                     StorageClass: 'STANDARD',
                     Body: fileContent,
                 },
-                function (err, data) {
+                function (err: any, data: any) {
                     if (err) {
                         return reject(err);
                     }
@@ -126,7 +127,7 @@ export class FileUploadService {
         });
     }
 
-    async getImageCloudS3(key: string): Promise<COS.GetObjectResult> {
+    async getImageCloudS3(key: string): Promise<any> {
         const cos = new COS({
             SecretId: this.configService.get('TENCENT_SECRET_ID'),
             SecretKey: this.configService.get('TENCENT_SECRET_KEY'),
@@ -138,7 +139,7 @@ export class FileUploadService {
                     Region: this.configService.get('TENCENT_REGION'),
                     Key: key,
                 },
-                (err, data) => {
+                (err: any, data: any) => {
                     if (err) {
                         return reject(err);
                     }
