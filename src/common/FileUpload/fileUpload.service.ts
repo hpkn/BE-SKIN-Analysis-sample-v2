@@ -17,47 +17,50 @@ export class FileUploadService {
         private readonly configService: ConfigService, // private readonly logger = new Logger(FileUploadService.name),
     ) {}
 
-    // async uploadImage(fileContent: Buffer, fileName: string) {
-    //     // const params = {
-    //     //     Bucket: this.configService.get('AWS_BUCKET_NAME'),
-    //     //     Key: this.configService.get('AWS_PATH') + `${fileName}.jpg`,
-    //     //     Body: fileContent,
-    //     const s3 = new S3({ region: this.configService.get('AWS_REGION') });
-    //     const params = {
-    //         Bucket: this.configService.get('AWS_BUCKET_NAME'),
-    //         Key: this.configService.get('AWS_PATH') + `${fileName}.jpg`,
-    //         Body: fileContent,
-    //     };
+    async uploadImage(fileContent: Buffer, fileName: string) {
+        if (this.configService.get('REGION') === 'CHINA') {
+            return await this.uploadImageTencent(fileContent, fileName);
+        }
 
-    //     return new Promise((resolve, reject) => {
-    //         s3.upload(params, (err: unknown, data: ManagedUpload.SendData) => {
-    //             if (err) {
-    //                 reject(err);
-    //             }
-    //             resolve(data);
-    //         });
-    //     });
-    //     // return true;
-    //     // } catch (e) {
-    //     //     console.log(e);
-    //     // }
-    // }
+        const s3 = new S3({ region: this.configService.get('AWS_REGION') });
+        const params = {
+            Bucket: this.configService.get('AWS_BUCKET_NAME'),
+            Key: this.configService.get('AWS_PATH') + `${fileName}.jpg`,
+            Body: fileContent,
+        };
 
-    // async getImageCloudS3(key: string): Promise<GetObjectOutput> {
-    //     const params = {
-    //         Bucket: this.configService.get('AWS_BUCKET_NAME'),
-    //         Key: this.configService.get('AWS_PATH') + key,
-    //     };
-    //     const s3 = new S3();
-    //     return new Promise((resolve, reject) => {
-    //         s3.getObject(params, function (err, data) {
-    //             if (err) {
-    //                 reject(err);
-    //             }
-    //             resolve(data);
-    //         });
-    //     });
-    // }
+        return new Promise((resolve, reject) => {
+            s3.upload(params, (err: unknown, data: ManagedUpload.SendData) => {
+                if (err) {
+                    reject(err);
+                }
+                resolve(data);
+            });
+        });
+        // return true;
+        // } catch (e) {
+        //     console.log(e);
+        // }
+    }
+
+    async getImageCloudS3(key: string): Promise<GetObjectOutput> {
+        if (this.configService.get('REGION') === 'CHINA') {
+            return await this.getImageTencent(key);
+        }
+        const params = {
+            Bucket: this.configService.get('AWS_BUCKET_NAME'),
+            Key: this.configService.get('AWS_PATH') + key,
+        };
+        const s3 = new S3();
+        return new Promise((resolve, reject) => {
+            s3.getObject(params, function (err, data) {
+                if (err) {
+                    reject(err);
+                }
+                resolve(data);
+            });
+        });
+    }
 
     getImageArgs(fileUsage: string | null = null, route: string, analysisType: string | null = null) {
         const hash = uuid();
@@ -96,14 +99,13 @@ export class FileUploadService {
             if (!sysUrl) throw new NotFoundException('product image was not found');
             const image = await this.getImageCloudS3(`${sysUrl}.jpg`);
 
-            console.log(image);
             return image.Body;
         } catch (e) {
             console.log(e);
         }
     }
 
-    async uploadImage(fileContent: Buffer, filename: string) {
+    async uploadImageTencent(fileContent: Buffer, filename: string) {
         const cos = new COS({
             SecretId: this.configService.get('TENCENT_SECRET_ID'),
             SecretKey: this.configService.get('TENCENT_SECRET_KEY'),
@@ -127,7 +129,7 @@ export class FileUploadService {
         });
     }
 
-    async getImageCloudS3(key: string): Promise<any> {
+    async getImageTencent(key: string): Promise<any> {
         const cos = new COS({
             SecretId: this.configService.get('TENCENT_SECRET_ID'),
             SecretKey: this.configService.get('TENCENT_SECRET_KEY'),
