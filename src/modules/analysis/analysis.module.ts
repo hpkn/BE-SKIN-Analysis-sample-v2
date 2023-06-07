@@ -24,6 +24,8 @@ import { MoistureUService } from '../algorithms/moistureU/moistureU.service';
 import { MoistureTService } from '../algorithms/moistureT/moistureT.service';
 import { SebumUService } from '../algorithms/sebumU/sebumU.service';
 import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
+import { WebResultController } from './webResult/webResult.controller';
+import { WebResultService } from './webResult/webResult.service';
 
 @Module({
     imports: [
@@ -32,7 +34,7 @@ import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middlew
             name: 'dataSaving',
         }),
     ],
-    controllers: [AlgoAnalysisController],
+    controllers: [AlgoAnalysisController, WebResultController],
     providers: [
         ConfigService,
         FileUploadService,
@@ -55,6 +57,7 @@ import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middlew
         MoistureUService,
         MoistureTService,
         SebumUService,
+        WebResultService,
         // UploadProcessor,
     ],
 })
@@ -67,4 +70,3 @@ export class AnalysisModule {
             .forRoutes('analysis');
     }
 }
-

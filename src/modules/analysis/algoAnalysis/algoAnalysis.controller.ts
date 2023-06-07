@@ -223,7 +223,7 @@ export class AlgoAnalysisController {
         }
     }
 
-    @Post('/history/result')
+    @Get('/history/result')
     async userAnalysisImageHistoryWithBatchId(@Query() param: any, @Res() res: Response, @Body() body: any) {
         console.log('here analysis');
         let { per, page } = param;
@@ -364,6 +364,7 @@ export class AlgoAnalysisController {
                 return promise2;
             })
             .catch((error) => {
+                console.log(error);
                 return res.send({
                     status: 500,
                     type: 'InternalServerError',
