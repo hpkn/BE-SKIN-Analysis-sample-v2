@@ -45,4 +45,3 @@ import { AuthMiddleware } from './common/middleWare/authMiddlware/auth.middlewar
 export class AppModule {
     // Auth MiddleWare
 }
-

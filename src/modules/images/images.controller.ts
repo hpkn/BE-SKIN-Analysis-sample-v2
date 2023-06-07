@@ -21,4 +21,3 @@ export class ImagesController {
         return res.status(200);
     }
 }
-

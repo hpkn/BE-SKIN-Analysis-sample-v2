@@ -5,7 +5,8 @@ import { v4 as uuid } from 'uuid';
 import { GetObjectOutput, ManagedUpload } from 'aws-sdk/clients/s3';
 import { S3Client, GetObjectCommand, CopyObjectCommand, ListObjectsV2Command } from '@aws-sdk/client-s3';
 import { S3 } from 'aws-sdk';
-
+// import COS from 'cos-nodejs-sdk-v5';
+let COS = require('cos-nodejs-sdk-v5');
 import { Upload } from '@aws-sdk/lib-storage';
 import * as path from 'path';
 import { NotFoundException } from '@nestjs/common/exceptions';
@@ -17,10 +18,10 @@ export class FileUploadService {
     ) {}
 
     async uploadImage(fileContent: Buffer, fileName: string) {
-        // const params = {
-        //     Bucket: this.configService.get('AWS_BUCKET_NAME'),
-        //     Key: this.configService.get('AWS_PATH') + `${fileName}.jpg`,
-        //     Body: fileContent,
+        if (this.configService.get('REGION') === 'CHINA') {
+            return await this.uploadImageTencent(fileContent, fileName);
+        }
+
         const s3 = new S3({ region: this.configService.get('AWS_REGION') });
         const params = {
             Bucket: this.configService.get('AWS_BUCKET_NAME'),
@@ -43,6 +44,9 @@ export class FileUploadService {
     }
 
     async getImageCloudS3(key: string): Promise<GetObjectOutput> {
+        if (this.configService.get('REGION') === 'CHINA') {
+            return await this.getImageTencent(key);
+        }
         const params = {
             Bucket: this.configService.get('AWS_BUCKET_NAME'),
             Key: this.configService.get('AWS_PATH') + key,
@@ -63,9 +67,9 @@ export class FileUploadService {
         route = 'image' + '/';
         let host: any = '';
         if (this.configService.get('SSL') === true) {
-            host = 'https://' + this.configService.get('HOSTNAME') + ':' + this.configService.get('PORT') + '/';
+            host = this.configService.get('URL') + ':' + this.configService.get('PORT') + '/';
         } else {
-            host = this.configService.get('HOSTNAME') + ':' + this.configService.get('PORT') + '/';
+            host = this.configService.get('URL') + ':' + this.configService.get('PORT') + '/';
         }
         const url = host + route + hash;
         const filename = `${hash}_${fileUsage}.jpg`;
@@ -78,9 +82,9 @@ export class FileUploadService {
         const hash = uuid();
         let host: any = '';
         if (this.configService.get('SSL') === true) {
-            host = this.configService.get('HOSTNAME') + ':' + this.configService.get('PORT');
+            host = this.configService.get('URL') + ':' + this.configService.get('PORT');
         } else {
-            host = this.configService.get('HOSTNAME') + ':' + this.configService.get('PORT');
+            host = this.configService.get('URL') + ':' + this.configService.get('PORT');
         }
         const url = 'https://' + host + route + hash;
         const filename = `${hash}_${fileUsage}.jpg`;
@@ -100,5 +104,50 @@ export class FileUploadService {
             console.log(e);
         }
     }
-}
 
+    async uploadImageTencent(fileContent: Buffer, filename: string) {
+        const cos = new COS({
+            SecretId: this.configService.get('TENCENT_SECRET_ID'),
+            SecretKey: this.configService.get('TENCENT_SECRET_KEY'),
+        });
+        return new Promise((resolve, reject) => {
+            cos.putObject(
+                {
+                    Bucket: this.configService.get('TENCENT_CFA_BUCKET_NAME'),
+                    Region: this.configService.get('TENCENT_REGION'),
+                    Key: filename + '.jpg',
+                    StorageClass: 'STANDARD',
+                    Body: fileContent,
+                },
+                function (err: any, data: any) {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(data);
+                },
+            );
+        });
+    }
+
+    async getImageTencent(key: string): Promise<any> {
+        const cos = new COS({
+            SecretId: this.configService.get('TENCENT_SECRET_ID'),
+            SecretKey: this.configService.get('TENCENT_SECRET_KEY'),
+        });
+        return new Promise((resolve, reject) => {
+            cos.getObject(
+                {
+                    Bucket: this.configService.get('TENCENT_CFA_BUCKET_NAME'),
+                    Region: this.configService.get('TENCENT_REGION'),
+                    Key: key,
+                },
+                (err: any, data: any) => {
+                    if (err) {
+                        return reject(err);
+                    }
+                    return resolve(data);
+                },
+            );
+        });
+    }
+}
