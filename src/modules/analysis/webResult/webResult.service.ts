@@ -15,8 +15,8 @@ export class WebResultService {
                     to_json(original_img.scores) ->> 'score' as value, 
                     record.created_time::date as date,
                     record.created_time::time as time,
-                    analyzed_img.url AS original_image_url,
-										original_img.url AS analyzed_image_url,
+                    original_img.url AS original_image_url,
+                    analyzed_img.url AS analyzed_image_url,
                     ROW_NUMBER() OVER (PARTITION BY type_measurements."name") AS ROW_NUMBER
                 FROM
                     analysis record
@@ -39,6 +39,7 @@ export class WebResultService {
                 _results 
             WHERE
                 ROW_NUMBER = 1;
+                
             `,
             [batch_id],
         );
