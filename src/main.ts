@@ -14,7 +14,6 @@ import * as morgan from 'morgan';
 // });
 
 async function bootstrap() {
-    
     const httpApp = await NestFactory.create(AppModule);
     await httpApp.listen(process.env.HTTP);
 
@@ -60,4 +59,3 @@ async function bootstrap() {
     });
 }
 bootstrap();
-
