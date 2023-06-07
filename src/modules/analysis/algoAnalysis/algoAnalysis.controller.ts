@@ -31,6 +31,7 @@ import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middlew
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 
 @Controller('analysis')
+@UseGuards(AuthMiddleware)
 export class AlgoAnalysisController {
     constructor(
         private readonly AlgoAnalysis: AlgoAnalysisService,
@@ -42,6 +43,7 @@ export class AlgoAnalysisController {
         private readonly diorTone: SkinToneDiorService,
         private readonly batchAnalysis: BatchAnalysisService,
     ) {}
+    // @UseGuards(AuthMiddleware)
     @Post('')
     @HttpCode(200)
     @UseInterceptors(FileInterceptor('image'))
@@ -136,7 +138,7 @@ export class AlgoAnalysisController {
             });
     }
 
-    @UseGuards(AuthMiddleware)
+    // @UseGuards(AuthMiddleware)
     @Get('/getAnalysisData/:batch_id')
     async getAnalysisData(@Param('batch_id') batch_id: number, @Res() res: Response) {
         try {
