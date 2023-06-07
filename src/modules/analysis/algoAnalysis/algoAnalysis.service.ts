@@ -762,7 +762,6 @@ export class AlgoAnalysisService {
         try {
             const resultObj = await Promise.all(promises);
             // remooving empty object
-
             const nonEmptyResults: any[] = resultObj.filter((result) => result !== undefined);
             nonEmptyResults.map((val) => {
                 val.customer_id = customer_id;
@@ -820,7 +819,7 @@ export class AlgoAnalysisService {
             END AS analysis_type,
             type_images.name as type,
             to_json ( scores ) ->> 'score' as score, 
-            hash,
+            to_json(args) ->> 'nth_analysis' as hash,
             created_time
             FROM measurements record
             LEFT JOIN type_images ON type_images.ID = record.type_image_id 
@@ -844,19 +843,45 @@ export class AlgoAnalysisService {
         try {
             // const resultObj = await Promise.all(promises);
 
-            console.log(batchIds);
-            const image: any[] = [];
-            for (let i = 0; i < batchIds.length; i++) {
-                const rows = await this.getImageData(batchIds[i]['batch_id']);
+            // const image: any[] = [];
+            const imagePromises: Promise<any>[] = batchIds.map(async (batchId: any) => {
+                const rows = await this.getImageData(batchId['batch_id']);
                 if (rows.length > 0) {
-                    image.push({
-                        batch_id: Number(batchIds[i]['batch_id']),
+                    return {
+                        batch_id: Number(batchId['batch_id']),
                         customer_id: customer_id,
                         images: [...rows],
-                    });
+                    };
+                }
+            });
+
+            const image = await Promise.all(imagePromises);
+
+            const result = image.filter((result) => result !== null);
+            console.log('check ---->    1');
+
+            for (const entry of result) {
+                const analyzedImages = entry.images.filter(
+                    (image: any) => image.type === 'analyzedImage' && image.score === null,
+                );
+
+                for (const analyzedImage of analyzedImages) {
+                    const { hash, analysis_type } = analyzedImage;
+                    const originalImage = entry.images.find(
+                        (image: any) =>
+                            image.type === 'originalImage' &&
+                            image.hash === hash &&
+                            image.analysis_type === analysis_type,
+                    );
+
+                    console.log(originalImage);
+                    if (originalImage) {
+                        analyzedImage.score = originalImage.score;
+                    }
                 }
             }
-            return image;
+
+            return result;
         } catch (error) {
             console.log(error);
             throw error;
@@ -900,3 +925,4 @@ export class AlgoAnalysisService {
     // MoistureU
     moistureU() {}
 }
+
