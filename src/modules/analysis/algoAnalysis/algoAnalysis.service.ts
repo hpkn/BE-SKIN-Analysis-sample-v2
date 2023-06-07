@@ -763,11 +763,32 @@ export class AlgoAnalysisService {
             const resultObj = await Promise.all(promises);
             // remooving empty object
 
-            const nonEmptyResults = resultObj.filter((result) => result !== undefined);
-            return nonEmptyResults;
-            // console.log('nonEmptyResults', nonEmptyResults);
+            const nonEmptyResults: any[] = resultObj.filter((result) => result !== undefined);
+            nonEmptyResults.map((val) => {
+                val.customer_id = customer_id;
+                val.sens_redness_combined_score = null;
+                val.keratin_score = val.keratin_score === null ? null : Number(val.keratin_score);
+                val.pores_score = val.pores_score === null ? null : Number(val.pores_score);
+                val.sensitivity_redness_score =
+                    val.sensitivity_redness_score === null ? null : Number(val.sensitivity_redness_score);
+                val.spots_score = val.spots_score === null ? null : Number(val.spots_score);
+                val.wrinkles_score = val.wrinkles_score === null ? null : Number(val.wrinkles_score);
+                val.porphiryn_score = val.porphiryn_score === null ? null : Number(val.porphiryn_score);
+                val.moisture_score = val.moisture_score === null ? null : Number(val.moisture_score);
+                val.sebum_score = val.sebum_score === null ? null : Number(val.sebum_score);
+                val.shine_score = val.shine_score === null ? null : Number(val.shine_score);
+                val.skintone_score = val.skintone_score === null ? null : Number(val.skintone_score);
+                val.sensitivity_scabs_score =
+                    val.sensitivity_scabs_score === null ? null : Number(val.sensitivity_scabs_score);
+                val.sensitivity_scaling_score =
+                    val.sensitivity_scaling_score === null ? null : Number(val.sensitivity_scaling_score);
+                val.moisture_u_score = val.moisture_u_score === null ? null : Number(val.moisture_u_score);
+                val.moisture_t_score = val.moisture_t_score === null ? null : Number(val.moisture_t_score);
+                val.sebum_u_score = val.sebum_u_score === null ? null : Number(val.sebum_u_score);
+                val.sebum_t_score = val.sebum_t_score === null ? null : Number(val.sebum_t_score);
+            });
 
-            // return resultObj;
+            return nonEmptyResults;
         } catch (error) {
             console.log(error);
             throw error;

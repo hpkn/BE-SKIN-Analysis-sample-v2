@@ -14,6 +14,10 @@ import * as morgan from 'morgan';
 // });
 
 async function bootstrap() {
+    
+    const httpApp = await NestFactory.create(AppModule);
+    await httpApp.listen(process.env.HTTP);
+
     const ssl = process.env.SSL === 'true' ? true : false;
     let httpsOptions = null;
     if (ssl) {
