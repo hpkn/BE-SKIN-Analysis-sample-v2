@@ -875,8 +875,8 @@ export class AlgoAnalysisService {
                         analyzedImage.score = originalImage.score;
                     }
 
-                    // if (originalImage.url === null) originalImage.url = '';
-                    // if (analyzedImage.url === null) analyzedImage.url = '';
+                    if (originalImage.url === null) originalImage.url = '';
+                    if (analyzedImage.url === null) analyzedImage.url = '';
                 }
             }
 
