@@ -24,7 +24,7 @@
         "test:e2e": "jest --config ./test/jest-e2e.json"
     },
     "dependencies": {
-        "@aws-sdk/client-s3": "^3.342.0",
+        "@aws-sdk/client-s3": "^3.348.0",
         "@aws-sdk/lib-storage": "^3.310.0",
         "@hapi/joi": "^17.1.1",
         "@nestjs/bull": "^0.6.3",
