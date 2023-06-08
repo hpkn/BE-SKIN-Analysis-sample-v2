@@ -874,10 +874,8 @@ export class AlgoAnalysisService {
                     if (originalImage) {
                         analyzedImage.score = originalImage.score;
                     }
-
-                    if (originalImage.url === null) originalImage.url = '';
-                    if (analyzedImage.url === null) analyzedImage.url = '';
                 }
+                entry.images.filter((image: any) => (image.url === null ? '' : image.url));
             }
 
             return result;
