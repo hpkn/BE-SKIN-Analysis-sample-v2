@@ -226,17 +226,17 @@ export class AlgoAnalysisController {
     @Get('/history/result')
     async userAnalysisImageHistoryWithBatchId(@Query() param: any, @Res() res: Response, @Body() body: any) {
         console.log('here analysis');
-        let { per, page } = param;
+        let { per, page, batch_id } = param;
 
         // let { customer_id } = body;
         try {
-            // const data = await this.AlgoAnalysis.userAnalysisImageHistory(customer_id, per, page);
+            const data = await this.AlgoAnalysis.userHistoryWithBatchId(batch_id);
 
             return res.status(200).json({
                 status: 200,
                 msg: 'Success',
                 service: 'getUserAnalysisImageHistory',
-                // body: data,
+                body: data,
             });
         } catch (error) {
             console.log(error);
@@ -637,4 +637,3 @@ export class AlgoAnalysisController {
         }
     }
 }
-

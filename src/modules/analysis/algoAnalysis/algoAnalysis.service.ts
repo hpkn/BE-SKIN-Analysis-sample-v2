@@ -892,38 +892,334 @@ export class AlgoAnalysisService {
         }
     }
 
-    async userAnalysisImageHistoryWithBatchId(batch_id: number) {
+    async userHistoryWithBatchId(batch_id: number) {
         const result = await this.database.executeQuery(
             `
-            SELECT  url,
-            CASE 
-                WHEN type_measurement_id = 1 THEN 'pores'
-                WHEN type_measurement_id = 2 THEN 'sensitivityscaling'
-                WHEN type_measurement_id = 3 THEN 'porphyrin'
-                WHEN type_measurement_id = 4 THEN 'wrinkles'
-                WHEN type_measurement_id = 5 THEN 'sebumU'
-                WHEN type_measurement_id = 6 THEN 'skintone'
-                WHEN type_measurement_id = 8 THEN 'spots'
-                WHEN type_measurement_id = 9 THEN 'sebumT'
-                WHEN type_measurement_id = 10 THEN 'shine'
-                WHEN type_measurement_id = 11 THEN 'keratin'
-                WHEN type_measurement_id = 12 THEN 'sensitivityredness'
-                WHEN type_measurement_id = 14 THEN 'sensitivityscabs'
-                WHEN type_measurement_id = 15 THEN 'sebum'
-                WHEN type_measurement_id = 16 THEN 'moistureT'
-                WHEN type_measurement_id = 17 THEN 'moistureU'
-            END AS analysis_type,
-            type_images.name as type,
-            to_json ( scores ) ->> 'score' as score, 
-            hash,
-            created_time
-            FROM measurements record
-            LEFT JOIN type_images ON type_images.ID = record.type_image_id 
-            WHERE batch_id = $1 AND ( type_image_id = 18 OR type_image_id = 21);
+            SELECT analysis_type, jsonb_agg(temp)
+            FROM
+                (
+                select distinct record.analysis_type as analysis_type,
+                    jsonb_agg(img)       as images,
+                    record.args          as args,
+                                        record.type_image,
+                    record.date          as date,
+                    record.time          as time
+                FROM
+                    (
+                    SELECT
+                        'moistureT' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 17 UNION
+                    SELECT
+                        'moistureU' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 17 UNION
+                    SELECT
+                        'sebumT' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 9 UNION
+                    SELECT
+                        'sebumU' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 5 UNION
+                    SELECT
+                        'keratin' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 11 UNION
+                    SELECT
+                        'moisture' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 5 UNION
+                    SELECT
+                        'pores' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+            
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 1 UNION
+                    SELECT
+                        'porphyrin' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+            
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 3 UNION
+                    SELECT
+                        'sebum' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 15 UNION
+                    SELECT
+                        'fullsensitivity' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 5 UNION
+                    SELECT
+                        'sensitivityredness' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 12 UNION
+                    SELECT
+                        'sensitivityscabs' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+            
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 14 UNION
+                    SELECT
+                        'sensitivityscaling' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 2 UNION
+                    SELECT
+                        'shine' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+            
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 12 UNION
+                    SELECT
+                        'skintone' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 6 UNION
+                    SELECT
+                        'spots' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    WHERE
+                        type_measurement_id = 8 UNION
+                    SELECT
+                        'wrinkles' AS analysis_type,
+                        type_image_id type_image,
+                    	CASE
+                            WHEN type_image_id = 21 THEN
+                            scores 
+                        END AS args,
+                        created_time :: DATE AS DATE,
+                        created_time :: TIME AS TIME,
+                        
+                        batch_id 
+                    FROM
+                        measurements 
+                    ) AS record
+                    LEFT JOIN ( 
+                        SELECT batch_id,
+                        type_image_id,
+                        tpi.name AS TYPE,
+                        scores || jsonb_build_object ( 'nth_analysis', to_json ( args ) ->> 'nth_analysis' ) AS args,
+                        json_build_object ( 'id', hash, 'url', url ) AS url  
+                        FROM measurements as ms LEFT JOIN type_images as tpi ON tpi.id = ms.type_image_id ) AS img ON img.batch_id = record.batch_id 
+                    AND img.type_image_id = record.type_image 
+                WHERE
+                    record.batch_id = $1 
+                GROUP BY
+                    record.analysis_type,
+                    record.args,
+                    record.DATE,
+                    record.TIME,
+                    record.type_image 
+                ) TEMP 
+            GROUP BY
+                analysis_type;
             `,
             [batch_id],
         );
-        return result;
+
+        let respObj_: any = {};
+        for (let i = 0; i < result.length; i++) {
+            let obj: any = {};
+            for (let j = 0; j < result[i].jsonb_agg.length; j++) {
+                let imgObj: any = {};
+                for (let k = 0; k < result[i].jsonb_agg[j].images.length; k++) {
+                    if (result[i].analysis_type === 'moistureT' || result[i].analysis_type === 'moistureU') {
+                        continue;
+                    }
+                    imgObj[result[i].jsonb_agg[j].images[k].type] = { ...result[i].jsonb_agg[j].images[k].url };
+                }
+                if (!obj[result[i].analysis_type]) {
+                    obj[result[i].analysis_type] = [
+                        {
+                            ...result[i].jsonb_agg[j].args,
+                            analysis_type: result[i].jsonb_agg[j].analysis_type,
+                            ...imgObj,
+                        },
+                    ];
+                } else {
+                    obj[result[i].analysis_type] = [
+                        ...obj[result[i].analysis_type],
+                        {
+                            ...result[i].jsonb_agg[j].args,
+                            analysis_type: result[i].jsonb_agg[j].analysis_type,
+                            ...imgObj,
+                        },
+                    ];
+                }
+            }
+
+            respObj_ = { ...respObj_, ...obj };
+        }
+        return respObj_;
     }
 
     // MoistureU

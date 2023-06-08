@@ -69,19 +69,19 @@ export class KeratinService {
             ...taskResponse,
         };
 
-        // const environment = {
-        //     deviceModel: data.deviceModel,
-        //     deviceOS: data.deviceOS,
-        //     nth_analysis: imageRecords,
-        //     lat: data.lat,
-        //     long: data.long,
-        //     temperature: data.temperature,
-        //     humidity: data.humidity,
-        //     uv_index: data.uv_index,
-        //     positionNumber: data.positionNumber,
-        // };
+        const environment = {
+            deviceModel: data.deviceModel,
+            deviceOS: data.deviceOS,
+            nth_analysis: imageRecords,
+            lat: data.lat,
+            long: data.long,
+            temperature: data.temperature,
+            humidity: data.humidity,
+            uv_index: data.uv_index,
+            positionNumber: data.positionNumber,
+        };
 
-        // await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
+        await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
         const saveSql =
             'INSERT INTO measurements (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores) values ($1, $2, $3, $4, $5, $6, $7, $8)';
         // const saveArgsSql = 'INSERT INTO keratin (batch_id, args) data ($1, $2)';
@@ -135,20 +135,6 @@ export class KeratinService {
         for (let i = 0; i < queries.length; i++) {
             this.database.executeQuery(saveSql, queries[i].variables);
         }
-        const retObj: any = {
-            analyzedImage: {
-                id: analyzedImageArgs.hash,
-                url: analyzedImageArgs.url,
-            },
-            maskImage: {
-                id: maskImageArgs.hash,
-                url: maskImageArgs.url,
-            },
-            originalImage: {
-                id: originalImageArgs.hash,
-                url: originalImageArgs.url,
-            },
-        };
 
         await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
         await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
@@ -244,4 +230,3 @@ export class KeratinService {
         return 'saved';
     }
 }
-
