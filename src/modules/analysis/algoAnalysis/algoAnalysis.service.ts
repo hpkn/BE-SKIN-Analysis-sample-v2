@@ -856,17 +856,14 @@ export class AlgoAnalysisService {
             });
 
             const image = await Promise.all(imagePromises);
-
             const result = image.filter((result) => result !== null);
-            console.log('check ---->    1');
-
             for (const entry of result) {
                 const analyzedImages = entry.images.filter(
                     (image: any) => image.type === 'analyzedImage' && image.score === null,
                 );
 
                 for (const analyzedImage of analyzedImages) {
-                    const { hash, analysis_type } = analyzedImage;
+                    const { hash, analysis_type, url } = analyzedImage;
                     const originalImage = entry.images.find(
                         (image: any) =>
                             image.type === 'originalImage' &&
@@ -874,10 +871,12 @@ export class AlgoAnalysisService {
                             image.analysis_type === analysis_type,
                     );
 
-                    console.log(originalImage);
                     if (originalImage) {
                         analyzedImage.score = originalImage.score;
                     }
+
+                    if (originalImage.url === null) originalImage.url = '';
+                    if (analyzedImage.url === null) analyzedImage.url = '';
                 }
             }
 
@@ -925,4 +924,3 @@ export class AlgoAnalysisService {
     // MoistureU
     moistureU() {}
 }
-
