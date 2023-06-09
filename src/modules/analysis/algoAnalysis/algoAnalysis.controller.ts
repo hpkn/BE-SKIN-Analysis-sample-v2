@@ -283,7 +283,7 @@ export class AlgoAnalysisController {
 
             return res.status(201).send({
                 status: 200,
-                service: 'Analysis CNDP SKIN Moisture U',
+                service: 'Analysis CNDP SKIN Moisture T',
                 body: {
                     batch_id: Number(body.batch_id),
                     args: {
@@ -320,6 +320,8 @@ export class AlgoAnalysisController {
         if (!file['originalImage'][0] || !file['analyzedImage'][0])
             return res.send({ status: 40002, type: 'BadRequestError', message: 'There is no necassary image file!' });
 
+        const imageRecords = uuidv4();
+
         const originalImage = file.originalImage[0].buffer;
         const analyzedImage = file.analyzedImage[0].buffer;
 
@@ -327,7 +329,7 @@ export class AlgoAnalysisController {
 
         const originalImageArgs = this.S3Image.getImageArgs('originalImage', '', 'sebumU');
 
-        await this.sebum_u.saveData(body, analyzedImageArgs, originalImageArgs);
+        await this.sebum_u.saveData(body, analyzedImageArgs, originalImageArgs, imageRecords);
 
         let promise1 = new Promise(function (resolve, reject) {
             resolve(
@@ -384,21 +386,22 @@ export class AlgoAnalysisController {
     async sebumT(
         @Query() param: any,
         @Res() res: Response,
-        @Body() body: MoistureUDTO,
+        @Body() body: any,
         @UploadedFiles()
         file: { originalImage: Express.Multer.File[]; analyzedImage: Express.Multer.File[] },
     ) {
         if (!file['originalImage'][0] || !file['analyzedImage'][0])
             return res.send({ status: 40002, type: 'BadRequestError', message: 'There is no necassary image file!' });
+        const imageRecords = uuidv4();
 
         const originalImage = file.originalImage[0].buffer;
         const analyzedImage = file.analyzedImage[0].buffer;
 
-        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', '', 'sebumU');
+        const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', '', 'sebumT');
 
-        const originalImageArgs = this.S3Image.getImageArgs('originalImage', '', 'sebumU');
+        const originalImageArgs = this.S3Image.getImageArgs('originalImage', '', 'sebumT');
 
-        await this.sebum_t.saveData(body, analyzedImageArgs, originalImageArgs);
+        await this.sebum_t.saveData(body, analyzedImageArgs, originalImageArgs, imageRecords);
 
         let promise1 = new Promise(function (resolve, reject) {
             resolve(

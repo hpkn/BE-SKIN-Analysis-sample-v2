@@ -27,7 +27,7 @@ export class WebResultService {
                     LEFT JOIN type_measurements ON type_measurements.ID = original_img.type_measurement_id
                     LEFT JOIN measurements AS analyzed_img ON record.batch_id = analyzed_img.batch_id 
                     AND analyzed_img.type_image_id = 18 
-                    AND ( original_img.args ->> 'nth_analysis' = analyzed_img.args ->> 'nth_analysis' OR type_measurements."name" = 'moistureT' OR type_measurements."name" = 'moistureU' OR type_measurements."name" = 'sebumU' OR type_measurements."name" = 'sebumT' ) 		
+                    AND ( original_img.args ->> 'nth_analysis' = analyzed_img.args ->> 'nth_analysis' OR type_measurements."name" = 'moistureT' OR type_measurements."name" = 'moistureU') 		
                 WHERE
                     record.batch_id = $1 
                     AND ( analyzed_img.type_image_id = 18 OR analyzed_img.type_image_id = 21  ) 
