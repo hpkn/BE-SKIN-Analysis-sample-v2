@@ -1218,6 +1218,22 @@ export class AlgoAnalysisService {
                 pores.raw = +pores.raw;
                 pores.score = +pores.score;
             });
+
+            if (respObj?.sebumU && Array.isArray(respObj?.sebumU)) {
+                respObj.sebumU = respObj.sebumU[0];
+            }
+
+            if (respObj?.sebumT && Array.isArray(respObj?.sebumT)) {
+                respObj.sebumT = respObj.sebumT[0];
+            }
+
+            if (respObj?.moistureU && Array.isArray(respObj?.moistureU)) {
+                respObj.moistureU = respObj.moistureU[0];
+            }
+
+            if (respObj?.moistureT && Array.isArray(respObj?.moistureT)) {
+                respObj.moistureT = respObj.moistureT[0];
+            }
             // respObj?.sebumT?.forEach((pores: any) => {
             //     pores.raw = +pores.raw;
             //     pores.score = +pores.score;
