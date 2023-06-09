@@ -20,6 +20,7 @@ export class WebResultController {
                     result[i]['analyzed_image_url'] = null;
                     result[i]['original_image_url'] = null;
                 }
+
                 result[i].value = +result[i].value;
                 for (let j = 0; j < avg.length; j++) {
                     if (result[i]['measurement'] === avg[j].measurement) {
@@ -38,4 +39,3 @@ export class WebResultController {
         }
     }
 }
-
