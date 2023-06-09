@@ -12,35 +12,46 @@ export class WebResultService {
             WITH _results AS (
                 SELECT DISTINCT
                     type_measurements."name" AS measurement,
-                    to_json(original_img.scores) ->> 'score' as value, 
-                    record.created_time::date as date,
-                    record.created_time::time as time,
+                    to_json ( original_img.scores ) ->> 'score' AS 
+                VALUE
+                    ,
+                    record.created_time :: DATE AS DATE,
+                    record.created_time :: TIME AS TIME,
                     original_img.url AS analyzed_image_url,
                     analyzed_img.url AS original_image_url,
-                    ROW_NUMBER() OVER (PARTITION BY type_measurements."name") AS ROW_NUMBER
+                    ROW_NUMBER ( ) OVER ( PARTITION BY type_measurements."name" ) AS ROW_NUMBER 
                 FROM
                     analysis record
-                    LEFT JOIN measurements as original_img ON record.batch_id = original_img.batch_id  AND original_img.type_image_id = 21 
-                    LEFT JOIN type_measurements ON type_measurements.ID = original_img.type_measurement_id 
-                    LEFT JOIN measurements as analyzed_img ON record.batch_id = analyzed_img.batch_id AND analyzed_img.type_image_id = 18
-                        AND (original_img.args ->> 'nth_analysis' = analyzed_img.args ->> 'nth_analysis' OR type_measurements."name" = 'moistureT' OR type_measurements."name" = 'moistureU') -- Add the join condition here                 
+                    LEFT JOIN measurements AS original_img ON record.batch_id = original_img.batch_id 
+                    AND original_img.type_image_id = 21
+                    LEFT JOIN type_measurements ON type_measurements.ID = original_img.type_measurement_id
+                    LEFT JOIN measurements AS analyzed_img ON record.batch_id = analyzed_img.batch_id 
+                    AND analyzed_img.type_image_id = 18 
+                    AND ( original_img.args ->> 'nth_analysis' = analyzed_img.args ->> 'nth_analysis' OR type_measurements."name" = 'moistureT' OR type_measurements."name" = 'moistureU' OR type_measurements."name" = 'sebumU' OR type_measurements."name" = 'sebumT' ) 		
                 WHERE
-                    record.batch_id = $1 AND (analyzed_img.type_image_id = 18)  
-                GROUP by type_measurements."name", original_img.url, analyzed_img.url, original_img.scores, record.created_time, original_img.type_measurement_id
-            )
-            SELECT
+                    record.batch_id = $1 
+                    AND ( analyzed_img.type_image_id = 18 OR analyzed_img.type_image_id = 21  ) 
+                GROUP BY
+                    type_measurements."name",
+                    original_img.url,
+                    analyzed_img.url,
+                    original_img.scores,
+                    record.created_time,
+                    original_img.type_measurement_id 
+                ) SELECT
                 measurement,
-                value,
-                date,
-                time,
+                
+            VALUE
+                ,
+                DATE,
+                TIME,
                 original_image_url,
-                analyzed_image_url
+                analyzed_image_url 
             FROM
                 _results 
             WHERE
                 ROW_NUMBER = 1;
-                
-            `,
+        `,
             [batch_id],
         );
         return result;
