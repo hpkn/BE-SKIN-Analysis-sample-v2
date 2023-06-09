@@ -893,8 +893,9 @@ export class AlgoAnalysisService {
     }
 
     async userHistoryWithBatchId(batch_id: number) {
-        const result = await this.database.executeQuery(
-            `
+        try {
+            const result = await this.database.executeQuery(
+                `
             SELECT analysis_type, jsonb_agg(temp)
             FROM
                 (
@@ -919,7 +920,7 @@ export class AlgoAnalysisService {
                     FROM
                         measurements 
                     WHERE
-                        type_measurement_id = 17 UNION
+                        type_measurement_id = 17 AND type_image_id = 21 UNION
                     SELECT
                         'moistureU' AS analysis_type,
                         type_image_id type_image,
@@ -934,7 +935,7 @@ export class AlgoAnalysisService {
                     FROM
                         measurements 
                     WHERE
-                        type_measurement_id = 17 UNION
+                        type_measurement_id = 17 AND type_image_id = 21 UNION
                     SELECT
                         'sebumT' AS analysis_type,
                         type_image_id type_image,
@@ -949,7 +950,7 @@ export class AlgoAnalysisService {
                     FROM
                         measurements 
                     WHERE
-                        type_measurement_id = 9 UNION
+                        type_measurement_id = 9  AND type_image_id = 21 UNION
                     SELECT
                         'sebumU' AS analysis_type,
                         type_image_id type_image,
@@ -964,7 +965,7 @@ export class AlgoAnalysisService {
                     FROM
                         measurements 
                     WHERE
-                        type_measurement_id = 5 UNION
+                        type_measurement_id = 5 AND type_image_id = 21 UNION
                     SELECT
                         'keratin' AS analysis_type,
                         type_image_id type_image,
@@ -979,7 +980,7 @@ export class AlgoAnalysisService {
                     FROM
                         measurements 
                     WHERE
-                        type_measurement_id = 11 UNION
+                        type_measurement_id = 11 AND type_image_id = 21 UNION
                     SELECT
                         'moisture' AS analysis_type,
                         type_image_id type_image,
@@ -994,7 +995,7 @@ export class AlgoAnalysisService {
                     FROM
                         measurements 
                     WHERE
-                        type_measurement_id = 5 UNION
+                        type_measurement_id = 5 AND type_image_id = 21 UNION
                     SELECT
                         'pores' AS analysis_type,
                         type_image_id type_image,
@@ -1010,7 +1011,7 @@ export class AlgoAnalysisService {
                     FROM
                         measurements 
                     WHERE
-                        type_measurement_id = 1 UNION
+                        type_measurement_id = 1 AND type_image_id = 21 UNION
                     SELECT
                         'porphyrin' AS analysis_type,
                         type_image_id type_image,
@@ -1026,7 +1027,7 @@ export class AlgoAnalysisService {
                     FROM
                         measurements 
                     WHERE
-                        type_measurement_id = 3 UNION
+                        type_measurement_id = 3 AND type_image_id = 21 UNION
                     SELECT
                         'sebum' AS analysis_type,
                         type_image_id type_image,
@@ -1043,21 +1044,6 @@ export class AlgoAnalysisService {
                     WHERE
                         type_measurement_id = 15 UNION
                     SELECT
-                        'fullsensitivity' AS analysis_type,
-                        type_image_id type_image,
-                    	CASE
-                            WHEN type_image_id = 21 THEN
-                            scores 
-                        END AS args,
-                        created_time :: DATE AS DATE,
-                        created_time :: TIME AS TIME,
-                        
-                        batch_id 
-                    FROM
-                        measurements 
-                    WHERE
-                        type_measurement_id = 5 UNION
-                    SELECT
                         'sensitivityredness' AS analysis_type,
                         type_image_id type_image,
                     	CASE
@@ -1071,7 +1057,7 @@ export class AlgoAnalysisService {
                     FROM
                         measurements 
                     WHERE
-                        type_measurement_id = 12 UNION
+                        type_measurement_id = 12 AND type_image_id = 21 UNION
                     SELECT
                         'sensitivityscabs' AS analysis_type,
                         type_image_id type_image,
@@ -1087,7 +1073,7 @@ export class AlgoAnalysisService {
                     FROM
                         measurements 
                     WHERE
-                        type_measurement_id = 14 UNION
+                        type_measurement_id = 14 AND type_image_id = 21 UNION
                     SELECT
                         'sensitivityscaling' AS analysis_type,
                         type_image_id type_image,
@@ -1102,7 +1088,7 @@ export class AlgoAnalysisService {
                     FROM
                         measurements 
                     WHERE
-                        type_measurement_id = 2 UNION
+                        type_measurement_id = 2 AND type_image_id = 21 UNION
                     SELECT
                         'shine' AS analysis_type,
                         type_image_id type_image,
@@ -1133,7 +1119,7 @@ export class AlgoAnalysisService {
                     FROM
                         measurements 
                     WHERE
-                        type_measurement_id = 6 UNION
+                        type_measurement_id = 6 AND type_image_id = 21 UNION
                     SELECT
                         'spots' AS analysis_type,
                         type_image_id type_image,
@@ -1148,7 +1134,7 @@ export class AlgoAnalysisService {
                     FROM
                         measurements 
                     WHERE
-                        type_measurement_id = 8 UNION
+                        type_measurement_id = 8 AND type_image_id = 21 UNION
                     SELECT
                         'wrinkles' AS analysis_type,
                         type_image_id type_image,
@@ -1162,17 +1148,18 @@ export class AlgoAnalysisService {
                         batch_id 
                     FROM
                         measurements 
+                        WHERE type_measurement_id = 4 AND type_image_id = 21
                     ) AS record
                     LEFT JOIN ( 
                         SELECT batch_id,
                         type_image_id,
                         tpi.name AS TYPE,
-                        scores || jsonb_build_object ( 'nth_analysis', to_json ( args ) ->> 'nth_analysis' ) AS args,
+                         scores || jsonb_build_object ( 'nth_analysis', to_json ( args ) ->> 'nth_analysis' ) AS args,
                         json_build_object ( 'id', hash, 'url', url ) AS url  
                         FROM measurements as ms LEFT JOIN type_images as tpi ON tpi.id = ms.type_image_id ) AS img ON img.batch_id = record.batch_id 
-                    AND img.type_image_id = record.type_image 
+                     
                 WHERE
-                    record.batch_id = $1 
+                    record.batch_id = $1
                 GROUP BY
                     record.analysis_type,
                     record.args,
@@ -1183,43 +1170,123 @@ export class AlgoAnalysisService {
             GROUP BY
                 analysis_type;
             `,
-            [batch_id],
-        );
+                [batch_id],
+            );
 
-        let respObj_: any = {};
-        for (let i = 0; i < result.length; i++) {
-            let obj: any = {};
-            for (let j = 0; j < result[i].jsonb_agg.length; j++) {
-                let imgObj: any = {};
-                for (let k = 0; k < result[i].jsonb_agg[j].images.length; k++) {
-                    if (result[i].analysis_type === 'moistureT' || result[i].analysis_type === 'moistureU') {
-                        continue;
+            let respObj: any = {};
+            for (let i = 0; i < result.length; i++) {
+                let obj: any = {};
+                for (let j = 0; j < result[i].jsonb_agg.length; j++) {
+                    let imgObj: any = {};
+                    for (let k = 0; k < result[i].jsonb_agg[j].images.length; k++) {
+                        if (result[i].analysis_type === 'moistureT' || result[i].analysis_type === 'moistureU') {
+                            continue;
+                        }
+                        imgObj[result[i].jsonb_agg[j].images[k].type] = { ...result[i].jsonb_agg[j].images[k].url };
                     }
-                    imgObj[result[i].jsonb_agg[j].images[k].type] = { ...result[i].jsonb_agg[j].images[k].url };
+                    if (!obj[result[i].analysis_type]) {
+                        obj[result[i].analysis_type] = [
+                            {
+                                ...result[i].jsonb_agg[j].args,
+                                analysis_type: result[i].jsonb_agg[j].analysis_type,
+                                date: result[i].jsonb_agg[j].date,
+                                time: result[i].jsonb_agg[j].time,
+                                ...imgObj,
+                            },
+                        ];
+                    } else {
+                        obj[result[i].analysis_type] = [
+                            ...obj[result[i].analysis_type],
+                            {
+                                ...result[i].jsonb_agg[j].args,
+                                analysis_type: result[i].jsonb_agg[j].analysis_type,
+                                date: result[i].jsonb_agg[j].date,
+                                time: result[i].jsonb_agg[j].time,
+                                ...imgObj,
+                            },
+                        ];
+                    }
                 }
-                if (!obj[result[i].analysis_type]) {
-                    obj[result[i].analysis_type] = [
-                        {
-                            ...result[i].jsonb_agg[j].args,
-                            analysis_type: result[i].jsonb_agg[j].analysis_type,
-                            ...imgObj,
-                        },
-                    ];
-                } else {
-                    obj[result[i].analysis_type] = [
-                        ...obj[result[i].analysis_type],
-                        {
-                            ...result[i].jsonb_agg[j].args,
-                            analysis_type: result[i].jsonb_agg[j].analysis_type,
-                            ...imgObj,
-                        },
-                    ];
-                }
+                respObj = { ...respObj, ...obj };
             }
 
-            respObj_ = { ...respObj_, ...obj };
+            respObj?.moistureT?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.moistureU?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            // respObj?.sebumT?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.sebumU?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.keratin?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.moisture?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.pores?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.porphyrin?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.sebum?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.fullsensitivity?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.sensitivityredness?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.sensitivityscabs?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.sensitivityscaling?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.shine?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.skintone?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.spots?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            // respObj?.wrinkles?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+
+            // respObj?.pores?.forEach((pores: any) => {
+            //     pores.raw = +pores.raw;
+            //     pores.score = +pores.score;
+            // });
+            return respObj;
+        } catch (e) {
+            console.log(e);
         }
-        return respObj_;
     }
 
     // MoistureU
