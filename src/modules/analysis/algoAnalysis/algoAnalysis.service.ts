@@ -1227,78 +1227,78 @@ export class AlgoAnalysisService {
             //     respObj.sebumT = respObj.sebumT[0];
             // }
 
-            // if (respObj?.moistureU && Array.isArray(respObj?.moistureU)) {
-            //     respObj.moistureU = respObj.moistureU[0];
-            // }
+            if (respObj?.moistureU && Array.isArray(respObj?.moistureU)) {
+                respObj.moistureU = respObj.moistureU[0];
+            }
 
-            // if (respObj?.moistureT && Array.isArray(respObj?.moistureT)) {
-            //     respObj.moistureT = respObj.moistureT[0];
-            // }
-            // respObj?.sebumT?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.sebumU?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.keratin?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.moisture?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.pores?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.porphyrin?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.sebum?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.fullsensitivity?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.sensitivityredness?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.sensitivityscabs?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.sensitivityscaling?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.shine?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.skintone?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.spots?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
-            // respObj?.wrinkles?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
+            if (respObj?.moistureT && Array.isArray(respObj?.moistureT)) {
+                respObj.moistureT = respObj.moistureT[0];
+            }
+            respObj?.sebumT?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.sebumU?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.keratin?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.moisture?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.pores?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.porphyrin?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.sebum?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.fullsensitivity?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.sensitivityredness?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.sensitivityscabs?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.sensitivityscaling?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.shine?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.skintone?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.spots?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
+            respObj?.wrinkles?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
 
-            // respObj?.pores?.forEach((pores: any) => {
-            //     pores.raw = +pores.raw;
-            //     pores.score = +pores.score;
-            // });
+            respObj?.pores?.forEach((pores: any) => {
+                pores.raw = +pores.raw;
+                pores.score = +pores.score;
+            });
             return respObj;
         } catch (e) {
             console.log(e);
