@@ -60,6 +60,7 @@ export class AlgoAnalysisController {
             });
 
         data.batch_id = Number(data.batch_id);
+        console.log(data.batch_id);
         const imageRecords = uuidv4();
         const client = celery.createClient('redis://localhost', 'redis://');
         let algoList = [
@@ -113,6 +114,7 @@ export class AlgoAnalysisController {
             });
         }
         const imageArg = this.AlgoAnalysis.handleImageArg(data);
+        console.log(imageArg);
 
         const result_ = await this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse, imageArg);
         let promise1 = new Promise(function (resolve, reject) {
@@ -129,6 +131,7 @@ export class AlgoAnalysisController {
                 return promise2;
             })
             .catch((error) => {
+                console.log(error);
                 return res.send({
                     status: 500,
                     type: 'InternalServerError',
@@ -590,7 +593,7 @@ export class AlgoAnalysisController {
             });
 
             //Upload Images
-            const saving = await this.AlgoAnalysis.saveOfflineImage(data, analyzedImage, originalImage, imageArg);
+            const saving = await this.AlgoAnalysis.saveOfflineImage(data, originalImage, analyzedImage, imageArg);
 
             let promise2 = new Promise(function (resolve, resject) {
                 resolve(saving);

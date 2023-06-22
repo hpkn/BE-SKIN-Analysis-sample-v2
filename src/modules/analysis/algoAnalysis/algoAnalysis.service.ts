@@ -187,7 +187,6 @@ export class AlgoAnalysisService {
             case 'keratin':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
                 maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'keratin');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
@@ -800,7 +799,8 @@ export class AlgoAnalysisService {
         const result = await this.database.executeQuery(
             `
             SELECT  url,
-            CASE 
+            backenddata
+             
                 WHEN type_measurement_id = 1 THEN 'pores'
                 WHEN type_measurement_id = 2 THEN 'sensitivityscaling'
                 WHEN type_measurement_id = 3 THEN 'porphyrin'
