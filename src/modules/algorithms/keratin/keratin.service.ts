@@ -135,20 +135,6 @@ export class KeratinService {
         for (let i = 0; i < queries.length; i++) {
             this.database.executeQuery(saveSql, queries[i].variables);
         }
-        const retObj: any = {
-            analyzedImage: {
-                id: analyzedImageArgs.hash,
-                url: analyzedImageArgs.url,
-            },
-            maskImage: {
-                id: maskImageArgs.hash,
-                url: maskImageArgs.url,
-            },
-            originalImage: {
-                id: originalImageArgs.hash,
-                url: originalImageArgs.url,
-            },
-        };
 
         await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
         await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
@@ -244,4 +230,3 @@ export class KeratinService {
         return 'saved';
     }
 }
-

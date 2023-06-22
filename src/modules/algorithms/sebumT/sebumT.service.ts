@@ -6,7 +6,7 @@ import { MoistureUDTO } from 'src/common/Dto/analysis/moistureU.dto';
 export class SebumTService {
     constructor(private database: DatabaseService) {}
 
-    async saveData(data: MoistureUDTO, analyzedImageArgs: any, originalImageArgs: any) {
+    async saveData(data: MoistureUDTO, analyzedImageArgs: any, originalImageArgs: any, imageRecords: any) {
         const saveSql =
             'INSERT INTO measurements (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores) values ($1, $2, $3, $4, $5, $6, $7, $8)';
         // const saveArgsSql = 'INSERT INTO keratin (batch_id, args) data ($1, $2)';
@@ -19,7 +19,7 @@ export class SebumTService {
                     analyzedImageArgs.hash,
                     9,
                     18,
-                    null,
+                    JSON.stringify({ nth_analysis: imageRecords }),
                     null,
                 ],
             },
@@ -31,7 +31,7 @@ export class SebumTService {
                     originalImageArgs.hash,
                     9,
                     21,
-                    null,
+                    JSON.stringify({ nth_analysis: imageRecords }),
                     JSON.stringify({
                         raw: data.raw,
                         score: data.score,
@@ -47,4 +47,3 @@ export class SebumTService {
         return 'saved';
     }
 }
-

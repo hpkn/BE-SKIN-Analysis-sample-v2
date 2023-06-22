@@ -12,7 +12,7 @@ export class SebumUService {
         private batchAnalysis: BatchAnalysisService,
     ) {}
 
-    async saveData(data: MoistureUDTO, analyzedImageArgs: any, originalImageArgs: any) {
+    async saveData(data: MoistureUDTO, analyzedImageArgs: any, originalImageArgs: any, imageRecords: any) {
         // const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'sebumU');
 
         // const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'sebumU');
@@ -29,7 +29,7 @@ export class SebumUService {
                     analyzedImageArgs.hash,
                     5,
                     18,
-                    null,
+                    JSON.stringify({ nth_analysis: imageRecords }),
                     null,
                 ],
             },
@@ -41,7 +41,7 @@ export class SebumUService {
                     originalImageArgs.hash,
                     5,
                     21,
-                    null,
+                    JSON.stringify({ nth_analysis: imageRecords }),
                     JSON.stringify({
                         raw: data.raw,
                         score: data.score,
@@ -57,4 +57,3 @@ export class SebumUService {
         return 'saved';
     }
 }
-
