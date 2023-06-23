@@ -12,6 +12,7 @@ import {
     HttpException,
     HttpCode,
     UseGuards,
+    Delete,
 } from '@nestjs/common';
 import * as celery from 'celery-node';
 import { Response } from 'express';
@@ -43,7 +44,7 @@ export class AlgoAnalysisController {
         private readonly diorTone: SkinToneDiorService,
         private readonly batchAnalysis: BatchAnalysisService,
     ) {}
-    // @UseGuards(AuthMiddleware)
+    @UseGuards(AuthMiddleware)
     @Post('')
     @HttpCode(200)
     @UseInterceptors(FileInterceptor('image'))
@@ -642,4 +643,27 @@ export class AlgoAnalysisController {
             throw new Error(e);
         }
     }
+
+    @UseGuards(AuthMiddleware)
+    @Delete('/deleteAnalysisData/:batch_id')
+    async deleteBatch(@Param('batch_id') batch_id: number, @Res() res: Response) {
+        try {
+            const result = await this.batchAnalysis.deleleBatch(batch_id);
+            console.log(result);
+            return res.status(200).json({
+                status: 200,
+                type: 'DeleteAnalysisData',
+                message: 'Successfully Deleted.',
+            });
+        } catch (error) {
+            console.log(error);
+            return res.send({
+                status: 500,
+                type: 'InternalServerError',
+                message: 'Internal server error.',
+                error: error.message,
+            });
+        }
+    }
 }
+
