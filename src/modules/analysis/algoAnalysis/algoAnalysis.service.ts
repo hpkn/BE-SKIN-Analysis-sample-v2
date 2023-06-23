@@ -798,29 +798,29 @@ export class AlgoAnalysisService {
     async getImageData(batch_id: number) {
         const result = await this.database.executeQuery(
             `
-            SELECT  url,
-            backenddata
-             
-                WHEN type_measurement_id = 1 THEN 'pores'
-                WHEN type_measurement_id = 2 THEN 'sensitivityscaling'
-                WHEN type_measurement_id = 3 THEN 'porphyrin'
-                WHEN type_measurement_id = 4 THEN 'wrinkles'
-                WHEN type_measurement_id = 5 THEN 'sebumU'
-                WHEN type_measurement_id = 6 THEN 'skintone'
-                WHEN type_measurement_id = 8 THEN 'spots'
-                WHEN type_measurement_id = 9 THEN 'sebumT'
-                WHEN type_measurement_id = 10 THEN 'shine'
-                WHEN type_measurement_id = 11 THEN 'keratin'
-                WHEN type_measurement_id = 12 THEN 'sensitivityredness'
-                WHEN type_measurement_id = 14 THEN 'sensitivityscabs'
-                WHEN type_measurement_id = 15 THEN 'sebum'
-                WHEN type_measurement_id = 16 THEN 'moistureT'
-                WHEN type_measurement_id = 17 THEN 'moistureU'
-            END AS analysis_type,
-            type_images.name as type,
-            to_json ( scores ) ->> 'score' as score, 
-            to_json(args) ->> 'nth_analysis' as hash,
-            created_time
+            SELECT  
+                url,
+                CASE
+                    WHEN type_measurement_id = 1 THEN 'pores'
+                    WHEN type_measurement_id = 2 THEN 'sensitivityscaling'
+                    WHEN type_measurement_id = 3 THEN 'porphyrin'
+                    WHEN type_measurement_id = 4 THEN 'wrinkles'
+                    WHEN type_measurement_id = 5 THEN 'sebumU'
+                    WHEN type_measurement_id = 6 THEN 'skintone'
+                    WHEN type_measurement_id = 8 THEN 'spots'
+                    WHEN type_measurement_id = 9 THEN 'sebumT'
+                    WHEN type_measurement_id = 10 THEN 'shine'
+                    WHEN type_measurement_id = 11 THEN 'keratin'
+                    WHEN type_measurement_id = 12 THEN 'sensitivityredness'
+                    WHEN type_measurement_id = 14 THEN 'sensitivityscabs'
+                    WHEN type_measurement_id = 15 THEN 'sebum'
+                    WHEN type_measurement_id = 16 THEN 'moistureT'
+                    WHEN type_measurement_id = 17 THEN 'moistureU'
+                END AS analysis_type,
+                type_images.name as type,
+                to_json ( scores ) ->> 'score' as score, 
+                to_json(args) ->> 'nth_analysis' as hash,
+                created_time
             FROM measurements record
             LEFT JOIN type_images ON type_images.ID = record.type_image_id 
             WHERE batch_id = $1 AND ( type_image_id = 18 OR type_image_id = 21);
@@ -1308,3 +1308,4 @@ export class AlgoAnalysisService {
     // MoistureU
     moistureU() {}
 }
+
