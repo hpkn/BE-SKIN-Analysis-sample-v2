@@ -80,7 +80,7 @@ export class ComputationService {
             }
             computed_score = 0.8 * avg + 0.2 * questionnaire_score;
             return computed_score;
-        } else if (analysis_type.toLowerCase() === 'oiliness') {
+        } else if (analysis_type.toLowerCase() === 'shine') {
             combined_scores = scores.reduce((sum: any, a: any) => sum + a, 0);
             const avg = Math.round(combined_scores / scores.length);
             if (questionnaire_score === 0) {
@@ -88,41 +88,17 @@ export class ComputationService {
             }
             computed_score = 0.8 * avg + 0.2 * questionnaire_score;
             return computed_score;
-        } else if (analysis_type.toLowerCase() === 'impurities') {
+        } else if (analysis_type.toLowerCase() === 'porphyrin') {
             computed_score = scores.reduce((sum: any, a: any) => sum + a, 0);
-            console.log(
-                'impurities',
-                'scores:',
-                scores,
-                'computed_score',
-                computed_score,
-                'questionnaire_score: ',
-                questionnaire_score,
-            );
             return Math.round(computed_score / scores.length);
         } else if (analysis_type.toLowerCase() === 'keratin') {
             computed_score = scores.reduce((sum: any, a: any) => sum + a, 0);
-            console.log(
-                'keratin',
-                'scores:',
-                scores,
-                'computed_score',
-                computed_score,
-                'questionnaire_score: ',
-                questionnaire_score,
-            );
             return Math.round(computed_score / scores.length);
         } else if (analysis_type.toLowerCase() === 'elasticity') {
             computed_score = scores.reduce((sum: any, a: any) => sum + a, 0);
-            console.log(
-                'elasticity',
-                'scores:',
-                scores,
-                'computed_score',
-                computed_score,
-                'questionnaire_score: ',
-                questionnaire_score,
-            );
+            return Math.round(computed_score / scores.length);
+        } else {
+            computed_score = scores.reduce((sum: any, a: any) => sum + a, 0);
             return Math.round(computed_score / scores.length);
         }
     }
