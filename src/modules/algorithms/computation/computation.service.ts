@@ -104,9 +104,14 @@ export class ComputationService {
     }
 
     computationResult(type: string, answers: string, score: any) {
+<<<<<<< HEAD
         try {
             let final_response = {};
             let combined_score = 0;
+=======
+        let final_response: any = {};
+        let combined_score = 0;
+>>>>>>> b59d7f1dc3d43729f54d1801404b2820f50f507b
 
             const questionnaire_score = this.quest_score(answers);
             let algo_type = type;
@@ -119,10 +124,18 @@ export class ComputationService {
 
             combined_score = this.cndp_computation(type, myScores, questionnaire_score);
 
+<<<<<<< HEAD
             final_response = {
                 computation_score: combined_score,
                 questionnaire_score: questionnaire_score,
             };
+=======
+        // final_response = {
+        //     questionnaire_score: questionnaire_score,
+        // };
+        final_response.computation_score = combined_score;
+        final_response.questionnaire_score = questionnaire_score;
+>>>>>>> b59d7f1dc3d43729f54d1801404b2820f50f507b
 
             return final_response;
         } catch (e) {

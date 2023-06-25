@@ -120,7 +120,10 @@ export class AlgoAnalysisController {
 
         const result_ = await this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse, imageArg);
         const computation = this.computation.computationResult(data.type, data.answers, result_.score);
-        result_.computation = computation;
+        result_.computation_score = computation['computation_score'];
+        result_.questionnaire_score = computation['questionnaire_score'];
+
+        // result_.computation = computation;
         let promise1 = new Promise(function (resolve, reject) {
             resolve(res.send({ status: 200, message: 'Success', body: result_ }));
         });
