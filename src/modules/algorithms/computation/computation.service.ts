@@ -104,7 +104,7 @@ export class ComputationService {
     }
 
     computationResult(type: string, answers: string, score: any) {
-        let final_response = {};
+        let final_response: any = {};
         let combined_score = 0;
 
         const questionnaire_score = this.quest_score(answers);
@@ -118,10 +118,11 @@ export class ComputationService {
 
         combined_score = this.cndp_computation(type, myScores, questionnaire_score);
 
-        final_response = {
-            computation_score: combined_score,
-            questionnaire_score: questionnaire_score,
-        };
+        // final_response = {
+        //     questionnaire_score: questionnaire_score,
+        // };
+        final_response.computation_score = combined_score;
+        final_response.questionnaire_score = questionnaire_score;
 
         return final_response;
     }
