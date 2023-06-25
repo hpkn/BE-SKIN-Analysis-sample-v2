@@ -117,7 +117,6 @@ export class AlgoAnalysisController {
             });
         }
         const imageArg = this.AlgoAnalysis.handleImageArg(data);
-        console.log(imageArg);
 
         const result_ = await this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse, imageArg);
         const computation = this.computation.computationResult(data.type, data.answers, result_.score);
@@ -670,3 +669,4 @@ export class AlgoAnalysisController {
         }
     }
 }
+

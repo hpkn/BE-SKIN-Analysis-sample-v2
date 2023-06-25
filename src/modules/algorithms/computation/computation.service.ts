@@ -23,7 +23,7 @@ export class ComputationService {
         //3 -> 3
         //4 -> 4
         //5 -> 2.5
-
+        ans = ans === undefined ? '' : ans;
         let ansArr = ans.split('');
         let length = ansArr.length;
         let result = 0;
@@ -104,25 +104,31 @@ export class ComputationService {
     }
 
     computationResult(type: string, answers: string, score: any) {
-        let final_response = {};
-        let combined_score = 0;
+        try {
+            let final_response = {};
+            let combined_score = 0;
 
-        const questionnaire_score = this.quest_score(answers);
-        let algo_type = type;
-        let myScores: number[] | number = [];
-        if (Array.isArray(score) === false) {
-            myScores.push(score);
-        } else {
-            myScores = score;
+            const questionnaire_score = this.quest_score(answers);
+            let algo_type = type;
+            let myScores: number[] | number = [];
+            if (Array.isArray(score) === false) {
+                myScores.push(score);
+            } else {
+                myScores = score;
+            }
+
+            combined_score = this.cndp_computation(type, myScores, questionnaire_score);
+
+            final_response = {
+                computation_score: combined_score,
+                questionnaire_score: questionnaire_score,
+            };
+
+            return final_response;
+        } catch (e) {
+            console.log(e);
+            throw new Error('error');
         }
-
-        combined_score = this.cndp_computation(type, myScores, questionnaire_score);
-
-        final_response = {
-            computation_score: combined_score,
-            questionnaire_score: questionnaire_score,
-        };
-
-        return final_response;
     }
 }
+
