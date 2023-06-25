@@ -30,6 +30,7 @@ import { SkinToneDiorService } from 'src/modules/algorithms/skinToneDior/skinTon
 import { OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
 import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
+import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 
 @Controller('analysis')
 @UseGuards(AuthMiddleware)
@@ -43,6 +44,7 @@ export class AlgoAnalysisController {
         private readonly S3Image: FileUploadService,
         private readonly diorTone: SkinToneDiorService,
         private readonly batchAnalysis: BatchAnalysisService,
+        private readonly computation: ComputationService,
     ) {}
     @UseGuards(AuthMiddleware)
     @Post('')
@@ -118,6 +120,8 @@ export class AlgoAnalysisController {
         console.log(imageArg);
 
         const result_ = await this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse, imageArg);
+        const computation = this.computation.computationResult(data.type, data.answers, result_.score);
+        result_.computation = computation;
         let promise1 = new Promise(function (resolve, reject) {
             resolve(res.send({ status: 200, message: 'Success', body: result_ }));
         });
@@ -666,4 +670,3 @@ export class AlgoAnalysisController {
         }
     }
 }
-

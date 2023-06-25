@@ -26,6 +26,7 @@ import { SebumUService } from '../algorithms/sebumU/sebumU.service';
 import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
 import { WebResultController } from './webResult/webResult.controller';
 import { WebResultService } from './webResult/webResult.service';
+import { ComputationService } from '../algorithms/computation/computation.service';
 
 @Module({
     imports: [
@@ -58,6 +59,7 @@ import { WebResultService } from './webResult/webResult.service';
         MoistureTService,
         SebumUService,
         WebResultService,
+        ComputationService,
         // UploadProcessor,
     ],
 })
