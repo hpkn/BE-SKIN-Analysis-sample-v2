@@ -75,7 +75,17 @@ export class PoresService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
+    async saveData(
+        coputaionResutl: any,
+        data: AlgoAnalysisDTO,
+        taskResponse: any,
+        imageRecords: any,
+        originalImage: any,
+        imageArgs: any,
+    ) {
+        taskResponse.computation_score = coputaionResutl.computation_score;
+        taskResponse.questionnaire_score = coputaionResutl.questionnaire_score;
+
         console.log('------------=====>', taskResponse);
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const analyzedImageS = Buffer.from(taskResponse.img_S, 'base64');

@@ -51,7 +51,14 @@ export class ShineService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
+    async saveData(
+        coputaionResutl: any,
+        data: AlgoAnalysisDTO,
+        taskResponse: any,
+        imageRecords: any,
+        originalImage: any,
+        imageArgs: any,
+    ) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const maskImage = Buffer.from(taskResponse.mask, 'base64');
         const originalImageSave = originalImage;
@@ -64,10 +71,15 @@ export class ShineService {
         delete taskResponse.img;
         delete taskResponse.mask;
         delete taskResponse.err;
+        taskResponse.computation_score = coputaionResutl.computation_score;
+        taskResponse.questionnaire_score = coputaionResutl.questionnaire_score;
 
         taskResponse = {
             ...taskResponse,
         };
+
+        taskResponse.computation_score = coputaionResutl.computation_score;
+        taskResponse.questionnaire_score = coputaionResutl.questionnaire_score;
 
         const environment = {
             deviceModel: data.deviceModel,

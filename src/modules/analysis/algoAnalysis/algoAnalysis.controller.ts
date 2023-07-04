@@ -119,16 +119,26 @@ export class AlgoAnalysisController {
         const imageArg = this.AlgoAnalysis.handleImageArg(data);
 
         const result_ = await this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse, imageArg);
-        const computation = this.computation.computationResult(data.type, data.answers, result_.score);
-        result_.computation_score = computation['computation_score'];
-        result_.questionnaire_score = computation['questionnaire_score'];
+        // const computation = this.computation.computationResult(data.type, data.answers, result_.score);
+        // result_.computation_score = computation['computation_score'];
+        // result_.questionnaire_score = computation['questionnaire_score'];
 
         // result_.computation = computation;
         let promise1 = new Promise(function (resolve, reject) {
             resolve(res.send({ status: 200, message: 'Success', body: result_ }));
         });
+        const coputaionResutl: any = {};
 
-        const saving = await this.AlgoAnalysis.finalSave(data, image, imageRecords, taskResponse, imageArg);
+        // coputaionResutl.computation_score = computation['computation_score'];
+        // coputaionResutl.questionnaire_score = computation['questionnaire_score'];
+        const saving = await this.AlgoAnalysis.finalSave(
+            coputaionResutl,
+            data,
+            image,
+            imageRecords,
+            taskResponse,
+            imageArg,
+        );
         let promise2 = new Promise(function (resolve, resject) {
             resolve(saving);
         });
