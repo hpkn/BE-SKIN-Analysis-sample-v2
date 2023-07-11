@@ -25,6 +25,8 @@ export class WebResultController {
                 for (let j = 0; j < avg.length; j++) {
                     if (result[i]['measurement'] === avg[j].measurement) {
                         result[i]['avg_value'] = parseFloat(avg[i].avg);
+                        result[i]['keyword_value'] = avg[i]['keyword_value'];
+                        result[i]['keyword_id'] = parseFloat(avg[i].keyword_id);
                     }
                 }
             }

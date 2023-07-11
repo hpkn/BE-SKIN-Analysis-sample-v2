@@ -51,15 +51,32 @@ export class WebResultService {
     async webResultAverage(batch_id: number) {
         const result = await this.database.executeQuery(
             `
-            SELECT round(AVG((to_json(scores) ->> 'score')::numeric),2) as avg, tp.name as measurement
+            SELECT 
+                round(AVG((to_json(scores) ->> 'score')::numeric),2) as avg, 
+                tp.name as measurement,
+                CASE
+                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 0 AND 5 THEN 'clear'
+                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 6 AND 15 THEN 'Almost Clear'
+                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 16 AND 48 THEN 'Mild'
+                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 49 AND 80 THEN 'Moderate'
+                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 81 AND 100 THEN 'Severe'
+                    ELSE NULL -- or any default value if needed
+                END AS keyword_value,
+                CASE
+                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 0 AND 5 THEN 0
+                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 6 AND 15 THEN 1
+                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 16 AND 48 THEN 2
+                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 49 AND 80 THEN 3
+                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 81 AND 100 THEN 4
+                    ELSE NULL -- or any default value if needed
+                END AS keyword_id
             FROM measurements as ms
             JOIN type_measurements as tp ON tp."id" = ms.type_measurement_id
             WHERE batch_id = $1 and type_image_id = 21
-            GROUP BY tp.name;;
+            GROUP BY tp.name
             `,
             [batch_id],
         );
         return result;
     }
 }
-
