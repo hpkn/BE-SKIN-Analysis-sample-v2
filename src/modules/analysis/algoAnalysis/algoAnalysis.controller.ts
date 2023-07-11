@@ -17,7 +17,7 @@ import {
 import * as celery from 'celery-node';
 import { Response } from 'express';
 import { AlgoAnalysisService } from './algoAnalysis.service';
-import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import { AlgoAnalysisDTO } from 'src/common/Dto/analysis/algoAnalysis.dto';
 import { MoistureUDTO } from 'src/common/Dto/analysis/moistureU.dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -31,6 +31,8 @@ import { OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
 import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
+import { multerConfig } from 'src/config/multer.config/multer.config';
+import { upload } from '../../../config/multer.config/multer.config';
 
 @Controller('analysis')
 @UseGuards(AuthMiddleware)
@@ -158,7 +160,7 @@ export class AlgoAnalysisController {
             });
     }
 
-    // @UseGuards(AuthMiddleware)
+    @UseGuards(AuthMiddleware)
     @Get('/getAnalysisData/:batch_id')
     async getAnalysisData(@Param('batch_id') batch_id: number, @Res() res: Response) {
         try {
@@ -186,6 +188,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/history/')
     async userAnalysisHistory(@Query() param: any, @Res() res: Response, @Body() body: any) {
         console.log('here analysis');
@@ -217,6 +220,7 @@ export class AlgoAnalysisController {
             });
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/history/image')
     async userAnalysisImageHistory(@Query() param: any, @Res() res: Response, @Body() body: any) {
         console.log('here analysis');
@@ -243,6 +247,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Get('/history/result')
     async userAnalysisImageHistoryWithBatchId(@Query() param: any, @Res() res: Response, @Body() body: any) {
         console.log('here analysis');
@@ -269,6 +274,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/moistureU')
     async moistureU(@Query() param: any, @Res() res: Response, @Body() body: MoistureUDTO) {
         try {
@@ -296,6 +302,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/moistureT')
     async moistureT(@Query() param: any, @Res() res: Response, @Body() body: MoistureUDTO) {
         try {
@@ -323,6 +330,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/sebumU')
     @UseInterceptors(
         FileFieldsInterceptor([
@@ -396,6 +404,7 @@ export class AlgoAnalysisController {
             });
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/sebumT')
     @UseInterceptors(
         FileFieldsInterceptor([
@@ -467,6 +476,7 @@ export class AlgoAnalysisController {
             });
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/skintone-dior')
     @UseInterceptors(
         FileFieldsInterceptor([
@@ -554,6 +564,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/offline')
     @UseInterceptors(
         FileFieldsInterceptor([
@@ -642,6 +653,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Get('/requestBatchId')
     async getBatchId(@Query() param: any, @Res() res: Response) {
         try {
@@ -681,5 +693,138 @@ export class AlgoAnalysisController {
             });
         }
     }
-}
 
+    /*
+        CBB
+    */
+    @UseGuards(AuthMiddleware)
+    @Post('cbb')
+    @HttpCode(200)
+    // @UseInterceptors(FileInterceptor('image'))
+    @UseInterceptors(upload.array('images', 5))
+    async combinedAnalysisBox(
+        @Body() data: AlgoAnalysisDTO,
+        @UploadedFile() image: Express.Multer.File[],
+        @Res()
+        res: Response,
+    ) {
+        if (!image)
+            return res.send({
+                status: 40002,
+                type: 'BadRequestError',
+                message: 'No file!',
+            });
+        const promises: Promise<any>[] = [];
+        const imageResult: any[] = [];
+        const finalData: any[] = [];
+        const allTaskResponse: any[] = [];
+        const allImagArgs: any[] = [];
+
+        data.batch_id = Number(data.batch_id);
+        const client = celery.createClient('redis://localhost', 'redis://');
+        let algoList = [
+            'keratin',
+            'pores',
+            'porphyrin',
+            'sebum',
+            'shine',
+            'spots',
+            'skintone',
+            'wrinkles',
+            'sensitivityscabs',
+            'sensitivityscaling',
+            'sensitivityredness',
+        ];
+        if (!algoList.includes(data.type)) {
+            throw new HttpException(`We don't have such type of algorithm -> ${data.type}`, 40001);
+        }
+        // console.time('celery');
+        for (let i = 0; i < image.length; i++) {
+            const imageRecords = uuidv4();
+            const originalImage = image[0].buffer.toString('base64');
+
+            data.task = this.AlgoAnalysis.getTaskByAlgoType(data.type);
+
+            const task = client.createTask(data.task.taskName);
+
+            let result: any;
+
+            if (data.task.taskName === 'CNDP_SkinTone') {
+                result = task.applyAsync([
+                    originalImage,
+                    '/home/ubuntu/backendtestuser/repositories/cfa-python/CNDP/files/chart.png',
+                ]);
+            } else if (data.task.taskName === 'CNDP_FitzSG') {
+                result = task.applyAsync([
+                    originalImage,
+                    '/home/ubuntu/backendtestuser/repositories/cfa-python/CNDP/files/chart.png',
+                ]);
+            } else {
+                result = task.applyAsync([originalImage]);
+            }
+
+            const taskResponse = await result?.get();
+
+            if (taskResponse.err) {
+                // console.log(taskResponse.err, 'cndp-skin');
+                return res.send({
+                    status: 40004,
+                    service: `analysis - ${data.task.taskName}`,
+                    message: 'Internal server error.',
+                    error: taskResponse.err,
+                });
+            }
+            const imageArg = this.AlgoAnalysis.handleImageArg(data);
+
+            const result_ = promises.push(this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse, imageArg));
+            // const computation = this.computation.computationResult(data.type, data.answers, result_.score);
+            // result_.computation_score = computation['computation_score'];
+            // result_.questionnaire_score = computation['questionnaire_score'];
+            imageResult.push(imageRecords);
+            finalData.push(data);
+            allTaskResponse.push(taskResponse);
+            allImagArgs.push(imageArg);
+        }
+        const result_ = await Promise.all(promises);
+
+        // result_.computation = computation;
+        let promise1 = new Promise(function (resolve, reject) {
+            resolve(res.send({ status: 200, message: 'Success', body: result_ }));
+        });
+        const coputaionResutl: any = {};
+
+        // coputaionResutl.computation_score = computation['computation_score'];
+        // coputaionResutl.questionnaire_score = computation['questionnaire_score'];
+        // }
+
+        const dataSaving: Promise<any>[] = [];
+        for (let i = 0; i < image.length; i++) {
+            const saving = dataSaving.push(
+                this.AlgoAnalysis.finalSave(
+                    coputaionResutl,
+                    finalData[i],
+                    image[i],
+                    imageResult[i],
+                    allTaskResponse[i],
+                    allImagArgs[i],
+                ),
+            );
+            let promise2 = new Promise(function (resolve, resject) {
+                resolve(saving);
+            });
+            promise1
+                .then(function (value) {
+                    return promise2;
+                })
+                .catch((error) => {
+                    console.log(error);
+                    return res.send({
+                        status: 500,
+                        type: 'InternalServerError',
+                        message: 'Internal server error.',
+                        error: error.message,
+                    });
+                });
+        }
+    }
+}
