@@ -17,7 +17,7 @@ import {
 import * as celery from 'celery-node';
 import { Response } from 'express';
 import { AlgoAnalysisService } from './algoAnalysis.service';
-import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import { AlgoAnalysisDTO } from 'src/common/Dto/analysis/algoAnalysis.dto';
 import { MoistureUDTO } from 'src/common/Dto/analysis/moistureU.dto';
 import { v4 as uuidv4 } from 'uuid';
@@ -63,7 +63,7 @@ export class AlgoAnalysisController {
             });
 
         data.batch_id = Number(data.batch_id);
-        console.log(data.batch_id);
+
         const imageRecords = uuidv4();
         const client = celery.createClient('redis://localhost', 'redis://');
         let algoList = [
@@ -158,7 +158,7 @@ export class AlgoAnalysisController {
             });
     }
 
-    // @UseGuards(AuthMiddleware)
+    @UseGuards(AuthMiddleware)
     @Get('/getAnalysisData/:batch_id')
     async getAnalysisData(@Param('batch_id') batch_id: number, @Res() res: Response) {
         try {
@@ -186,6 +186,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/history/')
     async userAnalysisHistory(@Query() param: any, @Res() res: Response, @Body() body: any) {
         console.log('here analysis');
@@ -217,6 +218,7 @@ export class AlgoAnalysisController {
             });
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/history/image')
     async userAnalysisImageHistory(@Query() param: any, @Res() res: Response, @Body() body: any) {
         console.log('here analysis');
@@ -243,6 +245,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Get('/history/result')
     async userAnalysisImageHistoryWithBatchId(@Query() param: any, @Res() res: Response, @Body() body: any) {
         console.log('here analysis');
@@ -269,6 +272,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/moistureU')
     async moistureU(@Query() param: any, @Res() res: Response, @Body() body: MoistureUDTO) {
         try {
@@ -296,6 +300,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/moistureT')
     async moistureT(@Query() param: any, @Res() res: Response, @Body() body: MoistureUDTO) {
         try {
@@ -323,6 +328,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/sebumU')
     @UseInterceptors(
         FileFieldsInterceptor([
@@ -396,6 +402,7 @@ export class AlgoAnalysisController {
             });
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/sebumT')
     @UseInterceptors(
         FileFieldsInterceptor([
@@ -467,6 +474,7 @@ export class AlgoAnalysisController {
             });
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/skintone-dior')
     @UseInterceptors(
         FileFieldsInterceptor([
@@ -554,6 +562,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Post('/offline')
     @UseInterceptors(
         FileFieldsInterceptor([
@@ -642,6 +651,7 @@ export class AlgoAnalysisController {
         }
     }
 
+    @UseGuards(AuthMiddleware)
     @Get('/requestBatchId')
     async getBatchId(@Query() param: any, @Res() res: Response) {
         try {
@@ -679,6 +689,136 @@ export class AlgoAnalysisController {
                 message: 'Internal server error.',
                 error: error.message,
             });
+        }
+    }
+
+    /*
+        CBB
+    */
+
+    @UseGuards(AuthMiddleware)
+    @Post('cbb')
+    @HttpCode(200)
+    @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 5 }]))
+    async combinedAnalysisBox(
+        @Body() data: AlgoAnalysisDTO,
+        @UploadedFiles() files: { image: Express.Multer.File[] },
+        @Res() res: Response,
+    ) {
+        try {
+            if (!files?.image) {
+                return res.send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'No file!',
+                });
+            }
+
+            const algoList = [
+                'keratin',
+                'pores',
+                'porphyrin',
+                'sebum',
+                'shine',
+                'spots',
+                'skintone',
+                'wrinkles',
+                'sensitivityscabs',
+                'sensitivityscaling',
+                'sensitivityredness',
+            ];
+
+            if (!algoList.includes(data.type)) {
+                throw new HttpException(`We don't have such type of algorithm -> ${data.type}`, 40001);
+            }
+
+            const client = celery.createClient('redis://localhost', 'redis://');
+
+            const taskResponse_ = [];
+            const imageResult = [];
+            const finalData = [];
+            const allImagArgs = [];
+            const computaionResutlt = {};
+            const analysisPromise: Promise<any>[] = [];
+            const savingPromise: Promise<any>[] = [];
+            const scores: any[] = [];
+            data.batch_id = Number(data.batch_id);
+
+            let sum = 0;
+            for (const image of files.image) {
+                const originalImage = image.buffer.toString('base64');
+                data.task = this.AlgoAnalysis.getTaskByAlgoType(data.type);
+                const task = client.createTask(data.task.taskName);
+                let result: any;
+
+                if (data.task.taskName === 'CNDP_SkinTone' || data.task.taskName === 'CNDP_FitzSG') {
+                    result = task.applyAsync([
+                        originalImage,
+                        '/home/ubuntu/backendtestuser/repositories/cfa-python/CNDP/files/chart.png',
+                    ]);
+                } else {
+                    result = task.applyAsync([originalImage]);
+                }
+
+                taskResponse_.push(result.get());
+            }
+
+            const taskResults = await Promise.all(taskResponse_);
+
+            let count = 0;
+            for (const taskResult of taskResults) {
+                let count_ = 0;
+                if (taskResult.err) {
+                    return res.send({
+                        status: 40004,
+                        service: `analysis - ${data.task.taskName}`,
+                        message: 'Internal server error.',
+                        error: taskResult.err,
+                    });
+                }
+                sum += taskResult['score'];
+                scores.push(taskResult['score']);
+                const imageRecords = uuidv4();
+                const imageArg = this.AlgoAnalysis.handleImageArg(data);
+
+                analysisPromise.push(this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResult, imageArg));
+
+                finalData.push(data);
+                imageResult.push(imageRecords);
+                allImagArgs.push(imageArg);
+                savingPromise.push(
+                    this.AlgoAnalysis.finalSave(
+                        computaionResutlt,
+                        data,
+                        files.image[count++],
+                        imageRecords,
+                        taskResult,
+                        imageArg,
+                    ),
+                );
+            }
+            const result: any[] = await Promise.all(analysisPromise);
+            const computation = this.computation.computationResult(data.type, data.answers, scores);
+
+            let promise1 = new Promise(function (resolve, reject) {
+                resolve(
+                    res.send({
+                        status: 200,
+                        message: 'Success',
+                        body: {
+                            result,
+                            computation_score: computation['computation_score'].toFixed(2),
+                            questionnaire_score: computation['questionnaire_score'].toFixed(2),
+                            score_average: (sum / scores.length).toFixed(2),
+                        },
+                    }),
+                );
+            });
+
+            await Promise.all(savingPromise);
+        } catch (error) {
+            console.error(error);
+            throw new HttpException('Internal server error', 500);
         }
     }
 }

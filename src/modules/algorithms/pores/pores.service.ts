@@ -86,7 +86,6 @@ export class PoresService {
         taskResponse.computation_score = coputaionResutl.computation_score;
         taskResponse.questionnaire_score = coputaionResutl.questionnaire_score;
 
-        console.log('------------=====>', taskResponse);
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const analyzedImageS = Buffer.from(taskResponse.img_S, 'base64');
         const analyzedImageM = Buffer.from(taskResponse.img_M, 'base64');
