@@ -14,6 +14,7 @@ import * as morgan from 'morgan';
 // });
 
 async function bootstrap() {
+    const enableSwagger = process.env.OPEN_SWAGGER === 'true';
     const httpApp = await NestFactory.create(AppModule);
     await httpApp.listen(process.env.HTTP);
 
@@ -35,10 +36,18 @@ async function bootstrap() {
     const port = Number(process.env.PORT) || 3000;
     const hostname = process.env.HOSTNAME || 'localhost';
 
-    const config = new DocumentBuilder().setTitle('SMS').setDescription('SMS').setVersion('1.0.0').build();
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('docs', app, document);
-
+    if (enableSwagger) {
+        const config = new DocumentBuilder()
+            .setTitle('CNDP SKIN')
+            .setDescription(
+                '<b>HOST</b><br><br> <b>STAGING SERVER</b>: https://staging.chowis.cloud:3444 <b> <br><br> PRODUCTION SERVER</b>: https://v2-api.chowis.cloud:3441 ',
+            )
+            .setVersion('2.0.0')
+            .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'Token' }, 'access-token')
+            .build();
+        const document = SwaggerModule.createDocument(app, config);
+        SwaggerModule.setup('docs', app, document);
+    }
     app.use(cookieParser());
 
     app.useGlobalPipes(
@@ -59,3 +68,4 @@ async function bootstrap() {
     });
 }
 bootstrap();
+

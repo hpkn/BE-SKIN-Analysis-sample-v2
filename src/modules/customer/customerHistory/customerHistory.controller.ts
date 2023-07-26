@@ -4,6 +4,7 @@ import { query, Request, response, Response } from 'express';
 import { GetcustomerHistoryDTO } from 'src/common/Dto/customer/analysisHistory/analysisHistory.dto';
 import { AnanalysisHistoryService } from './customerHistory.service';
 
+@ApiTags('Customer')
 @Controller('cndpskin')
 export class AnanalysisHistoryController {
     constructor(private readonly getAnalysisHistory: AnanalysisHistoryService) {}

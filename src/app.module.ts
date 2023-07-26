@@ -10,6 +10,7 @@ import { AnalysisModule } from './modules/analysis/analysis.module';
 import { CustomerModule } from './modules/customer/customer.module';
 import { BullModule } from '@nestjs/bull';
 import { AuthMiddleware } from './common/middleWare/authMiddlware/auth.middleware';
+import { TimingMiddleware } from './common/middleWare/timingMiddleware/timing.middleware';
 
 @Module({
     imports: [
@@ -38,10 +39,14 @@ import { AuthMiddleware } from './common/middleWare/authMiddlware/auth.middlewar
             provide: APP_FILTER,
             useClass: AllExceptionsFilter,
         },
-
+        AuthMiddleware,
         FileUploaddModule,
     ],
 })
 export class AppModule {
-    // Auth MiddleWare
+    // Timing MiddleWare
+    configure(consumer: MiddlewareConsumer) {
+        consumer.apply(TimingMiddleware).forRoutes('*');
+    }
 }
+
