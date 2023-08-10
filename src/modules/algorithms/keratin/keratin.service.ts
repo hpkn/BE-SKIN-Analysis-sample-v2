@@ -7,7 +7,7 @@ import { AlgoAnalysisDTO } from 'src/common/Dto/analysis/algoAnalysis.dto';
 import fs from 'fs';
 import { FileUploadService } from '../../../common/FileUpload/fileUpload.service';
 import { BatchAnalysisService } from 'src/modules/analysis/batchAnalysis/batchAnalysis.service';
-import { OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
+import { OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
 
 @Injectable()
 export class KeratinService {
@@ -225,4 +225,3 @@ export class KeratinService {
         return 'saved';
     }
 }
-

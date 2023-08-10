@@ -21,7 +21,7 @@ import { SensitivityRednessService } from 'src/modules/algorithms/sensitivityRed
 import { SensitivtyScalingService } from 'src/modules/algorithms/sensitivtyScaling/sensitivtyScaling.service';
 import { FitzSGService } from 'src/modules/algorithms/fitzSG/fitzSG.service';
 import { promises } from 'dns';
-import { OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
+import { OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
 
 @Injectable()
 export class AlgoAnalysisService {
@@ -1151,6 +1151,42 @@ export class AlgoAnalysisService {
     }
 
     // MoistureU
-    moistureU() {}
-}
+    // CBB offline saving
+    offlineCBBSaveData(imageRecords: any, dataObject: any[]) {
+        if (!dataObject || dataObject.length === 0) {
+            return;
+        }
+        const placeholders = dataObject.map(() => '(?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
+        const values = dataObject.flatMap((item) => [
+            item.batch_id,
+            item.url,
+            item.sys_url,
+            item.hash,
+            item.type_measurement_id,
+            item.type_image_id,
+            item.args, // Convert args object to JSON
+            item.scores, // Convert scores object to JSON
+        ]);
 
+        const query = `
+        INSERT INTO your_table_name
+          (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores)
+        VALUES ${placeholders}
+      `;
+
+        console.log(values);
+        this.database.executeQuery(query, values);
+
+        // await this.batchAnalysis.updateEnvironment(data.batchId, environment);
+
+        return 'saved';
+    }
+
+    async getAlgoID(algorithm: string): Promise<any[]> {
+        const result = await this.database.executeQuery(
+            `SELECT id FROM type_measurements WHERE name LIKE '${algorithm}'`,
+        );
+
+        return result;
+    }
+}
