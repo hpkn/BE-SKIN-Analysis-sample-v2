@@ -73,11 +73,7 @@ export class AlgoAnalysisController {
     @Post('')
     @HttpCode(200)
     @UseInterceptors(FileInterceptor('image'))
-    async getcustomerHistory(
-        @Body() data: any,
-        @UploadedFile() image: Express.Multer.File,
-        @Res() res: Response,
-    ) {
+    async getcustomerHistory(@Body() data: any, @UploadedFile() image: Express.Multer.File, @Res() res: Response) {
         if (!image)
             return res.send({
                 status: 40002,
@@ -181,7 +177,6 @@ export class AlgoAnalysisController {
             });
     }
 
-
     @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Get('/getAnalysisData/:batch_id')
@@ -247,7 +242,6 @@ export class AlgoAnalysisController {
     @ApiBearerAuth('access-token')
     @Post('/history/image')
     async userAnalysisImageHistory(@Query() param: paginationDTO, @Res() res: Response, @Body() body: historyDTO) {
-        console.log('here analysis');
         let { per, page } = param;
 
         let { customer_id } = body;
@@ -1045,7 +1039,6 @@ export class AlgoAnalysisController {
                     message: 'No file!',
                 });
             }
-
             const algoList = [
                 'keratin',
                 'pores',
