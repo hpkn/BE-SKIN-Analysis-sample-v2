@@ -1030,6 +1030,14 @@ export class AlgoAnalysisController {
                     message: 'No file!',
                 });
             }
+
+            if (files?.analyzedImage.length !== files?.originalImage.length) {
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'The number of analyzed images does not match number of original images',
+                });
+            }
             const algoList = [
                 'keratin',
                 'pores',
