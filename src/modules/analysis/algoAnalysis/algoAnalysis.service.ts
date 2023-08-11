@@ -624,6 +624,23 @@ export class AlgoAnalysisService {
         }
     }
 
+    async updateEnvironment(batch_id: number, environment: any) {
+        try {
+            let data = JSON.stringify(environment);
+
+            console.log('batch_id', batch_id);
+            const update = await this.database.executeQuery(
+                `
+                UPDATE analysis
+                SET args = args::jsonb || '${data}' :: jsonb
+                WHERE batch_id = ${batch_id}
+                `,
+            );
+            return update;
+        } catch (e) {
+            console.log('check', e);
+        }
+    }
     async finalSave(
         coputaionResutl: any,
         data: AlgoAnalysisDTO,
@@ -1189,5 +1206,40 @@ export class AlgoAnalysisService {
         );
 
         return result;
+    }
+
+    async offlineCBBSaveImage(originalImage: any, analyzedImage: any, imageArgs: any, data: any) {
+        const analyzedImageArgs = imageArgs.analyzedImageArgs;
+
+        const originalImageArgs = imageArgs.originalImageArgs;
+
+        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
+        // await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
+        await this.S3Image.uploadImage(originalImage, originalImageArgs.sys_url);
+
+        return 'saved';
+    }
+
+    async updateData(data: any, imageRecords: string) {
+        const environment = {
+            deviceModel: data.deviceModel,
+            deviceOS: data.deviceOS,
+            nth_analysis: imageRecords,
+            lat: data.lat,
+            long: data.long,
+            temperature: data.temperature,
+            humidity: data.humidity,
+            uv_index: data.uv_index,
+        };
+        await this.updateEnvironment(data.batch_id, environment);
+    }
+
+    // Save Log for data upload faillure
+    getErrorLog(batch_id: number) {
+        const kr_time = new Date().toLocaleString();
+        const errorLog = `batch id: ${batch_id} - Image upload failes\n\n
+        ${JSON.stringify(kr_time)}\n\n`;
+
+        return errorLog;
     }
 }
