@@ -52,7 +52,7 @@ export class WebResultController {
             const conditionResult = this.webResult.check(condition.moisture, condition.sebum);
 
             result.push({
-                measurement: 'skin_condition',
+                measurement: 'skin condition',
                 value: null,
                 date: '2023-07-19T00:00:00.000Z',
                 time: '07:44:30.439',
