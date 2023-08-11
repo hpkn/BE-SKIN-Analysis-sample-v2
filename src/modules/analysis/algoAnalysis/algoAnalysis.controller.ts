@@ -41,10 +41,9 @@ import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middlew
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { AllResponse } from 'src/common/interfaces/swaggerResponse.interface';
+
 import * as jwt from 'jsonwebtoken';
-import { JwtPayload } from 'src/common/middleWare/authMiddlware/jwt-payload.interface';
-import { iteratee } from 'lodash';
+import * as fs from 'fs';
 
 @ApiTags('Analysis')
 @Controller('analysis')
@@ -1059,12 +1058,12 @@ export class AlgoAnalysisController {
             const retunAnalyzed: any[] = [];
             const returnOriginal: any[] = [];
             const scores: number[] = JSON.parse(data.args).score;
+            const savingPromise: Promise<any>[] = [];
+
             let sum = 0;
             const imageRecords = uuidv4();
             const computation = this.computation.computationResult(data.type, data.answers, scores);
-            const average = (sum / scores.length).toFixed(2);
 
-            console.log(average);
             for (let i = 0; i < files.analyzedImage?.length; i++) {
                 sum += scores[1];
                 const imageArg = this.AlgoAnalysis.handleImageArg(data);
@@ -1099,6 +1098,15 @@ export class AlgoAnalysisController {
                         score_average: (sum / scores.length).toFixed(2),
                     }),
                 ]);
+
+                //  Image saving
+                const savingData = this.AlgoAnalysis.offlineCBBSaveImage(
+                    files?.originalImage[i].buffer,
+                    files?.analyzedImage[i].buffer,
+                    imageArg,
+                    data,
+                );
+                savingPromise.push(savingData);
             }
 
             const saveOriginal = original.map((item) => {
@@ -1169,7 +1177,14 @@ export class AlgoAnalysisController {
                 );
             });
 
-            // await Promise.all(savingPromise);
+            await Promise.all(savingPromise).catch((e) => {
+                Promise.all(savingPromise).catch((e) => {
+                    fs.appendFile('error.log', this.AlgoAnalysis.getErrorLog(data.barch_id), 'utf8', (err) => {
+                        if (err) throw err;
+                    });
+                });
+            });
+            await this.AlgoAnalysis.updateData(data, imageRecords);
         } catch (error) {
             console.error(error);
             throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);

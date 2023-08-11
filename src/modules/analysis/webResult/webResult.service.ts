@@ -6,6 +6,47 @@ import { DatabaseService } from 'src/database/database.service';
 export class WebResultService {
     constructor(private database: DatabaseService) {}
 
+    skinCondition(moistureT: number, moistureU: number, sebumT: number, sebumU: number) {
+        let moisture = null;
+        if (moistureT !== null || moistureU !== null) {
+            moisture = (moistureT + moistureU) / 2;
+        }
+        let sebum = null;
+        if (sebumT !== null || sebumU !== null) {
+            sebum = (sebumT + moistureU) / 2;
+        }
+        return {
+            moisture: Math.floor(moisture),
+            sebum: Math.floor(sebum),
+        };
+    }
+
+    check(moisture: number, sebum: number) {
+        if ((moisture <= 33 && sebum <= 33) || sebum <= 33 || moisture <= 33) {
+            return {
+                keyword_value: 'Dry Skin',
+                keyword_id: 1,
+            }; // 1; //Dry
+        } else if (sebum >= 66) {
+            return {
+                keyword_value: 'Oily Skin',
+                keyword_id: 4,
+            }; //4; //Oily
+        } else if ((sebum <= 34 && sebum <= 66) || sebum !== 50 || moisture !== 50) {
+            return {
+                keyword_value: 'combination Skin',
+                keyword_id: 3,
+            }; //3; // combination
+        } else if ((moisture === 50 && sebum === 50) || moisture === 50) {
+            return {
+                keyword_value: 'Normal Skin',
+                keyword_id: 2,
+            };
+        } else {
+            return null;
+        }
+    }
+
     async webResult(batch_id: number) {
         const result = await this.database.executeQuery(
             `
