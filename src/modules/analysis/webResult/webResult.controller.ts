@@ -25,7 +25,6 @@ export class WebResultController {
 
                 result[i].value = +result[i].value;
                 for (let j = 0; j < avg.length; j++) {
-                    console.log('here', result[i]['measurement'], avg[j].measurement);
                     if (result[i]['measurement'] === avg[j].measurement) {
                         result[i]['avg_value'] = parseFloat(avg[i].avg);
                         result[i]['keyword_value'] = avg[i]['keyword_value'];
@@ -33,6 +32,19 @@ export class WebResultController {
                     }
                 }
             }
+
+            result.push({
+                measurement: 'skin_condition',
+                value: null,
+                date: '2023-07-19T00:00:00.000Z',
+                time: '07:44:30.439',
+                original_image_url: null,
+                analyzed_image_url: null,
+                avg_value: null,
+                keyword_value: 'Very Dry',
+                keyword_id: 5,
+            });
+
             return res.status(200).json({
                 status: 200,
                 service: 'getAnalysisData for WebResult',
@@ -44,4 +56,3 @@ export class WebResultController {
         }
     }
 }
-

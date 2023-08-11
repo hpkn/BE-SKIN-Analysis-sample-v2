@@ -1156,26 +1156,27 @@ export class AlgoAnalysisService {
         if (!dataObject || dataObject.length === 0) {
             return;
         }
-        const placeholders = dataObject.map(() => '(?, ?, ?, ?, ?, ?, ?, ?)').join(', ');
-        const values = dataObject.flatMap((item) => [
-            item.batch_id,
-            item.url,
-            item.sys_url,
-            item.hash,
-            item.type_measurement_id,
-            item.type_image_id,
-            item.args, // Convert args object to JSON
-            item.scores, // Convert scores object to JSON
-        ]);
 
         const query = `
-        INSERT INTO your_table_name
+        INSERT INTO measurements
           (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores)
-        VALUES ${placeholders}
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
       `;
 
-        console.log(values);
-        this.database.executeQuery(query, values);
+        for (const data of dataObject) {
+            const values = [
+                data.batch_id,
+                data.url,
+                data.sys_url,
+                data.hash,
+                data.type_measurement_id,
+                data.type_image_id,
+                data.args,
+                data.scores,
+            ];
+
+            this.database.executeQuery(query, values);
+        }
 
         // await this.batchAnalysis.updateEnvironment(data.batchId, environment);
 

@@ -968,7 +968,7 @@ export class AlgoAnalysisController {
                                 {
                                     batchId: 426416,
                                     algorithm_type: 'spots',
-                                    ver: 'CDS_SP_2.1.2',
+                                    // ver: 'CDS_SP_2.1.2',
                                     score: 60,
                                     analyzedImage: {
                                         id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
@@ -978,15 +978,15 @@ export class AlgoAnalysisController {
                                         id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
                                         url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
                                     },
-                                    maskImage: {
-                                        id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                        url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    },
+                                    // maskImage: {
+                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    // },
                                 },
                                 {
                                     batchId: 426416,
                                     algorithm_type: 'spots',
-                                    ver: 'CDS_SP_2.1.2',
+                                    // ver: 'CDS_SP_2.1.2',
                                     score: 56,
                                     analyzedImage: {
                                         id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
@@ -996,10 +996,10 @@ export class AlgoAnalysisController {
                                         id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
                                         url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
                                     },
-                                    maskImage: {
-                                        id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                        url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    },
+                                    // maskImage: {
+                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    // },
                                 },
                             ],
                         },
@@ -1054,17 +1054,19 @@ export class AlgoAnalysisController {
             data.batch_id = Number(data.batch_id);
             data.task = this.AlgoAnalysis.getTaskByAlgoType(data.type);
 
-            const analysisPromise: Promise<any>[] = [];
-            const savingPromise: Promise<any>[] = [];
             const analyzed: any[] = [];
             const original: any[] = [];
+            const retunAnalyzed: any[] = [];
+            const returnOriginal: any[] = [];
             const scores: number[] = JSON.parse(data.args).score;
             let sum = 0;
-            console.log(JSON.parse(data.args));
             const imageRecords = uuidv4();
             const computation = this.computation.computationResult(data.type, data.answers, scores);
+            const average = (sum / scores.length).toFixed(2);
 
+            console.log(average);
             for (let i = 0; i < files.analyzedImage?.length; i++) {
+                sum += scores[1];
                 const imageArg = this.AlgoAnalysis.handleImageArg(data);
                 analyzed.push([
                     data.batch_id,
@@ -1098,7 +1100,17 @@ export class AlgoAnalysisController {
                     }),
                 ]);
             }
+
             const saveOriginal = original.map((item) => {
+                returnOriginal.push({
+                    batchId: data.batch_id,
+                    algorithm_type: data.type,
+                    score: JSON.parse(item[7]).score,
+                    originalImage: {
+                        id: item[3],
+                        url: item[1],
+                    },
+                });
                 return {
                     batch_id: item[0],
                     url: item[1],
@@ -1110,8 +1122,15 @@ export class AlgoAnalysisController {
                     scores: item[7],
                 };
             });
+            //return original
 
             const saveAnalyzed = analyzed.map((item) => {
+                retunAnalyzed.push({
+                    analyzedImage: {
+                        id: item[3],
+                        url: item[1],
+                    },
+                });
                 return {
                     batch_id: item[0],
                     url: item[1],
@@ -1124,9 +1143,16 @@ export class AlgoAnalysisController {
                 };
             });
 
-            const result = [...saveAnalyzed, ...saveOriginal];
+            const newArray = returnOriginal.map((item, index) => {
+                return {
+                    ...item,
+                    analyzedImage: retunAnalyzed[index].analyzedImage,
+                };
+            });
 
-            this.AlgoAnalysis.offlineCBBSaveData(imageRecords, result);
+            const savedResult = [...saveAnalyzed, ...saveOriginal];
+
+            this.AlgoAnalysis.offlineCBBSaveData(imageRecords, savedResult);
 
             let promise1 = new Promise(function (resolve, reject) {
                 resolve(
@@ -1137,6 +1163,7 @@ export class AlgoAnalysisController {
                             computation_score: computation['computation_score'].toFixed(2),
                             questionnaire_score: computation['questionnaire_score'].toFixed(2),
                             score_average: (sum / scores.length).toFixed(2),
+                            result: [...newArray],
                         },
                     }),
                 );
