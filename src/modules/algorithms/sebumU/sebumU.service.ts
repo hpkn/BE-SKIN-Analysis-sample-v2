@@ -23,7 +23,7 @@ export class SebumUService {
         const queries = [
             {
                 variables: [
-                    data.batchId,
+                    data.batch_id,
                     analyzedImageArgs.url,
                     analyzedImageArgs.sys_url,
                     analyzedImageArgs.hash,
@@ -35,7 +35,7 @@ export class SebumUService {
             },
             {
                 variables: [
-                    data.batchId,
+                    data.batch_id,
                     originalImageArgs.url,
                     originalImageArgs.sys_url,
                     originalImageArgs.hash,

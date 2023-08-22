@@ -51,17 +51,19 @@ export class WebResultController {
             );
             const conditionResult = this.webResult.check(condition.moisture, condition.sebum);
 
-            result.push({
-                measurement: 'skin condition',
-                value: null,
-                date: '2023-07-19T00:00:00.000Z',
-                time: '07:44:30.439',
-                original_image_url: null,
-                analyzed_image_url: null,
-                avg_value: null,
-                keyword_value: conditionResult.keyword_value,
-                keyword_id: conditionResult.keyword_id,
-            });
+            if (moistureT !== null || moistureU !== null || sebumT !== null || sebumU !== null) {
+                result.push({
+                    measurement: 'skin condition',
+                    value: null,
+                    date: '2023-07-19T00:00:00.000Z',
+                    time: '07:44:30.439',
+                    original_image_url: null,
+                    analyzed_image_url: null,
+                    avg_value: null,
+                    keyword_value: conditionResult.keyword_value,
+                    keyword_id: conditionResult.keyword_id,
+                });
+            }
 
             return res.status(200).json({
                 status: 200,

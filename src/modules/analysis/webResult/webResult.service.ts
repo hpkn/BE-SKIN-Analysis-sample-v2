@@ -46,7 +46,6 @@ export class WebResultService {
             return null;
         }
     }
-
     async webResult(batch_id: number) {
         const result = await this.database.executeQuery(
             `
@@ -92,32 +91,33 @@ export class WebResultService {
     async webResultAverage(batch_id: number) {
         const result = await this.database.executeQuery(
             `
-            SELECT 
-                round(AVG((to_json(scores) ->> 'score')::numeric),2) as avg, 
-                tp.name as measurement,
-                CASE
-                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 0 AND 6 THEN 'clear'
-                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 6 AND 16 THEN 'Almost Clear'
-                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 16 AND 49 THEN 'Mild'
-                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 49 AND 80 THEN 'Moderate'
-                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 80 AND 100 THEN 'Severe'
-                    ELSE NULL -- or any default value if needed
-                END AS keyword_value,
-                CASE
-                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 0 AND 5 THEN 0
-                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 5 AND 15 THEN 1
-                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 15 AND 49 THEN 2
-                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 49 AND 80 THEN 3
-                    WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 80 AND 100 THEN 4
-                    ELSE NULL -- or any default value if needed
-                END AS keyword_id
-            FROM measurements as ms
-            JOIN type_measurements as tp ON tp."id" = ms.type_measurement_id
-            WHERE batch_id = $1 and type_image_id = 21
-            GROUP BY tp.name
+                SELECT 
+                    round(AVG((to_json(scores) ->> 'score')::numeric),2) as avg, 
+                    tp.name as measurement,
+                    CASE
+                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 0 AND 6 THEN 'clear'
+                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 6 AND 16 THEN 'Almost Clear'
+                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 16 AND 49 THEN 'Mild'
+                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 49 AND 80 THEN 'Moderate'
+                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 80 AND 100 THEN 'Severe'
+                        ELSE NULL -- or any default value if needed
+                    END AS keyword_value,
+                    CASE
+                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 0 AND 5 THEN 0
+                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 5 AND 15 THEN 1
+                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 15 AND 49 THEN 2
+                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 49 AND 80 THEN 3
+                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 80 AND 100 THEN 4
+                        ELSE NULL -- or any default value if needed
+                    END AS keyword_id
+                FROM measurements as ms
+                JOIN type_measurements as tp ON tp."id" = ms.type_measurement_id
+                WHERE batch_id = $1 and type_image_id = 21
+                GROUP BY tp.name
             `,
             [batch_id],
         );
         return result;
     }
 }
+

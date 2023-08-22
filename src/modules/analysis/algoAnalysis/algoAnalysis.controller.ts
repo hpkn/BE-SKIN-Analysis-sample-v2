@@ -453,6 +453,7 @@ export class AlgoAnalysisController {
         @UploadedFiles()
         file: { originalImage: Express.Multer.File[]; analyzedImage: Express.Multer.File[] },
     ) {
+        body.batchId = Number(body.batch_id);
         if (!file['originalImage'][0] || !file['analyzedImage'][0])
             return res.send({ status: 40002, type: 'BadRequestError', message: 'There is no necassary image file!' });
         const imageRecords = uuidv4();
@@ -714,7 +715,7 @@ export class AlgoAnalysisController {
             const decoded: any = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
             const args = {
-                customer_id: decoded['customer_id'],
+                consultant_id: decoded['consultant_id'],
                 email: decoded['email'],
                 app_id: decoded['app_id'],
             };

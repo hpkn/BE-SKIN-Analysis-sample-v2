@@ -55,7 +55,7 @@ export class MoistureDTO {
         example: 5462,
     })
     @IsNotEmpty()
-    batchId?: number;
+    batch_id?: number;
 
     @ApiProperty({
         type: String,
