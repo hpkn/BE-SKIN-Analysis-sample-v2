@@ -2,7 +2,7 @@ import { Injectable, Inject, HttpException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
 import { FileUploadService } from '../../../common/FileUpload/fileUpload.service';
 import { BatchAnalysisService } from 'src/modules/analysis/batchAnalysis/batchAnalysis.service';
-import { MoistureUDTO } from 'src/common/Dto/analysis/moistureU.dto';
+import { MoistureDTO } from 'src/common/Dto/analysis/moisture.dto';
 
 @Injectable()
 export class SebumUService {
@@ -12,7 +12,7 @@ export class SebumUService {
         private batchAnalysis: BatchAnalysisService,
     ) {}
 
-    async saveData(data: MoistureUDTO, analyzedImageArgs: any, originalImageArgs: any, imageRecords: any) {
+    async saveData(data: MoistureDTO, analyzedImageArgs: any, originalImageArgs: any, imageRecords: any) {
         // const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'sebumU');
 
         // const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'sebumU');
@@ -57,3 +57,4 @@ export class SebumUService {
         return 'saved';
     }
 }
+

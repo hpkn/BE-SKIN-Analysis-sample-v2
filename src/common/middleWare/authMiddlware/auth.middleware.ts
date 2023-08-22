@@ -1,7 +1,6 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
-
 @Injectable()
 export class AuthMiddleware implements NestMiddleware {
     private readonly secretKey = process.env.ACCESS_TOKEN_SECRET;

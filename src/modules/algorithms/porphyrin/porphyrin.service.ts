@@ -296,7 +296,6 @@ export class PorphyrinService {
                     null,
                 ],
             },
-
             {
                 variables: [
                     data.batchId,

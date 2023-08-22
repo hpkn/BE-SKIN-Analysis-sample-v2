@@ -636,7 +636,7 @@ export class AlgoAnalysisService {
             throw new HttpException(`analysis - ${data.task.taskName} -> ${data.type}`, 40004);
         }
 
-        let args = await this.handleSaving(coputaionResutl, data, taskResponse, imageRecords, image.buffer, imageArg);
+        let args = await this.handleSaving(coputaionResutl, data, taskResponse, imageRecords, image?.buffer, imageArg);
         let responseBody = {
             batchId: data.batch_id,
             algorithm_type: data.type,

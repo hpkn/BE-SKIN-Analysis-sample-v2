@@ -6,11 +6,12 @@ import { DatabaseService } from 'src/database/database.service';
 export class BatchAnalysisService {
     constructor(private database: DatabaseService) {}
 
-    async insertInAnalysis(customer_id: any) {
+    async insertInAnalysis(customer_id: any, args: any) {
+        console.log(args);
         try {
             const insert = await this.database.executeQuery(`
               INSERT INTO analysis (customer_id, args) 
-              values (${customer_id}, ${null}) RETURNING *
+              values (${customer_id}, '${args}') RETURNING *
             `);
 
             console.log(insert);

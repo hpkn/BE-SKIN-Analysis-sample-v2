@@ -1,6 +1,15 @@
+// batch_id
+// type
+// deviceModel
+// deviceOS
+// lat
+// long
+// temperature
+// humidity
+// uv_index
+// positionNumber
 import { IsNumber, Min, IsOptional, IsString, IsNotEmpty } from 'class-validator';
 import { Type } from 'class-transformer';
-import { isNull } from 'util';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ArgsDTO {
@@ -23,7 +32,7 @@ export class AlgoDTO {
     algoName?: string;
 }
 
-export class OfflineDatasDTO {
+export class MoistureDTO {
     @ApiProperty({
         type: 'array',
         items: { type: 'string', format: 'binary' },
@@ -46,7 +55,7 @@ export class OfflineDatasDTO {
         example: 5462,
     })
     @IsNotEmpty()
-    batchId?: number;
+    batch_id?: number;
 
     @ApiProperty({
         type: String,
@@ -119,17 +128,17 @@ export class OfflineDatasDTO {
     })
     computation_score?: number | null;
 
-    @ApiPropertyOptional({
-        type: String,
-        description: 'This is required',
-        example: 20,
-    })
-    score_average?: number | null;
-
-    @IsOptional()
-    task?: AlgoDTO;
-
     @ApiProperty({ type: [ArgsDTO] })
     args: ArgsDTO[];
+
+    @IsOptional()
+    // @IsString()
+    task: any;
+
+    @IsOptional()
+    raw: any;
+
+    @IsOptional()
+    score: any;
 }
 

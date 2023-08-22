@@ -1,7 +1,9 @@
 import { Controller, Body, Get, Res, Param } from '@nestjs/common';
 import { Response } from 'express';
 import { WebResultService } from './webResult.service';
+import { ApiTags } from '@nestjs/swagger';
 
+@ApiTags('WebResult')
 @Controller('web-result')
 export class WebResultController {
     constructor(private readonly webResult: WebResultService) {}
@@ -14,6 +16,11 @@ export class WebResultController {
             const avg = await this.webResult.webResultAverage(batch_id);
 
             // console.log(result);
+            let moistureT = null;
+            let moistureU = null;
+            let sebumT = null;
+            let sebumU = null;
+
             for (let i = 0; i < result.length; i++) {
                 // console.log(result[i]['measurement'] === );
                 if (result[i]['measurement'] === 'moistureT' || result[i]['measurement'] === 'moistureU') {
@@ -23,6 +30,11 @@ export class WebResultController {
 
                 result[i].value = +result[i].value;
                 for (let j = 0; j < avg.length; j++) {
+                    if (avg[j].measurement === 'moistureT') moistureT = avg[j].avg;
+                    if (avg[j].measurement === 'moistureU') moistureU = avg[j].avg;
+                    if (avg[j].measurement === 'sebumT') sebumT = avg[j].avg;
+                    if (avg[j].measurement === 'sebumU') sebumU = avg[j].avg;
+
                     if (result[i]['measurement'] === avg[j].measurement) {
                         result[i]['avg_value'] = parseFloat(avg[i].avg);
                         result[i]['keyword_value'] = avg[i]['keyword_value'];
@@ -30,6 +42,29 @@ export class WebResultController {
                     }
                 }
             }
+
+            const condition = this.webResult.skinCondition(
+                Number(moistureT),
+                Number(moistureU),
+                Number(sebumT),
+                Number(sebumU),
+            );
+            const conditionResult = this.webResult.check(condition.moisture, condition.sebum);
+
+            if(moistureT !== null || moistureU !== null || sebumT !== null || sebumU !== null){
+                result.push({
+                    measurement: 'skin condition',
+                    value: null,
+                    date: '2023-07-19T00:00:00.000Z',
+                    time: '07:44:30.439',
+                    original_image_url: null,
+                    analyzed_image_url: null,
+                    avg_value: null,
+                    keyword_value: conditionResult.keyword_value,
+                    keyword_id: conditionResult.keyword_id,
+                });
+            }
+
             return res.status(200).json({
                 status: 200,
                 service: 'getAnalysisData for WebResult',
