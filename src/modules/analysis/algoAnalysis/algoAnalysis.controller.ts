@@ -942,7 +942,7 @@ export class AlgoAnalysisController {
 
     @ApiOperation({
         summary:
-            'CBB analysis, Expecting multiple image in the same request. The response will include score average, computation and questionnaire result and an array with result for images',
+            'CBB offline analysis, Expecting multiple originalImage and analyzedImage. The response will include score average, computation and questionnaire',
         security: [{ bearerToken: [] }],
     })
     @ApiConsumes('multipart/form-data')
@@ -1009,7 +1009,7 @@ export class AlgoAnalysisController {
     })
     @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
-    @Post('datasavingCbb')
+    @Post('offlineCBB')
     @HttpCode(200)
     @UseInterceptors(
         FileFieldsInterceptor([
@@ -1028,6 +1028,14 @@ export class AlgoAnalysisController {
                     status: 40002,
                     type: 'BadRequestError',
                     message: 'No file!',
+                });
+            }
+
+            if (files?.analyzedImage.length !== files?.originalImage.length) {
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'The number of analyzed images does not match number of original images',
                 });
             }
             const algoList = [
@@ -1050,7 +1058,7 @@ export class AlgoAnalysisController {
 
             const algoId = await this.AlgoAnalysis.getAlgoID(data.type);
 
-            data.batch_id = Number(data.batch_id);
+            data.batch_id = Number(data.batchId);
             data.task = this.AlgoAnalysis.getTaskByAlgoType(data.type);
 
             const analyzed: any[] = [];
@@ -1065,7 +1073,7 @@ export class AlgoAnalysisController {
             const computation = this.computation.computationResult(data.type, data.answers, scores);
 
             for (let i = 0; i < files.analyzedImage?.length; i++) {
-                sum += scores[1];
+                sum += scores[i];
                 const imageArg = this.AlgoAnalysis.handleImageArg(data);
                 analyzed.push([
                     data.batch_id,
@@ -1191,3 +1199,4 @@ export class AlgoAnalysisController {
         }
     }
 }
+

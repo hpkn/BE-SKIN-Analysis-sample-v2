@@ -189,7 +189,7 @@ export class OfflineDataCBBDTO {
         example: 5462,
     })
     @IsNotEmpty()
-    batch_id?: number;
+    batchId?: number;
 
     @ApiPropertyOptional({
         type: String,
@@ -230,6 +230,13 @@ export class OfflineDataCBBDTO {
     @ApiProperty({
         type: String,
         description: 'This is required',
+        example: 'V_0.0.1',
+    })
+    appVersion?: String | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
         example: 45,
     })
     lat?: number | null;
@@ -262,28 +269,6 @@ export class OfflineDataCBBDTO {
     })
     uv_index?: number | null;
 
-    @ApiPropertyOptional({
-        type: String,
-        description: 'This is required',
-        example: 20,
-    })
-    questionnaire_score?: number | null;
-
-    @ApiPropertyOptional({
-        type: String,
-        description: 'This is required',
-        example: 200,
-    })
-    computation_score?: number | null;
-
-    // @ApiPropertyOptional({
-    //     type: String,
-    //     description: 'This is required',
-    //     example: 20,
-    // })
-
-    // score_average?: number | null;
-
     @IsOptional()
     task?: AlgoDTO;
 
@@ -293,3 +278,4 @@ export class OfflineDataCBBDTO {
     @Type(() => MultiArgsDTO)
     args: MultiArgsDTO;
 }
+
