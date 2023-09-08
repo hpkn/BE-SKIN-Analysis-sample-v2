@@ -53,10 +53,10 @@ export class WebResultController {
 
             if(moistureT !== null || moistureU !== null || sebumT !== null || sebumU !== null){
                 result.push({
-                    measurement: 'skin condition',
+                    measurement: 'Skin Condition',
                     value: null,
-                    date: '2023-07-19T00:00:00.000Z',
-                    time: '07:44:30.439',
+                    date: null,
+                    time: null,
                     original_image_url: null,
                     analyzed_image_url: null,
                     avg_value: null,
