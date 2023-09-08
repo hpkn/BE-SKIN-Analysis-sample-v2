@@ -8,7 +8,7 @@
 // humidity
 // uv_index
 // positionNumber
-import { IsNumber, Min, IsOptional, IsString, IsNotEmpty } from 'class-validator';
+import { IsNumber, Min, IsOptional, IsString, IsNotEmpty, IsArray, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
 import { isNull } from 'util';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -131,6 +131,24 @@ export class BatchIdCheckerDto {
     batch_id: string;
 }
 
+export class SkinAgeConditionDto {
+    @IsNumber()
+    @ApiProperty({
+        type: Number,
+        description: 'This is required',
+        example: 426496,
+    })
+    batch_id: number;
+
+    @IsNumber()
+    @ApiProperty({
+        type: Number,
+        description: 'This is required',
+        example: 2000,
+    })
+    bithYear: number;
+}
+
 export class AlgoAnalysisDTO {
     @ApiProperty({
         type: 'array',
@@ -222,8 +240,15 @@ export class AlgoAnalysisDTO {
     task: any;
 }
 
-// export class ImageDto {
-//     @ApiProperty({ type: 'string', format: 'binary' })
-//     image: any; // Use 'any' type for the image data
-// }
+export class countCustomerDto {
+    @IsArray()
+    @IsInt({ each: true })
+    @Min(0, { each: true })
+    @ApiProperty({
+        type: 'array',
+        description: 'This is required',
+        example: [0, 6],
+    })
+    customer_ids: number[];
+}
 

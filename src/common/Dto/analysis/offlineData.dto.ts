@@ -164,6 +164,13 @@ export class OfflineDatasDTO {
 
     @ApiProperty({ type: [ArgsDTO] })
     args: ArgsDTO[];
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 'V_0.0.1',
+    })
+    appVersion?: String | null;
 }
 
 export class OfflineDataCBBDTO {
@@ -206,12 +213,12 @@ export class OfflineDataCBBDTO {
     birthYear?: number;
 
     @ApiProperty({
-        type: String,
+        type: Number,
         description: 'This is required',
-        example: 'keratin',
+        example: 1,
     })
     @IsString()
-    type?: string | null;
+    type?: any | null;
 
     @ApiProperty({
         type: String,

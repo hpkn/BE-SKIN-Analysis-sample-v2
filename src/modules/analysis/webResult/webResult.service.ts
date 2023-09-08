@@ -7,6 +7,7 @@ export class WebResultService {
     constructor(private database: DatabaseService) {}
 
     skinCondition(moistureT: number, moistureU: number, sebumT: number, sebumU: number) {
+        console.log(moistureT, moistureU, sebumT, sebumU, sebumU);
         let moisture = null;
         if (moistureT !== null || moistureU !== null) {
             moisture = (moistureT + moistureU) / 2;
@@ -15,14 +16,20 @@ export class WebResultService {
         if (sebumT !== null || sebumU !== null) {
             sebum = (sebumT + moistureU) / 2;
         }
+        console.log(moisture, sebum);
         return {
-            moisture: Math.floor(moisture),
-            sebum: Math.floor(sebum),
+            moisture: moisture,
+            sebum: sebum,
         };
     }
 
     check(moisture: number, sebum: number) {
-        if ((moisture <= 33 && sebum <= 33) || sebum <= 33 || moisture <= 33) {
+        if ((moisture === null && sebum === null) || moisture === null) {
+            return {
+                keyword_value: '',
+                keyword_id: 0,
+            };
+        } else if ((moisture <= 33 && sebum <= 33) || moisture <= 33) {
             return {
                 keyword_value: 'Dry Skin',
                 keyword_id: 1,
@@ -95,7 +102,7 @@ export class WebResultService {
                     round(AVG((to_json(scores) ->> 'score')::numeric),2) as avg, 
                     tp.name as measurement,
                     CASE
-                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 0 AND 6 THEN 'clear'
+                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 0 AND 6 THEN 'Clear'
                         WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 6 AND 16 THEN 'Almost Clear'
                         WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 16 AND 49 THEN 'Mild'
                         WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 49 AND 80 THEN 'Moderate'
