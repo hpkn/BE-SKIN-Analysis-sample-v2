@@ -81,6 +81,7 @@ export class FitzSGService {
             humidity: data.humidity,
             uv_index: data.uv_index,
             positionNumber: data.positionNumber,
+            
         };
 
         await this.batchAnalysis.updateEnvironment(data.batch_id, environment);

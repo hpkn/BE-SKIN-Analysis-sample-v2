@@ -786,21 +786,20 @@ export class AlgoAnalysisService {
 
     async updateEnvironment(batch_id: number, environment: any) {
         try {
-            let data = JSON.stringify(environment);
-
-            console.log('batch_id', batch_id);
-            const update = await this.database.executeQuery(
-                `
-                UPDATE analysis
-                SET args = args::jsonb || '${data}' :: jsonb
-                WHERE batch_id = ${batch_id}
-                `,
-            );
-            return update;
+          let data = JSON.stringify(environment);
+    
+          const update = `
+                    UPDATE analysis
+                    SET args = $1
+                    WHERE batch_id = $2
+                  `;
+    
+          this.database.executeQuery(update, [data, batch_id]);
+          return update;
         } catch (e) {
-            console.log('check', e);
+          console.log('check', e);
         }
-    }
+      }
 
     async finalSave(
         coputaionResutl: any,
@@ -1391,6 +1390,9 @@ export class AlgoAnalysisService {
             temperature: data.temperature,
             humidity: data.humidity,
             uv_index: data.uv_index,
+            appVersion: data.appVersion,
+            
+
         };
         await this.updateEnvironment(data.batch_id, environment);
     }
