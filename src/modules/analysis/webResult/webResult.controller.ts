@@ -51,7 +51,7 @@ export class WebResultController {
             );
             const conditionResult = this.webResult.check(condition.moisture, condition.sebum);
 
-            if(moistureT !== null || moistureU !== null || sebumT !== null || sebumU !== null){
+            if (moistureT !== null || moistureU !== null || sebumT !== null || sebumU !== null) {
                 result.push({
                     measurement: 'Skin Condition',
                     value: null,
@@ -76,3 +76,4 @@ export class WebResultController {
         }
     }
 }
+
