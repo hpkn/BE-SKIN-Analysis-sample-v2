@@ -15,6 +15,7 @@ export class SebumUService {
     async saveData(data: MoistureDTO, analyzedImageArgs: any, originalImageArgs: any, imageRecords: any) {
         // const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'sebumU');
 
+        console.log(data);
         // const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'sebumU');
 
         const saveSql =
@@ -45,6 +46,8 @@ export class SebumUService {
                     JSON.stringify({
                         raw: data.raw,
                         score: data.score,
+                        skinAge: data.skinAge,
+                        skinCondition: data.skinCondition,
                     }),
                 ],
             },

@@ -1080,6 +1080,8 @@ export class AlgoAnalysisController {
 
             const skinCondition = this.webResult.check(moisture, sebum);
 
+            await this.AlgoAnalysis.saveSkinValue(Number(batch_id), skinCondition['keyword_value'], skinAge);
+
             return res.status(200).json({
                 status: 200,
                 message: 'Success',

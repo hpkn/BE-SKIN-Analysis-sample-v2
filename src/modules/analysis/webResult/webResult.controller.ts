@@ -15,6 +15,8 @@ export class WebResultController {
 
             const avg = await this.webResult.webResultAverage(batch_id);
 
+            const skinAge = await this.webResult.getSkinAge(batch_id);
+
             // console.log(result);
             let moistureT = null;
             let moistureU = null;
@@ -37,6 +39,7 @@ export class WebResultController {
 
                     if (result[i]['measurement'] === avg[j].measurement) {
                         result[i]['avg_value'] = parseFloat(avg[i].avg);
+                        // result[i]['computation_score'] = parseFloat(avg[i].computation_score);
                         result[i]['keyword_value'] = avg[i]['keyword_value'];
                         result[i]['keyword_id'] = parseFloat(avg[i].keyword_id);
                     }
@@ -65,6 +68,19 @@ export class WebResultController {
                 });
             }
 
+            if (skinAge[0]?.skin_age) {
+                result.push({
+                    measurement: 'SkinAge',
+                    value: Number(skinAge[0]?.skin_age),
+                    date: skinAge[0]?.date,
+                    time: skinAge[0]?.time,
+                    original_image_url: null,
+                    analyzed_image_url: null,
+                    avg_value: null,
+                    keyword_value: Number(skinAge[0]?.skin_age),
+                    keyword_id: null,
+                });
+            }
             return res.status(200).json({
                 status: 200,
                 service: 'getAnalysisData for WebResult',

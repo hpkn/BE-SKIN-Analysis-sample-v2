@@ -65,6 +65,20 @@ export class MoistureDTO {
     @IsString()
     type?: string | null;
 
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is required',
+        example: '29',
+    })
+    skinAge?: string | null;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is required',
+        example: 'Mild',
+    })
+    skinCondition?: string | null;
+
     @ApiProperty({
         type: String,
         description: 'This is required',
@@ -128,16 +142,26 @@ export class MoistureDTO {
     })
     computation_score?: number | null;
 
-    @ApiProperty({ type: [ArgsDTO] })
-    args: ArgsDTO[];
+    // @ApiProperty({ type: [ArgsDTO] })
+    // args: ArgsDTO[];
 
     @IsOptional()
     // @IsString()
     task: any;
 
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 200,
+    })
     @IsOptional()
     raw: any;
 
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 200,
+    })
     @IsOptional()
     score: any;
 }
