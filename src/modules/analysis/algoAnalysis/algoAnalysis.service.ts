@@ -1150,7 +1150,8 @@ export class AlgoAnalysisService {
                         LEFT JOIN type_measurements tm ON tm.ID = ms.type_measurement_id 
                     WHERE
                         (
-                            type_measurement_id = 17 
+                            type_measurement_id = 17
+                            OR type_measurement_id = 16  
                             OR type_measurement_id = 9 
                             OR type_measurement_id = 5 
                             OR type_measurement_id = 11 
@@ -1180,7 +1181,8 @@ export class AlgoAnalysisService {
                         measurements AS ms
                         LEFT JOIN type_images AS tpi ON tpi.ID = ms.type_image_id 
                     ) AS img ON img.batch_id = record.batch_id 
-                    WHERE record.type_measurement_id = img.type_measurement_id AND record.unique_id = img.unique_id
+                    WHERE record.type_measurement_id = img.type_measurement_id 
+                    AND (record.unique_id = img.unique_id OR record."analysis_type" = 'moistureT' OR record."analysis_type" = 'moistureU')
                 GROUP BY
                     record.analysis_type,
                     record.args,
