@@ -59,7 +59,8 @@ export class WebResultService {
             WITH _results AS (
                 SELECT DISTINCT
                     type_measurements."name" AS measurement,
-                    to_json(original_img.scores) ->> 'score' as value, 
+                    to_json(original_img.scores) ->> 'score' as value,
+                    to_json(original_img.scores) ->> 'computation_score' as computation_score,
                     record.created_time::date as date,
                     record.created_time::time as time,
                     original_img.url AS original_image_url,
@@ -78,6 +79,7 @@ export class WebResultService {
             SELECT
                 measurement,
                 value,
+                computation_score,
                 date,
                 time,
                 original_image_url,
@@ -100,6 +102,7 @@ export class WebResultService {
             `
                 SELECT 
                     round(AVG((to_json(scores) ->> 'score')::numeric),2) as avg, 
+                     
                     tp.name as measurement,
                     CASE
                         WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 0 AND 6 THEN 'Clear'
@@ -124,6 +127,17 @@ export class WebResultService {
             `,
             [batch_id],
         );
+        return result;
+    }
+
+    async getSkinAge(batch_id: number) {
+        const result = await this.database.executeQuery(
+            `SELECT scores ->> 'skinAge' as skin_age, created_time::date as date, created_time::time as time
+            FROM measurements 
+            WHERE batch_id = $1 AND type_image_id = 21 AND type_measurement_id = 5`,
+            [batch_id],
+        );
+
         return result;
     }
 }

@@ -786,20 +786,20 @@ export class AlgoAnalysisService {
 
     async updateEnvironment(batch_id: number, environment: any) {
         try {
-          let data = JSON.stringify(environment);
-    
-          const update = `
+            let data = JSON.stringify(environment);
+
+            const update = `
                     UPDATE analysis
                     SET args = $1
                     WHERE batch_id = $2
                   `;
-    
-          this.database.executeQuery(update, [data, batch_id]);
-          return update;
+
+            this.database.executeQuery(update, [data, batch_id]);
+            return update;
         } catch (e) {
-          console.log('check', e);
+            console.log('check', e);
         }
-      }
+    }
 
     async finalSave(
         coputaionResutl: any,
@@ -851,39 +851,124 @@ export class AlgoAnalysisService {
     }
 
     async getAnalysisData(batch_id: any) {
-        console.log('here param', batch_id);
         try {
             const mesureId = await this.database.executeQuery(
-                `SELECT 
-                    analysis.batch_id,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 1 ), 2 ) AS pores_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 2 ), 2 ) AS sensitivity_scaling_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 3 ), 2 ) AS porphiryn_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 4 ), 2 ) AS wrinkles_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 5 ), 2 ) AS sebum_u_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 6 ), 2 ) AS skintone_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 8 ), 2 ) AS spots_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 9 ), 2 ) AS sebum_t_score, 
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 10 ), 2 ) AS shine_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 11 ), 2 ) AS keratin_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 12 ), 2 ) AS sensitivity_redness_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 14 ), 2 ) AS sensitivity_scabs_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 15 ), 2 ) AS sebum_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 16 ), 2 ) AS moisture_t_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 17 ), 2 ) AS moisture_u_score
-                FROM analysis
-                    LEFT JOIN answers_to_questions ON analysis.batch_id = answers_to_questions.batch_id
-                    LEFT JOIN measurements ON analysis.batch_id = measurements.batch_id
-                    LEFT JOIN type_measurements ON type_measurement_id = type_measurements."id" 
-                WHERE
-                    analysis.batch_id = $1 
-                    AND type_image_id = 21    
-                GROUP BY analysis.batch_id`,
+                `SELECT
+                analysis.batch_id,
+                to_timestamp( CAST ( analysis.created_time AS TEXT ), 'YYYY-MM-DD HH24:MI:SS' ) AS DATE,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 1 ), 2 ) AS pores_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 1 ), 2 ) AS pores_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 2 ), 2 ) AS sensitivity_scaling_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 2 ), 2 ) AS sensitivity_scaling_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 3 ), 2 ) AS porphiryn_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 3 ), 2 ) AS porphiryn_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 4 ), 2 ) AS wrinkles_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 4 ), 4 ) AS wrinkles_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 5 ), 2 ) AS sebum_u_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 5 ), 5 ) AS sebum_u_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 6 ), 2 ) AS skintone_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 6 ), 2 ) AS skintone_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 8 ), 2 ) AS spots_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 8 ), 2 ) AS spots_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 9 ), 2 ) AS sebum_t_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 9 ), 2 ) AS sebum_t_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 10 ), 2 ) AS shine_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 10 ), 2 ) AS shine_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 11 ), 2 ) AS keratin_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 11 ), 2 ) AS keratin_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 12 ), 2 ) AS sensitivity_redness_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 12 ), 2 ) AS sensitivity_redness_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 14 ), 2 ) AS sensitivity_scabs_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 14 ), 2 ) AS sensitivity_scabs_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 15 ), 2 ) AS sebum_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 15 ), 2 ) AS sebum_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 16 ), 2 ) AS moisture_t_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 16 ), 2 ) AS moisture_t_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 17 ), 2 ) AS moisture_u_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 17 ), 2 ) AS moisture_u_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 18 ), 2 ) AS moisture_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 18 ), 2 ) AS moisture_computation
+            FROM
+                analysis
+                LEFT JOIN answers_to_questions ON analysis.batch_id = answers_to_questions.batch_id
+                LEFT JOIN measurements ON analysis.batch_id = measurements.batch_id
+                LEFT JOIN type_measurements ON type_measurement_id = type_measurements."id" 
+            WHERE
+                analysis.batch_id = $1 
+                AND type_image_id = 21 
+            GROUP BY
+                analysis.batch_id`,
                 [batch_id],
             );
-            console.log('here we are', mesureId);
 
-            return mesureId[0];
+            // mesureId[0].filter((result) => result !== undefined);
+            const val = mesureId[0];
+            const final = {
+                ...val,
+                // keratin
+                keratin_computation: val.keratin_computation === null ? val.keratin_score : val.keratin_computation,
+                // pores
+
+                pores_computation: val.pores_computation === null ? val.pores_score : val.pores_computation,
+                // sensitivity_redness
+                sensitivity_redness_computation:
+                    val.sensitivity_redness_computation === null
+                        ? val.sensitivity_redness_score
+                        : val.sensitivity_redness_computation,
+                // spots
+
+                spots_computation: val.spots_computation === null ? val.spots_score : val.spots_computation,
+                //wrinkles
+
+                wrinkles_computation: val.wrinkles_computation === null ? val.wrinkles_score : val.wrinkles_computation,
+                // porphyrim
+
+                porphiryn_computation:
+                    val.porphiryn_computation === null ? val.porphiryn_score : val.porphiryn_computation,
+                //moisture
+
+                moisture_computation: val.moisture_computation === null ? val.moisture_score : val.moisture_computation,
+                //sebum
+
+                sebum_computation: val.sebum_computation === null ? val.sebum_score : val.sebumn_computation,
+                //shine
+
+                shine_computation: val.shine_computation === null ? val.shine_score : val.shine_computation,
+                //skintone
+
+                skintone_computation: val.skintone_computation === null ? val.skintone_score : val.skintone_computation,
+                // sensitivity_scabs
+
+                sensitivity_scabs_computation:
+                    val.sensitivity_scabs_computation === null
+                        ? val.sensitivity_scabs_score
+                        : val.sensitivity_scabs_computation,
+                // sensitivity_scaling
+
+                sensitivity_scaling_computation:
+                    val.sensitivity_scaling_computation === null
+                        ? val.sensitivity_scaling_score
+                        : val.sensitivity_scaling_computation,
+                //moisture_u
+
+                moisture_u_computation:
+                    val.moisture_u_computation === null ? val.moisture_u_score : val.moisture_u_computation,
+                // moisture_t_score
+
+                moisture_t_computation:
+                    val.moisture_t_computation === null ? val.moisture_t_score : val.moisture_t_computation,
+                //sebum_u
+
+                sebum_u_computation: val.sebum_u_computation === null ? val.sebum_u_score : val.sebum_u_computation,
+
+                // sebum_t
+
+                sebum_t_computation: val.sebum_t_computation === null ? val.sebum_t_score : val.sebum_t_computation,
+            };
+
+            return final;
+
+            // return mesureId[0];
             // if (mesureId['rows'][0]['id']) {
             //     return mesureId['rows'][0]['id'];
             // } else {
@@ -921,33 +1006,51 @@ export class AlgoAnalysisService {
 
     async getAnalysisByBatchId(batch_id: number) {
         const result = await this.database.executeQuery(
-            `SELECT 
-                    analysis.batch_id,
-                    to_timestamp(cast(analysis.created_time as TEXT), 'YYYY-MM-DD HH24:MI:SS') AS date,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 1 ), 2 ) AS pores_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 2 ), 2 ) AS sensitivity_scaling_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 3 ), 2 ) AS porphiryn_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 4 ), 2 ) AS wrinkles_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 5 ), 2 ) AS sebum_u_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 6 ), 2 ) AS skintone_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 8 ), 2 ) AS spots_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 9 ), 2 ) AS sebum_t_score, 
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 10 ), 2 ) AS shine_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 11 ), 2 ) AS keratin_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 12 ), 2 ) AS sensitivity_redness_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 14 ), 2 ) AS sensitivity_scabs_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 15 ), 2 ) AS sebum_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 16 ), 2 ) AS moisture_t_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 17 ), 2 ) AS moisture_u_score,
-                    ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 18 ), 2 ) AS moisture_score
-                FROM analysis
-                    LEFT JOIN answers_to_questions ON analysis.batch_id = answers_to_questions.batch_id
-                    LEFT JOIN measurements ON analysis.batch_id = measurements.batch_id
-                    LEFT JOIN type_measurements ON type_measurement_id = type_measurements."id" 
-                WHERE
-                    analysis.batch_id = $1 
-                    AND type_image_id = 21    
-                GROUP BY analysis.batch_id`,
+            `SELECT
+                analysis.batch_id,
+                to_timestamp( CAST ( analysis.created_time AS TEXT ), 'YYYY-MM-DD HH24:MI:SS' ) AS DATE,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 1 ), 2 ) AS pores_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 1 ), 2 ) AS pores_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 2 ), 2 ) AS sensitivity_scaling_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 2 ), 2 ) AS sensitivity_scaling_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 3 ), 2 ) AS porphiryn_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 3 ), 2 ) AS porphiryn_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 4 ), 2 ) AS wrinkles_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 4 ), 4 ) AS wrinkles_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 5 ), 2 ) AS sebum_u_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 5 ), 5 ) AS sebum_u_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 6 ), 2 ) AS skintone_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 6 ), 2 ) AS skintone_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 8 ), 2 ) AS spots_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 8 ), 2 ) AS spots_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 9 ), 2 ) AS sebum_t_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 9 ), 2 ) AS sebum_t_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 10 ), 2 ) AS shine_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 10 ), 2 ) AS shine_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 11 ), 2 ) AS keratin_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 11 ), 2 ) AS keratin_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 12 ), 2 ) AS sensitivity_redness_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 12 ), 2 ) AS sensitivity_redness_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 14 ), 2 ) AS sensitivity_scabs_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 14 ), 2 ) AS sensitivity_scabs_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 15 ), 2 ) AS sebum_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 15 ), 2 ) AS sebum_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 16 ), 2 ) AS moisture_t_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 16 ), 2 ) AS moisture_t_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 17 ), 2 ) AS moisture_u_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 17 ), 2 ) AS moisture_u_computation,
+                ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 18 ), 2 ) AS moisture_score,
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 18 ), 2 ) AS moisture_computation
+            FROM
+                analysis
+                LEFT JOIN answers_to_questions ON analysis.batch_id = answers_to_questions.batch_id
+                LEFT JOIN measurements ON analysis.batch_id = measurements.batch_id
+                LEFT JOIN type_measurements ON type_measurement_id = type_measurements."id" 
+            WHERE
+                analysis.batch_id = $1 
+                AND type_image_id = 21 
+            GROUP BY
+                analysis.batch_id`,
             [batch_id],
         );
         return result[0];
@@ -981,6 +1084,7 @@ export class AlgoAnalysisService {
             promises.push(this.getAnalysisByBatchId(batchId['batch_id']));
         }
 
+        // computation
         try {
             const resultObj = await Promise.all(promises);
             // remooving empty object
@@ -988,25 +1092,81 @@ export class AlgoAnalysisService {
             nonEmptyResults.map((val) => {
                 val.customer_id = customer_id;
                 val.sens_redness_combined_score = null;
+                // keratin
                 val.keratin_score = val.keratin_score === null ? null : Number(val.keratin_score);
-                val.pores_score = val.pores_score === null ? null : Number(val.pores_score);
+                val.keratin_computation =
+                    val.keratin_computation === null ? val.keratin_score : val.keratin_computation;
+                // pores
+                val.pores_score =
+                    val.pores_score !== null
+                        ? isNaN(parseFloat(val.pores_score))
+                            ? null
+                            : parseFloat(val.pores_score)
+                        : null;
+                val.pores_computation = val.pores_computation === null ? val.pores_score : val.pores_computation;
+                // sensitivity_redness
                 val.sensitivity_redness_score =
                     val.sensitivity_redness_score === null ? null : Number(val.sensitivity_redness_score);
+                val.sensitivity_redness_computation =
+                    val.sensitivity_redness_computation === null
+                        ? val.sensitivity_redness_score
+                        : val.sensitivity_redness_computation;
+                // spots
                 val.spots_score = val.spots_score === null ? null : Number(val.spots_score);
+                val.spots_computation = val.spots_computation === null ? val.spots_score : val.spots_computation;
+                //wrinkles
                 val.wrinkles_score = val.wrinkles_score === null ? null : Number(val.wrinkles_score);
+                val.wrinkles_computation =
+                    val.wrinkles_computation === null ? val.wrinkles_score : val.wrinkles_computation;
+                // porphyrim
                 val.porphiryn_score = val.porphiryn_score === null ? null : Number(val.porphiryn_score);
+                val.porphiryn_computation =
+                    val.porphiryn_computation === null ? val.porphiryn_score : val.porphiryn_computation;
+                //moisture
                 val.moisture_score = val.moisture_score === null ? null : Number(val.moisture_score);
+                val.moisture_computation =
+                    val.moisture_computation === null ? val.moisture_score : val.moisture_computation;
+                //sebum
                 val.sebum_score = val.sebum_score === null ? null : Number(val.sebum_score);
+                val.sebum_computation = val.sebum_computation === null ? val.sebum_score : val.sebumn_computation;
+                //shine
                 val.shine_score = val.shine_score === null ? null : Number(val.shine_score);
+                val.shine_computation = val.shine_computation === null ? val.shine_score : val.shine_computation;
+                //skintone
                 val.skintone_score = val.skintone_score === null ? null : Number(val.skintone_score);
+                val.skintone_computation =
+                    val.skintone_computation === null ? val.skintone_score : val.skintone_computation;
+                // sensitivity_scabs
                 val.sensitivity_scabs_score =
                     val.sensitivity_scabs_score === null ? null : Number(val.sensitivity_scabs_score);
+                val.sensitivity_scabs_computation =
+                    val.sensitivity_scabs_computation === null
+                        ? val.sensitivity_scabs_score
+                        : val.sensitivity_scabs_computation;
+                // sensitivity_scaling
                 val.sensitivity_scaling_score =
                     val.sensitivity_scaling_score === null ? null : Number(val.sensitivity_scaling_score);
+                val.sensitivity_scaling_computation =
+                    val.sensitivity_scaling_computation === null
+                        ? val.sensitivity_scaling_score
+                        : val.sensitivity_scaling_computation;
+                //moisture_u
                 val.moisture_u_score = val.moisture_u_score === null ? null : Number(val.moisture_u_score);
+                val.moisture_u_computation =
+                    val.moisture_u_computation === null ? val.moisture_u_score : val.moisture_u_computation;
+                // moisture_t_score
                 val.moisture_t_score = val.moisture_t_score === null ? null : Number(val.moisture_t_score);
+                val.moisture_t_computation =
+                    val.moisture_t_computation === null ? val.moisture_t_score : val.moisture_t_computation;
+                //sebum_u
                 val.sebum_u_score = val.sebum_u_score === null ? null : Number(val.sebum_u_score);
+                val.sebum_u_computation =
+                    val.sebum_u_computation === null ? val.sebum_u_score : val.sebum_u_computation;
+
+                // sebum_t
                 val.sebum_t_score = val.sebum_t_score === null ? null : Number(val.sebum_t_score);
+                val.sebum_t_computation =
+                    val.sebum_t_computation === null ? val.sebum_t_score : val.sebum_t_computation;
             });
 
             return nonEmptyResults;
@@ -1493,6 +1653,27 @@ export class AlgoAnalysisService {
             moistureU: moistureU,
             sebumU: sebumU,
         };
+    }
+
+    async saveSkinValue(batch_id: number, skinCondtion: any, skinAge: any) {
+        const condition = skinCondtion.length === 0 ? '-1' : skinCondtion;
+        try {
+            const update = `
+                UPDATE measurements 
+                SET scores =
+                    CASE
+                        WHEN scores ->> 'skinCondtion' IS NULL 
+                        AND scores ->> 'skinAge' IS NULL THEN
+                            jsonb_set ( jsonb_set ( scores, '{skinCondtion}', $1, TRUE ), '{skinAge}', $2, TRUE ) ELSE scores 
+                    END 
+                WHERE batch_id = $3 AND type_measurement_id = 5 AND type_image_id = 21
+            `;
+
+            this.database.executeQuery(update, [JSON.stringify(condition), JSON.stringify(skinAge), batch_id]);
+            return update;
+        } catch (e) {
+            console.log('check', e);
+        }
     }
 }
 
