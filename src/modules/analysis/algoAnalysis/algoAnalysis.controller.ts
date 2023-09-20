@@ -12,6 +12,7 @@ import {
     HttpException,
     HttpCode,
     UseGuards,
+    Delete,
 } from '@nestjs/common';
 import * as celery from 'celery-node';
 import { Response } from 'express';
@@ -29,6 +30,7 @@ import { SkinToneDiorService } from 'src/modules/algorithms/skinToneDior/skinTon
 import { OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
 import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
+import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 
 @Controller('analysis')
 @UseGuards(AuthMiddleware)
@@ -42,8 +44,9 @@ export class AlgoAnalysisController {
         private readonly S3Image: FileUploadService,
         private readonly diorTone: SkinToneDiorService,
         private readonly batchAnalysis: BatchAnalysisService,
+        private readonly computation: ComputationService,
     ) {}
-    // @UseGuards(AuthMiddleware)
+    @UseGuards(AuthMiddleware)
     @Post('')
     @HttpCode(200)
     @UseInterceptors(FileInterceptor('image'))
@@ -60,6 +63,7 @@ export class AlgoAnalysisController {
             });
 
         data.batch_id = Number(data.batch_id);
+        console.log(data.batch_id);
         const imageRecords = uuidv4();
         const client = celery.createClient('redis://localhost', 'redis://');
         let algoList = [
@@ -115,11 +119,26 @@ export class AlgoAnalysisController {
         const imageArg = this.AlgoAnalysis.handleImageArg(data);
 
         const result_ = await this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse, imageArg);
+        // const computation = this.computation.computationResult(data.type, data.answers, result_.score);
+        // result_.computation_score = computation['computation_score'];
+        // result_.questionnaire_score = computation['questionnaire_score'];
+
+        // result_.computation = computation;
         let promise1 = new Promise(function (resolve, reject) {
             resolve(res.send({ status: 200, message: 'Success', body: result_ }));
         });
+        const coputaionResutl: any = {};
 
-        const saving = await this.AlgoAnalysis.finalSave(data, image, imageRecords, taskResponse, imageArg);
+        // coputaionResutl.computation_score = computation['computation_score'];
+        // coputaionResutl.questionnaire_score = computation['questionnaire_score'];
+        const saving = await this.AlgoAnalysis.finalSave(
+            coputaionResutl,
+            data,
+            image,
+            imageRecords,
+            taskResponse,
+            imageArg,
+        );
         let promise2 = new Promise(function (resolve, resject) {
             resolve(saving);
         });
@@ -129,6 +148,7 @@ export class AlgoAnalysisController {
                 return promise2;
             })
             .catch((error) => {
+                console.log(error);
                 return res.send({
                     status: 500,
                     type: 'InternalServerError',
@@ -593,7 +613,7 @@ export class AlgoAnalysisController {
             });
 
             //Upload Images
-            const saving = await this.AlgoAnalysis.saveOfflineImage(data, analyzedImage, originalImage, imageArg);
+            const saving = await this.AlgoAnalysis.saveOfflineImage(data, originalImage, analyzedImage, imageArg);
 
             let promise2 = new Promise(function (resolve, resject) {
                 resolve(saving);
@@ -639,4 +659,27 @@ export class AlgoAnalysisController {
             throw new Error(e);
         }
     }
+
+    @UseGuards(AuthMiddleware)
+    @Delete('/deleteAnalysisData/:batch_id')
+    async deleteBatch(@Param('batch_id') batch_id: number, @Res() res: Response) {
+        try {
+            const result = await this.batchAnalysis.deleleBatch(batch_id);
+            console.log(result);
+            return res.status(200).json({
+                status: 200,
+                type: 'DeleteAnalysisData',
+                message: 'Successfully Deleted.',
+            });
+        } catch (error) {
+            console.log(error);
+            return res.send({
+                status: 500,
+                type: 'InternalServerError',
+                message: 'Internal server error.',
+                error: error.message,
+            });
+        }
+    }
 }
+

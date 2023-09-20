@@ -75,7 +75,18 @@ export class PoresService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
+    async saveData(
+        coputaionResutl: any,
+        data: AlgoAnalysisDTO,
+        taskResponse: any,
+        imageRecords: any,
+        originalImage: any,
+        imageArgs: any,
+    ) {
+        taskResponse.computation_score = coputaionResutl.computation_score;
+        taskResponse.questionnaire_score = coputaionResutl.questionnaire_score;
+
+        console.log('------------=====>', taskResponse);
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const analyzedImageS = Buffer.from(taskResponse.img_S, 'base64');
         const analyzedImageM = Buffer.from(taskResponse.img_M, 'base64');
@@ -254,40 +265,6 @@ export class PoresService {
         for (let i = 0; i < queries.length; i++) {
             this.database.executeQuery(saveSql, queries[i].variables);
         }
-        const retObj: any = {
-            analyzedImage: {
-                id: analyzedImageArgs.hash,
-                url: analyzedImageArgs.url,
-            },
-            analyzedImageSmall: {
-                id: analyzedImageArgsS.hash,
-                url: analyzedImageArgsS.url,
-            },
-            analyzedImageMedium: {
-                id: analyzedImageArgsM.hash,
-                url: analyzedImageArgsM.url,
-            },
-            analyzedImageBig: {
-                id: analyzedImageArgsB.hash,
-                url: analyzedImageArgsB.url,
-            },
-            maskImageSmall: {
-                id: maskImageSmall.hash,
-                url: maskImageSmall.url,
-            },
-            maskImageMedium: {
-                id: maskImageArgsM.hash,
-                url: maskImageArgsM.url,
-            },
-            maskImageBig: {
-                id: maskImageArgsB.hash,
-                url: maskImageArgsB.url,
-            },
-            originalImage: {
-                id: originalImageArgs.hash,
-                url: originalImageArgs.url,
-            },
-        };
 
         await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
 
@@ -304,7 +281,7 @@ export class PoresService {
         await this.S3Image.uploadImage(maskImageB, maskImageArgsB.sys_url);
         await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
 
-        taskResponse = { ...taskResponse, ...retObj };
+        taskResponse = { ...taskResponse };
 
         return taskResponse;
     }

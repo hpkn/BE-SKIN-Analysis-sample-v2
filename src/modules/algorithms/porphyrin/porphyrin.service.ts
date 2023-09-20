@@ -70,7 +70,14 @@ export class PorphyrinService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
+    async saveData(
+        coputaionResutl: any,
+        data: AlgoAnalysisDTO,
+        taskResponse: any,
+        imageRecords: any,
+        originalImage: any,
+        imageArgs: any,
+    ) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const analyzedImageRed = Buffer.from(taskResponse.red, 'base64');
         const analyzedImageGreen = Buffer.from(taskResponse.green, 'base64');
@@ -117,6 +124,9 @@ export class PorphyrinService {
             uv_index: data.uv_index,
             positionNumber: data.positionNumber,
         };
+
+        taskResponse.computation_score = coputaionResutl.computation_score;
+        taskResponse.questionnaire_score = coputaionResutl.questionnaire_score;
 
         await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
         const saveSql =
@@ -253,6 +263,8 @@ export class PorphyrinService {
         // const maskImageArgs = imageArgs.maskImageArgs;
 
         const originalImageArgs = imageArgs.originalImageArgs;
+
+        console.log('argument of image', imageArgs);
 
         const environment = {
             deviceModel: data.deviceModel,

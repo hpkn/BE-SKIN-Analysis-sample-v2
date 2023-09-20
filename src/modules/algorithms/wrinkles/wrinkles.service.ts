@@ -81,7 +81,14 @@ export class WrinklesService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
+    async saveData(
+        coputaionResutl: any,
+        data: AlgoAnalysisDTO,
+        taskResponse: any,
+        imageRecords: any,
+        originalImage: any,
+        imageArgs: any,
+    ) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const maskImageYellow = Buffer.from(taskResponse.mask_Y, 'base64');
         const maskImageOrange = Buffer.from(taskResponse.mask_O, 'base64');
@@ -115,6 +122,13 @@ export class WrinklesService {
             uv_index: data.uv_index,
             positionNumber: data.positionNumber,
         };
+
+        taskResponse = {
+            ...taskResponse,
+        };
+
+        taskResponse.computation_score = coputaionResutl.computation_score;
+        taskResponse.questionnaire_score = coputaionResutl.questionnaire_score;
 
         await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
 
@@ -306,3 +320,4 @@ export class WrinklesService {
         return 'saved';
     }
 }
+

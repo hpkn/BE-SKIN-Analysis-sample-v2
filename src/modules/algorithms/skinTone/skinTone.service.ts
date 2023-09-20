@@ -47,7 +47,14 @@ export class SkintoneService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
+    async saveData(
+        coputaionResutl: any,
+        data: AlgoAnalysisDTO,
+        taskResponse: any,
+        imageRecords: any,
+        originalImage: any,
+        imageArgs: any,
+    ) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const originalImageSave = Buffer.from(originalImage, 'base64');
 
@@ -61,6 +68,9 @@ export class SkintoneService {
         taskResponse = {
             ...taskResponse,
         };
+
+        taskResponse.computation_score = coputaionResutl.computation_score;
+        taskResponse.questionnaire_score = coputaionResutl.questionnaire_score;
 
         const environment = {
             deviceModel: data.deviceModel,

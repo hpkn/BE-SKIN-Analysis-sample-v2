@@ -39,5 +39,16 @@ export class BatchAnalysisService {
             console.log('check', e);
         }
     }
+
+    async deleleBatch(batch_id: number) {
+        const result = await this.database.executeQuery(
+            `DELETE FROM analysis
+            WHERE batch_id = ${batch_id};`,
+        );
+
+        return result;
+    }
+
+    //
 }
 

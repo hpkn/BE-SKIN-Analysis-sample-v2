@@ -77,7 +77,7 @@ export class SpotsService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArg: any) {
+    async saveData(coputaionResutl: any, data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArg: any) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const analyzedImageYellow = Buffer.from(taskResponse.yellow, 'base64');
         const analyzedImageOrange = Buffer.from(taskResponse.orange, 'base64');
@@ -108,6 +108,10 @@ export class SpotsService {
         taskResponse = {
             ...taskResponse,
         };
+
+        taskResponse.computation_score = coputaionResutl.computation_score;
+        taskResponse.questionnaire_score = coputaionResutl.questionnaire_score;
+
 
         const environment = {
             deviceModel: data.deviceModel,

@@ -51,7 +51,14 @@ export class KeratinService {
         return taskResponse;
     }
 
-    async saveData(data: AlgoAnalysisDTO, taskResponse: any, imageRecords: any, originalImage: any, imageArgs: any) {
+    async saveData(
+        coputaionResutl: any,
+        data: AlgoAnalysisDTO,
+        taskResponse: any,
+        imageRecords: any,
+        originalImage: any,
+        imageArgs: any,
+    ) {
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const maskImage = Buffer.from(taskResponse.mask, 'base64');
         const originalImageSave = Buffer.from(originalImage, 'base64');
@@ -80,6 +87,9 @@ export class KeratinService {
             uv_index: data.uv_index,
             positionNumber: data.positionNumber,
         };
+
+        taskResponse.computation_score = coputaionResutl.computation_score;
+        taskResponse.questionnaire_score = coputaionResutl.questionnaire_score;
 
         await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
         const saveSql =
@@ -179,22 +189,7 @@ export class KeratinService {
                     null,
                 ],
             },
-            // {
-            //     // maskImgae
 
-            //     variables: [
-            //         data.batch_id,
-            //         maskImageArgs.url,
-            //         maskImageArgs.sys_url,
-            //         maskImageArgs.hash,
-            //         11,
-            //         15,
-            //         JSON.stringify({
-            //             nth_analysis: imageRecords,
-            //         }),
-            //         null,
-            //     ],
-            // },
             {
                 variables: [
                     data.batchId,
@@ -230,3 +225,4 @@ export class KeratinService {
         return 'saved';
     }
 }
+

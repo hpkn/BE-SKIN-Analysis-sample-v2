@@ -24,6 +24,9 @@ export class AlgoAnalysisDTO {
     type?: string | null;
 
     @IsOptional()
+    answers?: string | null;
+
+    @IsOptional()
     // @Type(() => String)
     // @IsString()
     deviceModel?: string | null;
@@ -63,3 +66,4 @@ export class AlgoAnalysisDTO {
     // @IsString()
     task: any;
 }
+
