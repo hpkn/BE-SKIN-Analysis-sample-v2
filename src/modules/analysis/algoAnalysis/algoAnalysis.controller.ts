@@ -15,14 +15,12 @@ import {
     Delete,
     Req,
     HttpStatus,
-    ConsoleLogger,
 } from '@nestjs/common';
 import * as celery from 'celery-node';
 import e, { Request, Response } from 'express';
 import { AlgoAnalysisService } from './algoAnalysis.service';
-import { FileInterceptor, FilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
-    AlgoAnalysisCBBDTO,
     AlgoAnalysisDTO,
     BatchIdCheckerDto,
     SkinAgeConditionDto,
@@ -46,8 +44,6 @@ import {
     ApiBearerAuth,
     ApiBody,
     ApiConsumes,
-    ApiExcludeController,
-    ApiExcludeEndpoint,
     ApiOperation,
     ApiResponse,
     ApiTags,
