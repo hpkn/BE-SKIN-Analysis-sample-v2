@@ -20,7 +20,7 @@ import { SensitivityScabsService } from 'src/modules/algorithms/sensitivityScabs
 import { SensitivityRednessService } from 'src/modules/algorithms/sensitivityRedness/sensitivityRedness.service';
 import { SensitivtyScalingService } from 'src/modules/algorithms/sensitivtyScaling/sensitivtyScaling.service';
 import { FitzSGService } from 'src/modules/algorithms/fitzSG/fitzSG.service';
-import { promises } from 'dns';
+import * as moment from 'moment';
 import { OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
 
 @Injectable()
@@ -1669,6 +1669,89 @@ export class AlgoAnalysisService {
         } catch (e) {
             console.log('check', e);
         }
+    }
+
+    async calculateRevisit(CUSTOMER_ID_LIST: number[], THIS_MONTH: string) {
+        const query = `
+                SELECT batch_id, customer_id, created_time
+                FROM analysis
+                WHERE customer_id = ANY($1)
+            `;
+
+        const result = await this.database.executeQuery(query, [CUSTOMER_ID_LIST]);
+
+        console.log(result);
+        const analysisData = result;
+
+        const analysisDf = analysisData.map((row: any) => ({
+            batch_id: row.batch_id,
+            customer_id: row.customer_id,
+            created_time: moment(row.created_time).format('YYYY-MM-DD'),
+        }));
+
+        const uniqueCustomerIds = [...new Set(analysisDf.map((row: any) => row.customer_id))];
+
+        const revisitCountDict: Record<number, number> = {};
+        const revisitDayTermDict: Record<number, number> = {};
+        const revisitCountInThisMonthDict: Record<number, number> = {};
+
+        for (const customerId of uniqueCustomerIds) {
+            const customerDf = analysisDf.filter((row: any) => row.customer_id === customerId);
+            const sortedCustomerDf = customerDf.sort((a: any, b: any) => {
+                return moment(a.created_time).isBefore(moment(b.created_time)) ? -1 : 1;
+            });
+
+            const visitCount = sortedCustomerDf.length;
+
+            if (revisitCountDict[visitCount - 1]) {
+                revisitCountDict[visitCount - 1]++;
+            } else {
+                revisitCountDict[visitCount - 1] = 1;
+            }
+
+            if (visitCount > 1) {
+                for (let i = 0; i < visitCount - 1; i++) {
+                    const dayTerm = moment(sortedCustomerDf[i + 1].created_time).diff(
+                        moment(sortedCustomerDf[i].created_time),
+                        'days',
+                    );
+
+                    if (revisitDayTermDict[dayTerm]) {
+                        revisitDayTermDict[dayTerm]++;
+                    } else {
+                        revisitDayTermDict[dayTerm] = 1;
+                    }
+                }
+            }
+
+            const revisitCountInThisMonth = sortedCustomerDf.filter((row: any) =>
+                moment(row.created_time).isSame(THIS_MONTH, 'month'),
+            ).length;
+
+            if (revisitCountInThisMonthDict[revisitCountInThisMonth]) {
+                revisitCountInThisMonthDict[revisitCountInThisMonth]++;
+            } else {
+                revisitCountInThisMonthDict[revisitCountInThisMonth] = 1;
+            }
+        }
+
+        let revisitSum = 0;
+        for (const key in revisitCountDict) {
+            if (revisitCountDict.hasOwnProperty(key)) {
+                revisitSum += Number(key) * revisitCountDict[key];
+            }
+        }
+
+        console.log('revisitCountInThisMonthDict', revisitCountInThisMonthDict);
+        console.log('revisitDayTermDict', revisitDayTermDict);
+        console.log('revisitCountDict', revisitCountDict);
+        console.log('revisitSum', revisitSum);
+        return {
+            revisitCountDict: revisitCountDict,
+            revisitDayTermDict: revisitDayTermDict,
+            revisitCountInThisMonthDict: revisitCountInThisMonthDict,
+            revisitSum: revisitSum,
+        };
     }
 }
 

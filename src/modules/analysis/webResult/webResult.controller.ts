@@ -43,6 +43,10 @@ export class WebResultController {
                         result[i]['keyword_value'] = avg[i]['keyword_value'];
                         result[i]['keyword_id'] = parseFloat(avg[i].keyword_id);
                     }
+
+                    if (result[i]['computation_score']) {
+                        result[i]['computation_score'] = Number(result[i]['computation_score']);
+                    }
                 }
             }
 

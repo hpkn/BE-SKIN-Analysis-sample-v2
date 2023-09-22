@@ -26,6 +26,7 @@ import {
     AlgoAnalysisDTO,
     BatchIdCheckerDto,
     SkinAgeConditionDto,
+    allCustomerDto,
     countCustomerDto,
     historyDTO,
     paginationDTO,
@@ -287,7 +288,6 @@ export class AlgoAnalysisController {
     @ApiBearerAuth('access-token')
     @Get('/history/result')
     async userAnalysisImageHistoryWithBatchId(@Query() param: BatchIdCheckerDto, @Res() res: Response) {
-        console.log('here analysis');
         let { batch_id } = param;
 
         // let { customer_id } = body;
@@ -1058,6 +1058,25 @@ export class AlgoAnalysisController {
             });
         } catch (e) {
             throw new Error(e);
+        }
+    }
+
+    @UseGuards(AuthMiddleware)
+    @ApiBearerAuth('access-token')
+    @Post('/allConsultation')
+    async calculateRevisit(@Res() res: Response, @Body() body: allCustomerDto) {
+        try {
+            let { customer_ids, month } = body;
+
+            const result = await this.AlgoAnalysis.calculateRevisit(customer_ids, month);
+
+            return res.status(200).json({
+                status: 200,
+                service: 'requestBatchId',
+                body: { result: result },
+            });
+        } catch (e) {
+            console.log(e);
         }
     }
 
