@@ -235,22 +235,29 @@ export class ComputationService {
             const { computed_score, questionnaire_score } = this.cndp_computation(type, myScores, answers);
 
             let keyWord;
+            let keyword_id;
             if (computed_score >= 0 && computed_score < 6) {
                 keyWord = 'Clear';
+                keyword_id = 1;
             } else if (computed_score >= 6 && computed_score < 16) {
                 keyWord = 'Almost Clear';
+                keyword_id = 2;
             } else if (computed_score >= 16 && computed_score < 49) {
                 keyWord = 'Mild';
+                keyword_id = 3;
             } else if (computed_score >= 49 && computed_score < 80) {
                 keyWord = 'Moderate';
+                keyword_id = 4;
             } else if (computed_score >= 80 && computed_score <= 100) {
                 keyWord = 'Severe';
+                keyword_id = 5;
             } else {
                 keyWord = 'Unknown'; // Handle the case when the number is outside the defined ranges
             }
             final_response.computation_score = computed_score;
             final_response.questionnaire_score = questionnaire_score;
             final_response.keyWord = keyWord;
+            final_response.keyword_id = keyword_id;
 
             return final_response;
         } catch (e) {

@@ -26,6 +26,7 @@ import {
     AlgoAnalysisDTO,
     BatchIdCheckerDto,
     SkinAgeConditionDto,
+    allCustomerDto,
     countCustomerDto,
     historyDTO,
     paginationDTO,
@@ -287,7 +288,6 @@ export class AlgoAnalysisController {
     @ApiBearerAuth('access-token')
     @Get('/history/result')
     async userAnalysisImageHistoryWithBatchId(@Query() param: BatchIdCheckerDto, @Res() res: Response) {
-        console.log('here analysis');
         let { batch_id } = param;
 
         // let { customer_id } = body;
@@ -907,7 +907,7 @@ export class AlgoAnalysisController {
                 data?.answers === undefined ? '' : data?.answers,
                 scores,
             );
-            console.log('summation', sum);
+
             const avg = sum / scores.length;
 
             console.log(avg);
@@ -1021,6 +1021,7 @@ export class AlgoAnalysisController {
                             questionnaire_score: computation['questionnaire_score']?.toFixed(2),
                             score_average: avg.toFixed(2),
                             keyWord: computation['keyWord'],
+                            keyword_id: computation['keyword_id'],
                             result: [...newArray],
                         },
                     }),
@@ -1063,6 +1064,25 @@ export class AlgoAnalysisController {
 
     @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
+    @Post('/allConsultation')
+    async calculateRevisit(@Res() res: Response, @Body() body: allCustomerDto) {
+        try {
+            let { customer_ids, month } = body;
+
+            const result = await this.AlgoAnalysis.calculateRevisit(customer_ids, month);
+
+            return res.status(200).json({
+                status: 200,
+                service: 'requestBatchId',
+                body: { result: result },
+            });
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    @UseGuards(AuthMiddleware)
+    @ApiBearerAuth('access-token')
     @Post('/skinAgeCondition')
     async skinAgeCondition(@Body() body: SkinAgeConditionDto, @Res() res: Response) {
         console.log('here analysis');
@@ -1089,6 +1109,7 @@ export class AlgoAnalysisController {
                 body: {
                     skinAge: skinAge,
                     skinCondition: skinCondition['keyword_value'],
+                    keyword_id: skinCondition['keyword_id'],
                 },
             });
         } catch (error) {
