@@ -236,6 +236,7 @@ export class ComputationService {
 
             let keyWord;
             let keyword_id;
+
             if (computed_score >= 0 && computed_score < 6) {
                 keyWord = 'Clear';
                 keyword_id = 1;
