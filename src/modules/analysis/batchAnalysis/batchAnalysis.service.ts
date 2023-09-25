@@ -6,11 +6,12 @@ import { DatabaseService } from 'src/database/database.service';
 export class BatchAnalysisService {
     constructor(private database: DatabaseService) {}
 
-    async insertInAnalysis(customer_id: any) {
+    async insertInAnalysis(customer_id: any, args: any) {
+        console.log(args);
         try {
             const insert = await this.database.executeQuery(`
               INSERT INTO analysis (customer_id, args) 
-              values (${customer_id}, ${null}) RETURNING *
+              values (${customer_id}, '${args}') RETURNING *
             `);
 
             console.log(insert);
@@ -26,14 +27,13 @@ export class BatchAnalysisService {
         try {
             let data = JSON.stringify(environment);
 
-            console.log('batch_id', batch_id);
-            const update = await this.database.executeQuery(
-                `
-                UPDATE analysis
-                SET args = args::jsonb || '${data}' :: jsonb
-                WHERE batch_id = ${batch_id}
-                `,
-            );
+            const update = `
+                    UPDATE analysis
+                    SET args = $1
+                    WHERE batch_id = $2
+                  `;
+
+            this.database.executeQuery(update, [data, batch_id]);
             return update;
         } catch (e) {
             console.log('check', e);

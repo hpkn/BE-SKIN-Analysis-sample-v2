@@ -86,7 +86,6 @@ export class PoresService {
         taskResponse.computation_score = coputaionResutl.computation_score;
         taskResponse.questionnaire_score = coputaionResutl.questionnaire_score;
 
-        console.log('------------=====>', taskResponse);
         const analyzedImage = Buffer.from(taskResponse.img, 'base64');
         const analyzedImageS = Buffer.from(taskResponse.img_S, 'base64');
         const analyzedImageM = Buffer.from(taskResponse.img_M, 'base64');
@@ -301,6 +300,8 @@ export class PoresService {
             temperature: data.temperature,
             humidity: data.humidity,
             uv_index: data.uv_index,
+            appVersion: data.appVersion,
+
         };
 
         await this.batchAnalysis.updateEnvironment(data.batchId, environment);

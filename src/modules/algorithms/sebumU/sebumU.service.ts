@@ -1,25 +1,22 @@
 import { Injectable, Inject, HttpException } from '@nestjs/common';
 import { DatabaseService } from 'src/database/database.service';
-import { FileUploadService } from '../../../common/FileUpload/fileUpload.service';
-import { BatchAnalysisService } from 'src/modules/analysis/batchAnalysis/batchAnalysis.service';
-import { MoistureUDTO } from 'src/common/Dto/analysis/moistureU.dto';
+import { MoistureDTO } from 'src/common/Dto/analysis/moisture.dto';
 
 @Injectable()
 export class SebumUService {
     constructor(
         private database: DatabaseService,
-        private S3Image: FileUploadService,
-        private batchAnalysis: BatchAnalysisService,
+
     ) {}
 
-    async saveData(data: MoistureUDTO, analyzedImageArgs: any, originalImageArgs: any, imageRecords: any) {
+    async saveData(data: MoistureDTO, analyzedImageArgs: any, originalImageArgs: any, imageRecords: any) {
         // const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'sebumU');
 
+        console.log(data);
         // const originalImageArgs = this.S3Image.getImageArgs('originalImage', data.task.algoName, 'sebumU');
 
         const saveSql =
             'INSERT INTO measurements (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores) values ($1, $2, $3, $4, $5, $6, $7, $8)';
-        // const saveArgsSql = 'INSERT INTO keratin (batch_id, args) data ($1, $2)';
         const queries = [
             {
                 variables: [
@@ -45,6 +42,8 @@ export class SebumUService {
                     JSON.stringify({
                         raw: data.raw,
                         score: data.score,
+                        skinAge: data.skinAge,
+                        skinCondition: data.skinCondition,
                     }),
                 ],
             },
@@ -57,3 +56,4 @@ export class SebumUService {
         return 'saved';
     }
 }
+

@@ -7,7 +7,7 @@ import { AlgoAnalysisDTO } from 'src/common/Dto/analysis/algoAnalysis.dto';
 import fs from 'fs';
 import { FileUploadService } from '../../../common/FileUpload/fileUpload.service';
 import { BatchAnalysisService } from 'src/modules/analysis/batchAnalysis/batchAnalysis.service';
-import { OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
+import { OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
 
 @Injectable()
 export class KeratinService {
@@ -168,6 +168,8 @@ export class KeratinService {
             temperature: data.temperature,
             humidity: data.humidity,
             uv_index: data.uv_index,
+            appVersion: data.appVersion,
+
         };
 
         await this.batchAnalysis.updateEnvironment(data.batchId, environment);
@@ -225,4 +227,3 @@ export class KeratinService {
         return 'saved';
     }
 }
-

@@ -181,6 +181,8 @@ export class SebumService {
             temperature: data.temperature,
             humidity: data.humidity,
             uv_index: data.uv_index,
+            appVersion: data.appVersion,
+
         };
 
         await this.batchAnalysis.updateEnvironment(data.batchId, environment);

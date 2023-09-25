@@ -7,6 +7,7 @@ export class WebResultService {
     constructor(private database: DatabaseService) {}
 
     skinCondition(moistureT: number, moistureU: number, sebumT: number, sebumU: number) {
+        console.log(moistureT, moistureU, sebumT, sebumU, sebumU);
         let moisture = null;
         if (moistureT !== null || moistureU !== null) {
             moisture = (moistureT + moistureU) / 2;
@@ -15,14 +16,20 @@ export class WebResultService {
         if (sebumT !== null || sebumU !== null) {
             sebum = (sebumT + moistureU) / 2;
         }
+        console.log(moisture, sebum);
         return {
-            moisture: Math.floor(moisture),
-            sebum: Math.floor(sebum),
+            moisture: moisture,
+            sebum: sebum,
         };
     }
 
     check(moisture: number, sebum: number) {
-        if ((moisture <= 33 && sebum <= 33) || sebum <= 33 || moisture <= 33) {
+        if ((moisture === null && sebum === null) || moisture === null) {
+            return {
+                keyword_value: '',
+                keyword_id: 0,
+            };
+        } else if ((moisture <= 33 && sebum <= 33) || moisture <= 33) {
             return {
                 keyword_value: 'Dry Skin',
                 keyword_id: 1,
@@ -52,7 +59,8 @@ export class WebResultService {
             WITH _results AS (
                 SELECT DISTINCT
                     type_measurements."name" AS measurement,
-                    to_json(original_img.scores) ->> 'score' as value, 
+                    to_json(original_img.scores) ->> 'score' as value,
+                    to_json(original_img.scores) ->> 'computation_score' as computation_score,
                     record.created_time::date as date,
                     record.created_time::time as time,
                     original_img.url AS original_image_url,
@@ -71,6 +79,7 @@ export class WebResultService {
             SELECT
                 measurement,
                 value,
+                computation_score,
                 date,
                 time,
                 original_image_url,
@@ -93,9 +102,10 @@ export class WebResultService {
             `
                 SELECT 
                     round(AVG((to_json(scores) ->> 'score')::numeric),2) as avg, 
+                     
                     tp.name as measurement,
                     CASE
-                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 0 AND 6 THEN 'clear'
+                        WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 0 AND 6 THEN 'Clear'
                         WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 6 AND 16 THEN 'Almost Clear'
                         WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 16 AND 49 THEN 'Mild'
                         WHEN round(AVG((to_json(scores) ->> 'score')::numeric),2) BETWEEN 49 AND 80 THEN 'Moderate'
@@ -117,6 +127,17 @@ export class WebResultService {
             `,
             [batch_id],
         );
+        return result;
+    }
+
+    async getSkinAge(batch_id: number) {
+        const result = await this.database.executeQuery(
+            `SELECT scores ->> 'skinAge' as skin_age, created_time::date as date, created_time::time as time
+            FROM measurements 
+            WHERE batch_id = $1 AND type_image_id = 21 AND type_measurement_id = 5`,
+            [batch_id],
+        );
+
         return result;
     }
 }

@@ -1,9 +1,12 @@
-import { Controller, Body, Get, Post, UseInterceptors, UploadedFiles, Res, Param, Query } from '@nestjs/common';
-import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { Controller, Body, Get, Post, UseInterceptors, UploadedFiles, Res, Param, Query, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { query, Request, response, Response } from 'express';
 import { GetcustomerHistoryDTO } from 'src/common/Dto/customer/analysisHistory/analysisHistory.dto';
 import { AnanalysisHistoryService } from './customerHistory.service';
+import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
+import { countCustomerDto } from 'src/common/Dto/analysis/algoAnalysis.dto';
 
+@ApiTags('Customer')
 @Controller('cndpskin')
 export class AnanalysisHistoryController {
     constructor(private readonly getAnalysisHistory: AnanalysisHistoryService) {}
@@ -48,5 +51,7 @@ export class AnanalysisHistoryController {
             });
         }
     }
+
+
 }
 
