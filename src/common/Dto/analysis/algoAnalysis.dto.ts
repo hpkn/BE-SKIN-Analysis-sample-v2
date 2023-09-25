@@ -252,3 +252,23 @@ export class countCustomerDto {
     customer_ids: number[];
 }
 
+export class allCustomerDto {
+    @IsArray()
+    @IsInt({ each: true })
+    @Min(0, { each: true })
+    @ApiProperty({
+        type: 'array',
+        description: 'This is required',
+        example: [0, 6],
+    })
+    customer_ids: number[];
+
+    @IsString()
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: '2023-07',
+    })
+    month: string;
+}
+
