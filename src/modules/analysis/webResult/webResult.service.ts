@@ -7,7 +7,7 @@ export class WebResultService {
     constructor(private database: DatabaseService) {}
 
     skinCondition(moistureT: number, moistureU: number, sebumT: number, sebumU: number) {
-        console.log("chack data", moistureT, moistureU, sebumT, sebumU, sebumU);
+        console.log('chack data', moistureT, moistureU, sebumT, sebumU, sebumU);
         let moisture = null;
         if (moistureT !== null || moistureU !== null) {
             moisture = (Number(moistureT) + Number(moistureU)) / 2;
@@ -16,7 +16,7 @@ export class WebResultService {
         if (sebumT !== null || sebumU !== null) {
             sebum = (Number(sebumT) + Number(moistureU)) / 2;
         }
-        console.log("check", moisture, sebum);
+        console.log('check', moisture, sebum);
         return {
             moisture: moisture,
             sebum: sebum,
@@ -101,66 +101,73 @@ export class WebResultService {
     async webResultAverage(batch_id: number) {
         const result = await this.database.executeQuery(
             `
-                SELECT 
-                ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) AS avg,
-                tp.NAME AS measurement,
+            SELECT 
+                ROUND(AVG_SCORE, 2) AS avg,
+                NAME AS measurement,
                 CASE
-                    WHEN tp."id"  IN (16, 17) THEN 
+                    WHEN id IN (16, 17) THEN 
                         CASE 
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 81 AND 100 THEN 'Very Hydrated'
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 49 AND 80.99 THEN 'Hydrated'
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 16 AND 48.99 THEN 'Normal'
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 7 AND 15.99 THEN 'Dehydrated'
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 0 AND 5.99 THEN 'Very Dehydrated'
+                            WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 'Very Hydrated'
+                            WHEN AVG_SCORE BETWEEN 49 AND 80.99 THEN 'Hydrated'
+                            WHEN AVG_SCORE BETWEEN 16 AND 48.99 THEN 'Normal'
+                            WHEN AVG_SCORE BETWEEN 7 AND 15.99 THEN 'Dehydrated'
+                            WHEN AVG_SCORE BETWEEN 0 AND 5.99 THEN 'Very Dehydrated'
                         END
-                    WHEN tp."id"  IN (9, 5, 15) THEN 
+                    WHEN id IN (9, 5, 15) THEN 
                         CASE 
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 0 AND 5 THEN 'Very Dry'
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 5.99 AND 15.99 THEN 'Dry'
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 16 AND 48.99 THEN 'Normal'
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 49 AND 80.99 THEN 'Oily'
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 81 AND 100 THEN 'Very Oily'
+                            WHEN AVG_SCORE BETWEEN 0 AND 5 THEN 'Very Dry'
+                            WHEN AVG_SCORE BETWEEN 5.99 AND 15.99 THEN 'Dry'
+                            WHEN AVG_SCORE BETWEEN 16 AND 48.99 THEN 'Normal'
+                            WHEN AVG_SCORE BETWEEN 49 AND 80.99 THEN 'Oily'
+                            WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 'Very Oily'
                         END
                     ELSE
                         CASE 
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 0 AND 5 THEN 'Clear'
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 6 AND 15.99 THEN 'Almost Clear'
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 16 AND 48.99 THEN 'Mild'
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 49 AND 80.99 THEN 'Moderate'
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 81 AND 100 THEN 'Severe'
+                            WHEN AVG_SCORE BETWEEN 0 AND 5 THEN 'Clear'
+                            WHEN AVG_SCORE BETWEEN 6 AND 15.99 THEN 'Almost Clear'
+                            WHEN AVG_SCORE BETWEEN 16 AND 48.99 THEN 'Mild'
+                            WHEN AVG_SCORE BETWEEN 49 AND 80.99 THEN 'Moderate'
+                            WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 'Severe'
+                            ELSE NULL 
                         END
                 END AS keyword_value,
                 CASE
-                    WHEN tp."id"  IN (16, 17) THEN 
+                    WHEN id IN (16, 17) THEN 
                         CASE 
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 81 AND 100 THEN 5
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 50 AND 80.99 THEN 4
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 17 AND 48.99 THEN 3
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 7 AND 15.99 THEN 2
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 0 AND 6.99 THEN 1
+                            WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 5
+                            WHEN AVG_SCORE BETWEEN 50 AND 80.99 THEN 4
+                            WHEN AVG_SCORE BETWEEN 17 AND 48.99 THEN 3
+                            WHEN AVG_SCORE BETWEEN 7 AND 15.99 THEN 2
+                            WHEN AVG_SCORE BETWEEN 0 AND 6.99 THEN 1
                         END
-                    WHEN tp."id"  IN (9, 5, 15) THEN 
+                    WHEN id IN (9, 5, 15) THEN 
                         CASE 
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 0 AND 5 THEN 1
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 5.99 AND 15.99 THEN 2
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 16 AND 48.99 THEN 3
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 49 AND 80.99 THEN 4
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 81 AND 100 THEN 5
+                            WHEN AVG_SCORE BETWEEN 0 AND 5 THEN 1
+                            WHEN AVG_SCORE BETWEEN 5.99 AND 15.99 THEN 2
+                            WHEN AVG_SCORE BETWEEN 16 AND 48.99 THEN 3
+                            WHEN AVG_SCORE BETWEEN 49 AND 80.99 THEN 4
+                            WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 5
                         END
                     ELSE
                         CASE 
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 0 AND 5 THEN 1
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 6 AND 15.99 THEN 2
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 16 AND 48.99 THEN 3
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 49 AND 80.99 THEN 4
-                            WHEN ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) BETWEEN 81 AND 100 THEN 5
+                            WHEN AVG_SCORE BETWEEN 0 AND 5 THEN 1
+                            WHEN AVG_SCORE BETWEEN 6 AND 15.99 THEN 2
+                            WHEN AVG_SCORE BETWEEN 16 AND 48.99 THEN 3
+                            WHEN AVG_SCORE BETWEEN 49 AND 80.99 THEN 4
+                            WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 5
                             ELSE NULL 
                         END
                 END AS keyword_id
+            FROM (
+                SELECT 
+                    tp.NAME as Name,
+                    tp."id" as id,
+                    ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) AS AVG_SCORE
                 FROM measurements AS ms
                 JOIN type_measurements AS tp ON tp."id" = ms.type_measurement_id 
-                WHERE batch_id = $1 AND type_image_id = 21 
-                GROUP BY tp.NAME, tp."id";
+                WHERE batch_id = $1 AND type_image_id = 21
+                GROUP BY tp.NAME, tp."id"
+            ) AS subquery;
             `,
             [batch_id],
         );

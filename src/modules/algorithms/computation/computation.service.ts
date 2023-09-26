@@ -246,10 +246,10 @@ export class ComputationService {
             } else if (computed_score >= 16 && computed_score < 49) {
                 keyWord = 'Mild';
                 keyword_id = 3;
-            } else if (computed_score >= 49 && computed_score < 80) {
+            } else if (computed_score >= 49 && computed_score < 81) {
                 keyWord = 'Moderate';
                 keyword_id = 4;
-            } else if (computed_score >= 80 && computed_score <= 100) {
+            } else if (computed_score >= 81 && computed_score <= 100) {
                 keyWord = 'Severe';
                 keyword_id = 5;
             } else {
