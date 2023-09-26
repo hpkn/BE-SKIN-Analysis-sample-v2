@@ -37,7 +37,6 @@ export class WebResultController {
                     if (avg[j].measurement === 'sebumT') sebumT = avg[j].avg;
                     if (avg[j].measurement === 'sebumU') sebumU = avg[j].avg;
 
-                    console.log(avg[j]['measurement'], avg[j].avg, avg[i].avg);
                     if (result[i]['measurement'] === avg[j].measurement) {
                         result[i]['avg_value'] = parseFloat(avg[j].avg);
                         // result[i]['computation_score'] = parseFloat(avg[i].computation_score);
