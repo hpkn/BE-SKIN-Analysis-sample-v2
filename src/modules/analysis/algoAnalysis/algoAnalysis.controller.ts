@@ -903,7 +903,7 @@ export class AlgoAnalysisController {
                 data?.answers === undefined ? '' : data?.answers,
                 scores,
             );
-            console.log('summation', sum);
+
             const avg = sum / scores.length;
 
             console.log(avg);
@@ -1017,6 +1017,7 @@ export class AlgoAnalysisController {
                             questionnaire_score: computation['questionnaire_score']?.toFixed(2),
                             score_average: avg.toFixed(2),
                             keyWord: computation['keyWord'],
+                            keyword_id: computation['keyword_id'],
                             result: [...newArray],
                         },
                     }),
@@ -1104,6 +1105,7 @@ export class AlgoAnalysisController {
                 body: {
                     skinAge: skinAge,
                     skinCondition: skinCondition['keyword_value'],
+                    keyword_id: skinCondition['keyword_id'],
                 },
             });
         } catch (error) {
