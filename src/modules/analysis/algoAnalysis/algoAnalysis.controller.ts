@@ -861,6 +861,7 @@ export class AlgoAnalysisController {
         @Res() res: Response,
     ) {
         try {
+            console.log(data);
             if (!files?.analyzedImage || !files?.originalImage) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
                     status: 40002,
@@ -896,7 +897,17 @@ export class AlgoAnalysisController {
             const original: any[] = [];
             const retunAnalyzed: any[] = [];
             const returnOriginal: any[] = [];
-            const scores: number[] = JSON.parse(data.args).score;
+            let scores: number[];
+            let raw: number[];
+            let promitive = this.AlgoAnalysis.isPrimitive(data.args);
+            if (promitive === true) {
+                scores = JSON.parse(data.args).score;
+                raw = JSON.parse(data.args).raw;
+            } else {
+                scores = data.args.score;
+                raw = data.args.raw;
+            }
+            console.log('check score', scores);
             const savingPromise: Promise<any>[] = [];
 
             let sum = 0;
@@ -937,8 +948,8 @@ export class AlgoAnalysisController {
                         nth_analysis: imageRecords,
                     }),
                     JSON.stringify({
-                        score: JSON.parse(data.args).score[i],
-                        raw: JSON.parse(data.args).raw[i],
+                        score: scores[i],
+                        raw: raw[i],
                         computation_score: computation['computation_score']?.toFixed(2),
                         questionnaire_score: computation['questionnaire_score'].toFixed(2),
                         score_average: avg.toFixed(2),
@@ -961,7 +972,7 @@ export class AlgoAnalysisController {
                 returnOriginal.push({
                     batchId: data.batch_id,
                     algorithm_type: data.type,
-                    score: JSON.parse(item[7]).score,
+                    score: promitive === true ? JSON.parse(item[7]).score : item[7].score,
                     originalImage: {
                         id: item[3],
                         url: item[1],
@@ -1085,7 +1096,6 @@ export class AlgoAnalysisController {
     @ApiBearerAuth('access-token')
     @Post('/skinAgeCondition')
     async skinAgeCondition(@Body() body: SkinAgeConditionDto, @Res() res: Response) {
-        console.log('here analysis');
         let { batch_id, bithYear } = body;
 
         // let { customer_id } = body;
@@ -1096,11 +1106,23 @@ export class AlgoAnalysisController {
 
             const skinAge = this.computation.skinAge(wrinkles, spots, bithYear);
 
-            const { moisture, sebum } = this.webResult.skinCondition(moistureT, moistureU, sebumT, sebumU);
+            // const { moisture, sebum } = this.webResult.skinCondition(moistureT, moistureU, sebumT, sebumU);
 
-            const skinCondition = this.webResult.check(moisture, sebum);
+            const answers = await this.AlgoAnalysis.fetchQuestion(Number(batch_id));
 
-            await this.AlgoAnalysis.saveSkinValue(Number(batch_id), skinCondition['keyword_value'], skinAge);
+            let questFr = -1;
+            if (answers !== null) {
+                questFr = this.computation.questionnaireFrequency(answers, 5);
+            }
+
+            console.log('check here', moistureT, moistureU, sebumT, sebumU, questFr);
+
+            const skinCondition = this.webResult.getSkinCondition(moistureT, sebumT, moistureU, sebumU, questFr);
+
+            // const skinCondition = this.webResult.check(moisture, sebum);
+            console.log(answers, questFr, skinCondition);
+
+            this.AlgoAnalysis.saveSkinCondtion(Number(batch_id), skinCondition, skinAge);
 
             return res.status(200).json({
                 status: 200,
@@ -1108,8 +1130,8 @@ export class AlgoAnalysisController {
                 service: 'Skin Age & Condition',
                 body: {
                     skinAge: skinAge,
-                    skinCondition: skinCondition['keyword_value'],
-                    keyword_id: skinCondition['keyword_id'],
+                    skinCondition: skinCondition,
+                    keyword_id: skinCondition,
                 },
             });
         } catch (error) {

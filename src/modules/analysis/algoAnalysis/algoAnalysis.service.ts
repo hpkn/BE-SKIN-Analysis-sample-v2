@@ -1553,8 +1553,6 @@ export class AlgoAnalysisService {
             humidity: data.humidity,
             uv_index: data.uv_index,
             appVersion: data.appVersion,
-            
-
         };
         await this.updateEnvironment(data.batch_id, environment);
     }
@@ -1626,6 +1624,36 @@ export class AlgoAnalysisService {
         }
     }
 
+    async fetchQuestion(batchId: number) {
+        try {
+            const result = await this.database.executeQuery(
+                `
+                SELECT
+                    MAX(CASE
+                    WHEN type_measurement_id = 8 THEN ((to_json(scores) ->> 'answers'))
+                    WHEN type_measurement_id = 4 THEN ((to_json(scores) ->> 'answers'))
+                        WHEN type_measurement_id = 1 THEN ((to_json(scores) ->> 'answers'))
+                        WHEN type_measurement_id = 7 THEN ((to_json(scores) ->> 'answers'))
+                        WHEN type_measurement_id = 11 THEN ((to_json(scores) ->> 'answers'))
+                    END) AS answers
+                FROM
+                    measurements
+                WHERE
+                    batch_id = $1
+                    AND type_image_id = 21
+                    AND (to_json(scores) ->> 'answers') IS NOT NULL
+                LIMIT 1	
+            `,
+                [batchId],
+            );
+            const finalRes = result[0].answers;
+            return finalRes;
+        } catch (e) {
+            console.log('check', e);
+            throw new Error();
+        }
+    }
+
     async skinAgeOperation(batchId: number) {
         const result = await this.fetchAgeCondition(batchId);
 
@@ -1667,6 +1695,21 @@ export class AlgoAnalysisService {
                             jsonb_set ( jsonb_set ( scores, '{skinCondtion}', $1, TRUE ), '{skinAge}', $2, TRUE ) ELSE scores 
                     END 
                 WHERE batch_id = $3 AND type_measurement_id = 5 AND type_image_id = 21
+            `;
+
+            this.database.executeQuery(update, [JSON.stringify(condition), JSON.stringify(skinAge), batch_id]);
+            return update;
+        } catch (e) {
+            console.log('check', e);
+        }
+    }
+
+    saveSkinCondtion(batch_id: number, skinCondtion: any, skinAge: any) {
+        const condition = skinCondtion.length === 0 ? '-1' : skinCondtion;
+        try {
+            const update = `
+                INSERT INTO measurements (batch_id, type_measurement_id, type_image_id, scores)
+                VALUES ($3, 18, 21, '{"skinCondtion": $1, "skinAge": $2}')
             `;
 
             this.database.executeQuery(update, [JSON.stringify(condition), JSON.stringify(skinAge), batch_id]);
@@ -1757,6 +1800,10 @@ export class AlgoAnalysisService {
             revisitCountInThisMonthDict: revisitCountInThisMonthDict,
             revisitSum: revisitSum,
         };
+    }
+
+    isPrimitive(obj: any): boolean {
+        return (typeof obj !== 'object' && typeof obj !== 'function') || obj === null;
     }
 }
 

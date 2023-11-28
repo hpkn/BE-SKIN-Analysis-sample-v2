@@ -34,22 +34,6 @@ export class AlgoDTO {
 
 export class MoistureDTO {
     @ApiProperty({
-        type: 'array',
-        items: { type: 'string', format: 'binary' },
-    })
-    @IsNotEmpty()
-    // @IsArray()
-    originalImage: string[];
-
-    @ApiProperty({
-        type: 'array',
-        items: { type: 'string', format: 'binary' },
-    })
-    @IsNotEmpty()
-    // @IsArray()
-    analyzedImage: string[];
-
-    @ApiProperty({
         type: String,
         description: 'This is required',
         example: 5462,

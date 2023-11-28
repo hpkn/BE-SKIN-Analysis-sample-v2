@@ -23,6 +23,211 @@ export class WebResultService {
         };
     }
 
+    getSkinCondition(mScoreT: number, sScoreT: number, mScoreU: number, sScoreU: number, sebumQAScore: number) {
+        const veryDry = 1;
+        const dry = 2;
+        const normal = 3;
+        const oily = 4;
+        const veryOily = 5;
+        const combination = 6;
+
+        let tZoneType = 0;
+        let uZoneType = 0;
+        let skinCondition = 0;
+
+        console.log(sebumQAScore);
+
+        if (sebumQAScore >= 0 && sScoreT >= 0) {
+            sScoreT = Math.round(0.8 * sScoreT + 0.2 * sebumQAScore);
+        }
+
+        // Logic for determining skin condition
+        // ...
+        // Combine t-zone sebum score with sebum Q&A score.
+        if (sebumQAScore >= 0 && sScoreT >= 0) sScoreT = Math.round(0.8 * sScoreT + 0.2 * sebumQAScore);
+
+        // ---------- (1) ----------
+        // When either one of the mositure scores is not available, we define skin/scalp condition with sebum scores.
+        // -- This should only apply to CMA Hair, HH/CHP Hair where moisture measurement is not accurate.
+        if (mScoreT == -1 || mScoreU == -1) {
+            if (sScoreU >= 0 && sScoreU < 6) {
+                if (sScoreT >= 0 && sScoreT < 6) skinCondition = veryDry;
+                if (sScoreT >= 6 && sScoreT < 16) skinCondition = dry;
+                if (sScoreT >= 16 && sScoreT < 49) skinCondition = dry;
+                if (sScoreT >= 49 && sScoreT < 81) skinCondition = combination;
+                if (sScoreT >= 81 && sScoreT <= 99) skinCondition = combination;
+            }
+            if (sScoreU >= 6 && sScoreU < 16) {
+                if (sScoreT >= 0 && sScoreT < 6) skinCondition = dry;
+                if (sScoreT >= 6 && sScoreT < 16) skinCondition = dry;
+                if (sScoreT >= 16 && sScoreT < 49) skinCondition = dry;
+                if (sScoreT >= 49 && sScoreT < 81) skinCondition = combination;
+                if (sScoreT >= 81 && sScoreT <= 99) skinCondition = combination;
+            }
+            if (sScoreU >= 16 && sScoreU < 49) {
+                if (sScoreT >= 0 && sScoreT < 6) skinCondition = dry;
+                if (sScoreT >= 6 && sScoreT < 16) skinCondition = dry;
+                if (sScoreT >= 16 && sScoreT < 49) skinCondition = normal;
+                if (sScoreT >= 49 && sScoreT < 81) skinCondition = oily;
+                if (sScoreT >= 81 && sScoreT <= 99) skinCondition = oily;
+            }
+            if (sScoreU >= 49 && sScoreU < 81) {
+                if (sScoreT >= 0 && sScoreT < 6) skinCondition = combination;
+                if (sScoreT >= 6 && sScoreT < 16) skinCondition = combination;
+                if (sScoreT >= 16 && sScoreT < 49) skinCondition = oily;
+                if (sScoreT >= 49 && sScoreT < 81) skinCondition = oily;
+                if (sScoreT >= 81 && sScoreT <= 99) skinCondition = oily;
+            }
+            if (sScoreU >= 81 && sScoreU <= 99) {
+                if (sScoreT >= 0 && sScoreT < 6) skinCondition = combination;
+                if (sScoreT >= 6 && sScoreT < 16) skinCondition = combination;
+                if (sScoreT >= 16 && sScoreT < 49) skinCondition = oily;
+                if (sScoreT >= 49 && sScoreT < 81) skinCondition = oily;
+                if (sScoreT >= 81 && sScoreT <= 99) skinCondition = veryOily;
+            }
+        }
+
+        // ---------- (2) ---------
+        // When both moisture scores and both sebum scores are available.
+        // obtain T-zone skin/scalp type.
+        if (mScoreT >= 0 && mScoreT < 6) {
+            if (sScoreT >= 0 && sScoreT < 6) tZoneType = veryDry;
+            if (sScoreT >= 6 && sScoreT < 16) tZoneType = dry;
+            if (sScoreT >= 16 && sScoreT < 49) tZoneType = dry;
+            if (sScoreT >= 49 && sScoreT < 81) tZoneType = oily;
+            if (sScoreT >= 81 && sScoreT <= 99) tZoneType = veryOily;
+        }
+        if (mScoreT >= 6 && mScoreT < 16) {
+            if (sScoreT >= 0 && sScoreT < 6) tZoneType = dry;
+            if (sScoreT >= 6 && sScoreT < 16) tZoneType = dry;
+            if (sScoreT >= 16 && sScoreT < 49) tZoneType = dry;
+            if (sScoreT >= 49 && sScoreT < 81) tZoneType = oily;
+            if (sScoreT >= 81 && sScoreT <= 99) tZoneType = veryOily;
+        }
+        if (mScoreT >= 16 && mScoreT < 49) {
+            if (sScoreT >= 0 && sScoreT < 6) tZoneType = dry;
+            if (sScoreT >= 6 && sScoreT < 16) tZoneType = normal;
+            if (sScoreT >= 16 && sScoreT < 49) tZoneType = normal;
+            if (sScoreT >= 49 && sScoreT < 81) tZoneType = oily; // Here
+            if (sScoreT >= 81 && sScoreT <= 99) tZoneType = veryOily;
+        }
+        if (mScoreT >= 49 && mScoreT < 81) {
+            if (sScoreT >= 0 && sScoreT < 6) tZoneType = normal;
+            if (sScoreT >= 6 && sScoreT < 16) tZoneType = normal;
+            if (sScoreT >= 16 && sScoreT < 49) tZoneType = normal;
+            if (sScoreT >= 49 && sScoreT < 81) tZoneType = oily;
+            if (sScoreT >= 81 && sScoreT <= 99) tZoneType = veryOily;
+        }
+        if (mScoreT >= 81 && mScoreT <= 99) {
+            if (sScoreT >= 0 && sScoreT < 6) tZoneType = normal;
+            if (sScoreT >= 6 && sScoreT < 16) tZoneType = normal;
+            if (sScoreT >= 16 && sScoreT < 49) tZoneType = normal;
+            if (sScoreT >= 49 && sScoreT < 81) tZoneType = oily;
+            if (sScoreT >= 81 && sScoreT <= 99) tZoneType = veryOily;
+        }
+
+        // define U-zone skin/scalp type.
+        if (mScoreU >= 0 && mScoreU < 6) {
+            if (sScoreU >= 0 && sScoreU < 6) uZoneType = veryDry;
+            if (sScoreU >= 6 && sScoreU < 16) uZoneType = dry;
+            if (sScoreU >= 16 && sScoreU < 49) uZoneType = dry;
+            if (sScoreU >= 49 && sScoreU < 81) uZoneType = oily;
+            if (sScoreU >= 81 && sScoreU <= 99) uZoneType = veryOily;
+        }
+        if (mScoreU >= 6 && mScoreU < 16) {
+            if (sScoreU >= 0 && sScoreU < 6) uZoneType = dry;
+            if (sScoreU >= 6 && sScoreU < 16) uZoneType = dry;
+            if (sScoreU >= 16 && sScoreU < 49) uZoneType = dry;
+            if (sScoreU >= 49 && sScoreU < 81) uZoneType = oily;
+            if (sScoreU >= 81 && sScoreU <= 99) uZoneType = veryOily;
+        }
+        if (mScoreU >= 16 && mScoreU < 49) {
+            if (sScoreU >= 0 && sScoreU < 6) uZoneType = dry;
+            if (sScoreU >= 6 && sScoreU < 16) uZoneType = normal;
+            if (sScoreU >= 16 && sScoreU < 49) uZoneType = normal;
+            if (sScoreU >= 49 && sScoreU < 81) uZoneType = oily; // Here for Uzone
+            if (sScoreU >= 81 && sScoreU <= 99) uZoneType = veryOily;
+        }
+        if (mScoreU >= 49 && mScoreU < 81) {
+            if (sScoreU >= 0 && sScoreU < 6) uZoneType = normal;
+            if (sScoreU >= 6 && sScoreU < 16) uZoneType = normal;
+            if (sScoreU >= 16 && sScoreU < 49) uZoneType = normal;
+            if (sScoreU >= 49 && sScoreU < 81) uZoneType = oily;
+            if (sScoreU >= 81 && sScoreU <= 99) uZoneType = veryOily;
+        }
+        if (mScoreU >= 81 && mScoreU <= 99) {
+            if (sScoreU >= 0 && sScoreU < 6) uZoneType = normal;
+            if (sScoreU >= 6 && sScoreU < 16) uZoneType = normal;
+            if (sScoreU >= 16 && sScoreU < 49) uZoneType = normal;
+            if (sScoreU >= 49 && sScoreU < 81) uZoneType = oily;
+            if (sScoreU >= 81 && sScoreU <= 99) uZoneType = veryOily;
+        }
+
+        // Conclude final skin/scalp condition.
+        if (tZoneType == veryDry) {
+            if (uZoneType == veryDry) skinCondition = veryDry;
+            if (uZoneType == dry) skinCondition = dry;
+            if (uZoneType == normal) skinCondition = dry;
+            if (uZoneType == oily) skinCondition = combination;
+            if (uZoneType == veryOily) skinCondition = combination;
+        }
+        if (tZoneType == dry) {
+            if (uZoneType == veryDry) skinCondition = dry;
+            if (uZoneType == dry) skinCondition = dry;
+            if (uZoneType == normal) skinCondition = dry;
+            if (uZoneType == oily) skinCondition = combination;
+            if (uZoneType == veryOily) skinCondition = combination;
+        }
+        if (tZoneType == normal) {
+            if (uZoneType == veryDry) skinCondition = dry;
+            if (uZoneType == dry) skinCondition = dry;
+            if (uZoneType == normal) skinCondition = normal;
+            if (uZoneType == oily) skinCondition = oily;
+            if (uZoneType == veryOily) skinCondition = oily;
+        }
+        if (tZoneType == oily) {
+            if (uZoneType == veryDry) skinCondition = combination;
+            if (uZoneType == dry) skinCondition = combination;
+            if (uZoneType == normal) skinCondition = oily;
+            if (uZoneType == oily) skinCondition = oily;
+            if (uZoneType == veryOily) skinCondition = oily;
+        }
+        if (tZoneType == veryOily) {
+            if (uZoneType == veryDry) skinCondition = combination;
+            if (uZoneType == dry) skinCondition = combination;
+            if (uZoneType == normal) skinCondition = oily;
+            if (uZoneType == oily) skinCondition = oily;
+            if (uZoneType == veryOily) skinCondition = veryOily;
+        }
+
+        console.log('------------========', tZoneType, uZoneType, skinCondition);
+
+        let keyword_value = '';
+
+        switch (skinCondition) {
+            case veryDry:
+                keyword_value = 'very_dry';
+                break;
+            case dry:
+                keyword_value = 'dry';
+                break;
+            case combination:
+                keyword_value = 'combination';
+                break;
+            case normal:
+                keyword_value = 'normal';
+                break;
+            case oily:
+                keyword_value = 'oily';
+                break;
+            case veryOily:
+                keyword_value = 'very_oily';
+                break;
+        }
+
+        return keyword_value;
+    }
+
     check(moisture: number, sebum: number) {
         if ((moisture === null && sebum === null) || moisture === null) {
             return {

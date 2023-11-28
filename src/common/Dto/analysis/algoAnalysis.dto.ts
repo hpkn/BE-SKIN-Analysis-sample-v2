@@ -132,21 +132,21 @@ export class BatchIdCheckerDto {
 }
 
 export class SkinAgeConditionDto {
-    @IsNumber()
+    @IsNotEmpty()
     @ApiProperty({
         type: Number,
         description: 'This is required',
         example: 426496,
     })
-    batch_id: number;
+    batch_id: any;
 
-    @IsNumber()
+    @IsNotEmpty()
     @ApiProperty({
         type: Number,
         description: 'This is required',
         example: 2000,
     })
-    bithYear: number;
+    bithYear: any;
 }
 
 export class AlgoAnalysisDTO {
