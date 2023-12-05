@@ -1009,7 +1009,7 @@ export class AlgoAnalysisController {
     })
     @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
-    @Post('datasavingCbb')
+    @Post('cbBoxSaving')
     @HttpCode(200)
     @UseInterceptors(
         FileFieldsInterceptor([
