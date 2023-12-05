@@ -1275,11 +1275,19 @@ export class AlgoAnalysisService {
         }
     }
 
+    // Remove identical object
+    removeIdenticalObjects = (arr: any[]) => {
+        const uniqueObjects = arr.filter(
+            (obj, index, self) => index === self.findIndex((o) => JSON.stringify(o) === JSON.stringify(obj)),
+        );
+        return uniqueObjects;
+    };
+
     async userHistoryWithBatchId(batch_id: number) {
         try {
             const result = await this.database.executeQuery(
                 `
-            SELECT
+                SELECT
                 analysis_type,
                 jsonb_agg ( TEMP ) 
             FROM
@@ -1326,7 +1334,8 @@ export class AlgoAnalysisService {
                             OR type_measurement_id = 4 
                         ) 
                         AND type_image_id = 21 
-                        AND batch_id = $1 
+                        AND batch_id = $1
+						
                     ) AS record
                     LEFT JOIN (
                     SELECT
@@ -1340,7 +1349,9 @@ export class AlgoAnalysisService {
                     FROM
                         measurements AS ms
                         LEFT JOIN type_images AS tpi ON tpi.ID = ms.type_image_id 
-                    ) AS img ON img.batch_id = record.batch_id 
+                        WHERE batch_id = $1
+
+                    ) AS img ON img.batch_id = record.batch_id AND img.type_measurement_id = record.type_measurement_id 
                     WHERE record.type_measurement_id = img.type_measurement_id 
                     AND (record.unique_id = img.unique_id OR record."analysis_type" = 'moistureT' OR record."analysis_type" = 'moistureU')
                 GROUP BY
@@ -1352,23 +1363,33 @@ export class AlgoAnalysisService {
                 ) TEMP 
             GROUP BY
                 analysis_type;
-                
             `,
                 [batch_id],
             );
+
+            // console.log(result);
+
+            // const removeDuplicate = this.removeIdenticalObjects(result);
+            // console.log(removeDuplicate);
 
             let respObj: any = {};
             for (let i = 0; i < result.length; i++) {
                 let obj: any = {};
                 for (let j = 0; j < result[i].jsonb_agg.length; j++) {
                     let imgObj: any = {};
+                    console.log('image check ', result[i].jsonb_agg[j]);
                     for (let k = 0; k < result[i].jsonb_agg[j].images.length; k++) {
+                        // console.log('Checking this --->', result[i].jsonb_agg[j]);
                         if (result[i].analysis_type === 'moistureT' || result[i].analysis_type === 'moistureU') {
                             continue;
                         }
-                        imgObj[result[i].jsonb_agg[j].images[k].type] = { ...result[i].jsonb_agg[j].images[k].url };
+                        // console.log(result[i].jsonb_agg[j].images[k].url);
+                        if (result[i].jsonb_agg[j].time === result[i].jsonb_agg[j].time) {
+                            imgObj[result[i].jsonb_agg[j].images[k].type] = { ...result[i].jsonb_agg[j].images[k].url };
+                        }
                     }
                     if (!obj[result[i].analysis_type]) {
+                        // console.log(imgObj);
                         obj[result[i].analysis_type] = [
                             {
                                 ...result[i].jsonb_agg[j].args,
@@ -1491,7 +1512,7 @@ export class AlgoAnalysisService {
 
     // MoistureU
     // CBB offline saving
-    offlineCBBSaveData(imageRecords: any, dataObject: any[]) {
+    offlineCBBSaveData(dataObject: any[]) {
         if (!dataObject || dataObject.length === 0) {
             return;
         }
@@ -1546,7 +1567,7 @@ export class AlgoAnalysisService {
         const environment = {
             deviceModel: data.deviceModel,
             deviceOS: data.deviceOS,
-            nth_analysis: imageRecords,
+            nth_analysis: '',
             lat: data.lat,
             long: data.long,
             temperature: data.temperature,
