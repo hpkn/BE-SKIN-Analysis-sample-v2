@@ -164,6 +164,13 @@ export class OfflineDatasDTO {
 
     @ApiProperty({ type: [ArgsDTO] })
     args: ArgsDTO[];
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 'V_0.0.1',
+    })
+    appVersion?: String | null;
 }
 
 export class OfflineDataCBBDTO {
@@ -189,7 +196,7 @@ export class OfflineDataCBBDTO {
         example: 5462,
     })
     @IsNotEmpty()
-    batch_id?: number;
+    batchId?: number;
 
     @ApiPropertyOptional({
         type: String,
@@ -206,12 +213,12 @@ export class OfflineDataCBBDTO {
     birthYear?: number;
 
     @ApiProperty({
-        type: String,
+        type: Number,
         description: 'This is required',
-        example: 'keratin',
+        example: 1,
     })
     @IsString()
-    type?: string | null;
+    type?: any | null;
 
     @ApiProperty({
         type: String,
@@ -226,6 +233,13 @@ export class OfflineDataCBBDTO {
         example: 'Android',
     })
     deviceOS?: String | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 'V_0.0.1',
+    })
+    appVersion?: String | null;
 
     @ApiProperty({
         type: String,
@@ -262,28 +276,6 @@ export class OfflineDataCBBDTO {
     })
     uv_index?: number | null;
 
-    @ApiPropertyOptional({
-        type: String,
-        description: 'This is required',
-        example: 20,
-    })
-    questionnaire_score?: number | null;
-
-    @ApiPropertyOptional({
-        type: String,
-        description: 'This is required',
-        example: 200,
-    })
-    computation_score?: number | null;
-
-    // @ApiPropertyOptional({
-    //     type: String,
-    //     description: 'This is required',
-    //     example: 20,
-    // })
-
-    // score_average?: number | null;
-
     @IsOptional()
     task?: AlgoDTO;
 
@@ -293,3 +285,4 @@ export class OfflineDataCBBDTO {
     @Type(() => MultiArgsDTO)
     args: MultiArgsDTO;
 }
+

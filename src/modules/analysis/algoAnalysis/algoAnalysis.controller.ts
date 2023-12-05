@@ -25,6 +25,9 @@ import {
     AlgoAnalysisCBBDTO,
     AlgoAnalysisDTO,
     BatchIdCheckerDto,
+    SkinAgeConditionDto,
+    allCustomerDto,
+    countCustomerDto,
     historyDTO,
     paginationDTO,
 } from 'src/common/Dto/analysis/algoAnalysis.dto';
@@ -40,10 +43,21 @@ import { OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offl
 import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+    ApiBearerAuth,
+    ApiBody,
+    ApiConsumes,
+    ApiExcludeController,
+    ApiExcludeEndpoint,
+    ApiOperation,
+    ApiResponse,
+    ApiTags,
+} from '@nestjs/swagger';
 
 import * as jwt from 'jsonwebtoken';
 import * as fs from 'fs';
+import { toLower } from 'lodash';
+import { WebResultService } from '../webResult/webResult.service';
 
 @ApiTags('Analysis')
 @Controller('analysis')
@@ -60,6 +74,7 @@ export class AlgoAnalysisController {
         private readonly diorTone: SkinToneDiorService,
         private readonly batchAnalysis: BatchAnalysisService,
         private readonly computation: ComputationService,
+        private readonly webResult: WebResultService,
     ) {}
 
     @UseGuards(AuthMiddleware)
@@ -273,7 +288,6 @@ export class AlgoAnalysisController {
     @ApiBearerAuth('access-token')
     @Get('/history/result')
     async userAnalysisImageHistoryWithBatchId(@Query() param: BatchIdCheckerDto, @Res() res: Response) {
-        console.log('here analysis');
         let { batch_id } = param;
 
         // let { customer_id } = body;
@@ -453,6 +467,7 @@ export class AlgoAnalysisController {
         @UploadedFiles()
         file: { originalImage: Express.Multer.File[]; analyzedImage: Express.Multer.File[] },
     ) {
+        body.batchId = Number(body.batch_id);
         if (!file['originalImage'][0] || !file['analyzedImage'][0])
             return res.send({ status: 40002, type: 'BadRequestError', message: 'There is no necassary image file!' });
         const imageRecords = uuidv4();
@@ -649,7 +664,13 @@ export class AlgoAnalysisController {
             const analyzedImage = file.analyzedImage[0].buffer;
             const originalImage = file.originalImage[0].buffer;
 
-            const imageArg = this.AlgoAnalysis.handleofflineImageArg(data);
+            let imageArg;
+            if (/[0-9]/.test(data.type)) {
+                imageArg = this.AlgoAnalysis.handleCBBImageArg(data);
+            } else {
+                imageArg = this.AlgoAnalysis.handleofflineImageArg(data);
+            }
+
             await this.AlgoAnalysis.SaveDataFinal(data, imageRecords, imageArg);
 
             //upload to DB
@@ -714,7 +735,7 @@ export class AlgoAnalysisController {
             const decoded: any = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
             const args = {
-                customer_id: decoded['customer_id'],
+                consultant_id: decoded['consultant_id'],
                 email: decoded['email'],
                 app_id: decoded['app_id'],
             };
@@ -754,195 +775,11 @@ export class AlgoAnalysisController {
         }
     }
 
-    @ApiOperation({
-        summary:
-            'CBB analysis, Expecting multiple image in the same request. The response will include score average, computation and questionnaire result and an array with result for images',
-        security: [{ bearerToken: [] }],
-    })
-    @ApiConsumes('multipart/form-data')
-    @ApiBody({ type: AlgoAnalysisCBBDTO })
-    @ApiResponse({
-        status: 200,
-        description: 'Success',
-        schema: {
-            type: 'object',
-            properties: {
-                status: { type: 'number', example: 200 },
-                service: { type: 'string', example: 'Success' },
-                body: {
-                    type: 'object',
-                    properties: {
-                        computation_score: { type: 'number', example: 56.4 },
-                        questionnaire_score: { type: 'number', example: 70.0 },
-                        score_average: { type: 'number', example: 53.33 },
-                        result: {
-                            type: 'array',
-                            example: [
-                                {
-                                    batchId: 426416,
-                                    algorithm_type: 'spots',
-                                    ver: 'CDS_SP_2.1.2',
-                                    score: 60,
-                                    analyzedImage: {
-                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                    },
-                                    originalImage: {
-                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                    },
-                                    maskImage: {
-                                        id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                        url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    },
-                                },
-                                {
-                                    batchId: 426416,
-                                    algorithm_type: 'spots',
-                                    ver: 'CDS_SP_2.1.2',
-                                    score: 56,
-                                    analyzedImage: {
-                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                    },
-                                    originalImage: {
-                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                    },
-                                    maskImage: {
-                                        id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                        url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    },
-                                },
-                            ],
-                        },
-                    },
-                },
-            },
-        },
-    })
-    @UseGuards(AuthMiddleware)
-    @ApiBearerAuth('access-token')
-    @Post('cbb')
-    @HttpCode(200)
-    @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 5 }]))
-    async combinedAnalysisBox(
-        @Body() data: any,
-        @UploadedFiles() files: { image: Express.Multer.File[] },
-        @Res() res: Response,
-    ) {
-        try {
-            if (!files?.image) {
-                return res.status(HttpStatus.BAD_REQUEST).send({
-                    status: 40002,
-                    type: 'BadRequestError',
-                    message: 'No file!',
-                });
-            }
-            const algoList = [
-                'keratin',
-                'pores',
-                'porphyrin',
-                'sebum',
-                'shine',
-                'spots',
-                'skintone',
-                'wrinkles',
-                'sensitivityscabs',
-                'sensitivityscaling',
-                'sensitivityredness',
-            ];
-
-            if (!algoList.includes(data.type)) {
-                throw new HttpException(`We don't have such type of algorithm -> ${data.type}`, HttpStatus.BAD_REQUEST);
-            }
-
-            const client = celery.createClient('redis://localhost', 'redis://');
-
-            data.batch_id = Number(data.batch_id);
-            const computaionResutlt = {};
-
-            const taskResults = await Promise.all(
-                files.image.map(async (image) => {
-                    const originalImage = image.buffer.toString('base64');
-                    data.task = this.AlgoAnalysis.getTaskByAlgoType(data.type);
-                    const task = client.createTask(data.task.taskName);
-                    let result: any;
-
-                    if (data.task.taskName === 'CNDP_SkinTone' || data.task.taskName === 'CNDP_FitzSG') {
-                        result = await task.applyAsync([
-                            originalImage,
-                            '/home/ubuntu/backendtestuser/repositories/cfa-python/CNDP/files/chart.png',
-                        ]);
-                    } else {
-                        result = await task.applyAsync([originalImage]);
-                    }
-
-                    result = await result.get();
-                    if (result.err) {
-                        throw new HttpException('Internal server error.', HttpStatus.INTERNAL_SERVER_ERROR);
-                    }
-
-                    return result;
-                }),
-            );
-
-            // console.log(taskResults);
-
-            const analysisPromise: Promise<any>[] = [];
-            const savingPromise: Promise<any>[] = [];
-            const scores: number[] = [];
-            let sum = 0;
-
-            taskResults.forEach((taskResult, count) => {
-                sum += taskResult.score;
-                scores.push(taskResult.score);
-                const imageRecords = uuidv4();
-                const imageArg = this.AlgoAnalysis.handleImageArg(data);
-
-                analysisPromise.push(this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResult, imageArg));
-
-                const savingData = this.AlgoAnalysis.finalSave(
-                    computaionResutlt,
-                    data,
-                    files.image[count],
-                    imageRecords,
-                    taskResult,
-                    imageArg,
-                );
-                savingPromise.push(savingData);
-            });
-
-            const result = await Promise.all(analysisPromise);
-
-            const computation = this.computation.computationResult(data.type, data.answers, scores);
-            let promise1 = new Promise(function (resolve, reject) {
-                resolve(
-                    res.send({
-                        status: 200,
-                        message: 'Success',
-                        body: {
-                            result,
-                            computation_score: computation['computation_score'].toFixed(2),
-                            questionnaire_score: computation['questionnaire_score'].toFixed(2),
-                            score_average: (sum / scores.length).toFixed(2),
-                        },
-                    }),
-                );
-            });
-
-            await Promise.all(savingPromise);
-        } catch (error) {
-            console.error(error);
-            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     // CBB offline analysis
 
     @ApiOperation({
         summary:
-            'CBB analysis, Expecting multiple image in the same request. The response will include score average, computation and questionnaire result and an array with result for images',
+            'CBB offline analysis, Expecting multiple originalImage and analyzedImage. The response will include score average, computation and questionnaire',
         security: [{ bearerToken: [] }],
     })
     @ApiConsumes('multipart/form-data')
@@ -961,6 +798,7 @@ export class AlgoAnalysisController {
                         computation_score: { type: 'number', example: 56.4 },
                         questionnaire_score: { type: 'number', example: 70.0 },
                         score_average: { type: 'number', example: 53.33 },
+                        keyWord: { type: 'string', example: 'Mild' },
                         result: {
                             type: 'array',
                             example: [
@@ -1009,7 +847,7 @@ export class AlgoAnalysisController {
     })
     @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
-    @Post('cbBoxSaving')
+    @Post('offlineCBB')
     @HttpCode(200)
     @UseInterceptors(
         FileFieldsInterceptor([
@@ -1023,6 +861,7 @@ export class AlgoAnalysisController {
         @Res() res: Response,
     ) {
         try {
+            console.log(data);
             if (!files?.analyzedImage || !files?.originalImage) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
                     status: 40002,
@@ -1038,49 +877,59 @@ export class AlgoAnalysisController {
                     message: 'The number of analyzed images does not match number of original images',
                 });
             }
-            const algoList = [
-                'keratin',
-                'pores',
-                'porphyrin',
-                'sebum',
-                'shine',
-                'spots',
-                'skintone',
-                'wrinkles',
-                'sensitivityscabs',
-                'sensitivityscaling',
-                'sensitivityredness',
-            ];
 
-            if (!algoList.includes(data.type)) {
-                throw new HttpException(`We don't have such type of algorithm -> ${data.type}`, HttpStatus.BAD_REQUEST);
+            data.batch_id = Number(data.batchId);
+
+            // data.task = this.AlgoAnalysis.getCBBTaskByAlgoType(Number(data.type));
+            let algo;
+            let algoId;
+            if (/[0-9]/.test(data.type)) {
+                algo = this.AlgoAnalysis.getCBBTaskByAlgoType(Number(data.type));
+                algoId = algo.id;
+            } else {
+                data.task = this.AlgoAnalysis.getTaskByAlgoType(data.type);
+                algoId = await this.AlgoAnalysis.getAlgoID(toLower(data.type));
             }
 
-            const algoId = await this.AlgoAnalysis.getAlgoID(data.type);
-
-            data.batch_id = Number(data.batch_id);
-            data.task = this.AlgoAnalysis.getTaskByAlgoType(data.type);
+            // const algo = this.AlgoAnalysis.getCBBTaskByAlgoType(data.type);
 
             const analyzed: any[] = [];
             const original: any[] = [];
             const retunAnalyzed: any[] = [];
             const returnOriginal: any[] = [];
-            const scores: number[] = JSON.parse(data.args).score;
+            let scores: number[];
+            let raw: number[];
+            let promitive = this.AlgoAnalysis.isPrimitive(data.args);
+            if (promitive === true) {
+                scores = JSON.parse(data.args).score;
+                raw = JSON.parse(data.args).raw;
+            } else {
+                scores = data.args.score;
+                raw = data.args.raw;
+            }
+            console.log('check score', scores);
             const savingPromise: Promise<any>[] = [];
 
             let sum = 0;
+            sum = scores.reduce((accumulator, currentValue) => accumulator + currentValue);
             const imageRecords = uuidv4();
-            const computation = this.computation.computationResult(data.type, data.answers, scores);
+            const computation = this.computation.computationResult(
+                Number(data.type),
+                data?.answers === undefined ? '' : data?.answers,
+                scores,
+            );
 
+            const avg = sum / scores.length;
+
+            console.log(avg);
             for (let i = 0; i < files.analyzedImage?.length; i++) {
-                sum += scores[1];
-                const imageArg = this.AlgoAnalysis.handleImageArg(data);
+                const imageArg = this.AlgoAnalysis.handleCBBImageArg(data);
                 analyzed.push([
                     data.batch_id,
                     imageArg.analyzedImageArgs.url,
                     imageArg.analyzedImageArgs.sys_url,
                     imageArg.analyzedImageArgs.hash,
-                    algoId[0]['id'],
+                    algoId,
                     18,
                     JSON.stringify({
                         nth_analysis: imageRecords,
@@ -1093,17 +942,19 @@ export class AlgoAnalysisController {
                     imageArg.originalImageArgs.url,
                     imageArg.originalImageArgs.sys_url,
                     imageArg.originalImageArgs.hash,
-                    algoId[0]['id'],
+                    algoId,
                     21,
                     JSON.stringify({
                         nth_analysis: imageRecords,
                     }),
                     JSON.stringify({
-                        score: JSON.parse(data.args).score[i],
-                        raw: JSON.parse(data.args).raw[i],
-                        computation_score: computation['computation_score'].toFixed(2),
+                        score: scores[i],
+                        raw: raw[i],
+                        computation_score: computation['computation_score']?.toFixed(2),
                         questionnaire_score: computation['questionnaire_score'].toFixed(2),
-                        score_average: (sum / scores.length).toFixed(2),
+                        score_average: avg.toFixed(2),
+                        answers: data?.answers === undefined ? '' : data?.answers,
+                        keyWord: computation['keyWord'],
                     }),
                 ]);
 
@@ -1121,7 +972,7 @@ export class AlgoAnalysisController {
                 returnOriginal.push({
                     batchId: data.batch_id,
                     algorithm_type: data.type,
-                    score: JSON.parse(item[7]).score,
+                    score: promitive === true ? JSON.parse(item[7]).score : item[7].score,
                     originalImage: {
                         id: item[3],
                         url: item[1],
@@ -1170,15 +1021,18 @@ export class AlgoAnalysisController {
 
             this.AlgoAnalysis.offlineCBBSaveData(imageRecords, savedResult);
 
+            console.log();
             let promise1 = new Promise(function (resolve, reject) {
                 resolve(
                     res.send({
                         status: 200,
                         message: 'Success',
                         body: {
-                            computation_score: computation['computation_score'].toFixed(2),
-                            questionnaire_score: computation['questionnaire_score'].toFixed(2),
-                            score_average: (sum / scores.length).toFixed(2),
+                            computation_score: computation['computation_score']?.toFixed(2),
+                            questionnaire_score: computation['questionnaire_score']?.toFixed(2),
+                            score_average: avg.toFixed(2),
+                            keyWord: computation['keyWord'],
+                            keyword_id: computation['keyword_id'],
                             result: [...newArray],
                         },
                     }),
@@ -1196,6 +1050,98 @@ export class AlgoAnalysisController {
         } catch (error) {
             console.error(error);
             throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @UseGuards(AuthMiddleware)
+    @ApiBearerAuth('access-token')
+    @Post('/countConsultation')
+    async analysisCount(@Body() body: countCustomerDto, @Res() res: Response) {
+        try {
+            let { customer_ids } = body;
+
+            console.log('here param', body);
+            const insert = await this.AlgoAnalysis.countAnalysis(customer_ids);
+
+            return res.status(200).json({
+                status: 200,
+                service: 'requestBatchId',
+                body: { batch_id: insert },
+            });
+        } catch (e) {
+            throw new Error(e);
+        }
+    }
+
+    @UseGuards(AuthMiddleware)
+    @ApiBearerAuth('access-token')
+    @Post('/allConsultation')
+    async calculateRevisit(@Res() res: Response, @Body() body: allCustomerDto) {
+        try {
+            let { customer_ids, month } = body;
+
+            const result = await this.AlgoAnalysis.calculateRevisit(customer_ids, month);
+
+            return res.status(200).json({
+                status: 200,
+                service: 'requestBatchId',
+                body: { result: result },
+            });
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    @UseGuards(AuthMiddleware)
+    @ApiBearerAuth('access-token')
+    @Post('/skinAgeCondition')
+    async skinAgeCondition(@Body() body: SkinAgeConditionDto, @Res() res: Response) {
+        let { batch_id, bithYear } = body;
+
+        // let { customer_id } = body;
+        try {
+            const { spots, wrinkles, moistureT, sebumT, moistureU, sebumU } = await this.AlgoAnalysis.skinAgeOperation(
+                Number(batch_id),
+            );
+
+            const skinAge = this.computation.skinAge(wrinkles, spots, bithYear);
+
+            // const { moisture, sebum } = this.webResult.skinCondition(moistureT, moistureU, sebumT, sebumU);
+
+            const answers = await this.AlgoAnalysis.fetchQuestion(Number(batch_id));
+
+            let questFr = -1;
+            if (answers !== null) {
+                questFr = this.computation.questionnaireFrequency(answers, 5);
+            }
+
+            console.log('check here', moistureT, moistureU, sebumT, sebumU, questFr);
+
+            const skinCondition = this.webResult.getSkinCondition(moistureT, sebumT, moistureU, sebumU, questFr);
+
+            // const skinCondition = this.webResult.check(moisture, sebum);
+            console.log(answers, questFr, skinCondition);
+
+            this.AlgoAnalysis.saveSkinCondtion(Number(batch_id), skinCondition, skinAge);
+
+            return res.status(200).json({
+                status: 200,
+                message: 'Success',
+                service: 'Skin Age & Condition',
+                body: {
+                    skinAge: skinAge,
+                    skinCondition: skinCondition,
+                    keyword_id: skinCondition,
+                },
+            });
+        } catch (error) {
+            console.log(error);
+            return res.send({
+                status: 500,
+                type: 'InternalServerError',
+                message: 'Internal server error.',
+                error: error.message,
+            });
         }
     }
 }

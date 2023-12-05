@@ -34,28 +34,12 @@ export class AlgoDTO {
 
 export class MoistureDTO {
     @ApiProperty({
-        type: 'array',
-        items: { type: 'string', format: 'binary' },
-    })
-    @IsNotEmpty()
-    // @IsArray()
-    originalImage: string[];
-
-    @ApiProperty({
-        type: 'array',
-        items: { type: 'string', format: 'binary' },
-    })
-    @IsNotEmpty()
-    // @IsArray()
-    analyzedImage: string[];
-
-    @ApiProperty({
         type: String,
         description: 'This is required',
         example: 5462,
     })
     @IsNotEmpty()
-    batchId?: number;
+    batch_id?: number;
 
     @ApiProperty({
         type: String,
@@ -64,6 +48,20 @@ export class MoistureDTO {
     })
     @IsString()
     type?: string | null;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is required',
+        example: '29',
+    })
+    skinAge?: string | null;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is required',
+        example: 'Mild',
+    })
+    skinCondition?: string | null;
 
     @ApiProperty({
         type: String,
@@ -128,16 +126,26 @@ export class MoistureDTO {
     })
     computation_score?: number | null;
 
-    @ApiProperty({ type: [ArgsDTO] })
-    args: ArgsDTO[];
+    // @ApiProperty({ type: [ArgsDTO] })
+    // args: ArgsDTO[];
 
     @IsOptional()
     // @IsString()
     task: any;
 
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 200,
+    })
     @IsOptional()
     raw: any;
 
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 200,
+    })
     @IsOptional()
     score: any;
 }
