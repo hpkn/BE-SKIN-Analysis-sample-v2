@@ -11,6 +11,8 @@ import { CustomerModule } from './modules/customer/customer.module';
 import { BullModule } from '@nestjs/bull';
 import { AuthMiddleware } from './common/middleWare/authMiddlware/auth.middleware';
 import { TimingMiddleware } from './common/middleWare/timingMiddleware/timing.middleware';
+import { ApiKeyModule } from './modules/apiKey-auth/apikey.module';
+import { ApiKeyMiddleware } from './common/middleWare/authMiddlware/apikey.middleware';
 
 @Module({
     imports: [
@@ -41,12 +43,14 @@ import { TimingMiddleware } from './common/middleWare/timingMiddleware/timing.mi
         },
         AuthMiddleware,
         FileUploaddModule,
+        ApiKeyModule,
+        ApiKeyMiddleware,
     ],
 })
 export class AppModule {
     // Timing MiddleWare
     configure(consumer: MiddlewareConsumer) {
         consumer.apply(TimingMiddleware).forRoutes('*');
+        consumer.apply(ApiKeyMiddleware).forRoutes('web-result/*');
     }
 }
-
