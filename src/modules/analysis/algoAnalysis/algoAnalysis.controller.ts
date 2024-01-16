@@ -39,7 +39,7 @@ import { FileUploadService } from 'src/common/FileUpload/fileUpload.service';
 import { SebumUService } from 'src/modules/algorithms/sebumU/sebumU.service';
 import { SebumTService } from 'src/modules/algorithms/sebumT/sebumT.service';
 import { SkinToneDiorService } from 'src/modules/algorithms/skinToneDior/skinToneDior.service';
-import { OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
+import { EncryptedCBBDTO, OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
 import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
@@ -1098,8 +1098,6 @@ export class AlgoAnalysisController {
     @Post('/skinAgeCondition')
     async skinAgeCondition(@Body() body: SkinAgeConditionDto, @Res() res: Response) {
         let { batch_id, bithYear } = body;
-
-        // let { customer_id } = body;
         try {
             const { spots, wrinkles, moistureT, sebumT, moistureU, sebumU } = await this.AlgoAnalysis.skinAgeOperation(
                 Number(batch_id),
@@ -1143,6 +1141,302 @@ export class AlgoAnalysisController {
                 message: 'Internal server error.',
                 error: error.message,
             });
+        }
+    }
+
+    // Encryption
+    @ApiOperation({
+        summary: 'encryptedCBB, is the version of the CBB accepting encrypted score and decripts them',
+        security: [{ bearerToken: [] }],
+    })
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({ type: EncryptedCBBDTO })
+    @ApiResponse({
+        status: 200,
+        description: 'Success',
+        schema: {
+            type: 'object',
+            properties: {
+                status: { type: 'number', example: 200 },
+                service: { type: 'string', example: 'Success' },
+                body: {
+                    type: 'object',
+                    properties: {
+                        computation_score: { type: 'number', example: 56.4 },
+                        questionnaire_score: { type: 'number', example: 70.0 },
+                        score_average: { type: 'number', example: 53.33 },
+                        keyWord: { type: 'string', example: 'Mild' },
+                        result: {
+                            type: 'array',
+                            example: [
+                                {
+                                    batchId: 426416,
+                                    algorithm_type: 'spots',
+                                    // ver: 'CDS_SP_2.1.2',
+                                    score: 60,
+                                    analyzedImage: {
+                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                    },
+                                    originalImage: {
+                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                    },
+                                    // maskImage: {
+                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    // },
+                                },
+                                {
+                                    batchId: 426416,
+                                    algorithm_type: 'spots',
+                                    // ver: 'CDS_SP_2.1.2',
+                                    score: 56,
+                                    analyzedImage: {
+                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                    },
+                                    originalImage: {
+                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                    },
+                                    // maskImage: {
+                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    // },
+                                },
+                            ],
+                        },
+                    },
+                },
+            },
+        },
+    })
+    @UseGuards(AuthMiddleware)
+    @ApiBearerAuth('access-token')
+    @Post('encryptedCBB')
+    @HttpCode(200)
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'originalImage', maxCount: 5 },
+            { name: 'analyzedImage', maxCount: 5 },
+        ]),
+    )
+    async encryptionCBB(
+        @Body() data: any,
+        @UploadedFiles() files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
+        @Res() res: Response,
+    ) {
+        try {
+            if (!files?.analyzedImage || !files?.originalImage) {
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'No file!',
+                });
+            }
+
+            if (files?.analyzedImage.length !== files?.originalImage.length) {
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'The number of analyzed images does not match number of original images',
+                });
+            }
+
+            data.batch_id = Number(data.batchId);
+
+            // data.task = this.AlgoAnalysis.getCBBTaskByAlgoType(Number(data.type));
+            let algo;
+            let algoId;
+            if (/[0-9]/.test(data.type)) {
+                algo = this.AlgoAnalysis.getCBBTaskByAlgoType(Number(data.type));
+                algoId = algo.id;
+            } else {
+                data.task = this.AlgoAnalysis.getTaskByAlgoType(data.type);
+                algoId = await this.AlgoAnalysis.getAlgoID(toLower(data.type));
+            }
+
+            // const algo = this.AlgoAnalysis.getCBBTaskByAlgoType(data.type);
+
+            const analyzed: any[] = [];
+            const original: any[] = [];
+            const retunAnalyzed: any[] = [];
+            const returnOriginal: any[] = [];
+            let scores: any[];
+            let raw: any[];
+            let decryptedScores = [];
+            let decryptedRaw = [];
+            let promitive = this.AlgoAnalysis.isPrimitive(data.args);
+            if (promitive === true) {
+                scores = JSON.parse(data.args).score;
+                raw = JSON.parse(data.args).raw;
+
+                console.log('check score --:', scores);
+
+                for (let i = 0; i < scores.length; i++) {
+                    decryptedScores.push(this.AlgoAnalysis.scoreDecrypt(scores[i]));
+                    decryptedRaw.push(this.AlgoAnalysis.scoreDecrypt(raw[i]));
+                }
+                scores = decryptedScores;
+                raw = decryptedRaw;
+            } else {
+                scores = data.args.score;
+                raw = data.args.raw;
+                for (let i = 0; i < scores.length; i++) {
+                    decryptedScores.push(this.AlgoAnalysis.scoreDecrypt(scores[i]));
+                    decryptedRaw.push(this.AlgoAnalysis.scoreDecrypt(raw[i]));
+                }
+                scores = decryptedScores;
+                raw = decryptedRaw;
+            }
+
+            console.log(scores);
+
+            const savingPromise: Promise<any>[] = [];
+
+            let sum = 0;
+            sum = scores.reduce((accumulator, currentValue) => accumulator + currentValue);
+
+            const computation = this.computation.computationResult(
+                Number(data.type),
+                data?.answers === undefined ? '' : data?.answers,
+                scores,
+            );
+
+            console.log(scores);
+
+            const avg = sum / scores.length;
+
+            for (let i = 0; i < files.analyzedImage?.length; i++) {
+                const imageRecords = uuidv4();
+                const imageArg = this.AlgoAnalysis.handleCBBImageArg(data);
+                analyzed.push([
+                    data.batch_id,
+                    imageArg.analyzedImageArgs.url,
+                    imageArg.analyzedImageArgs.sys_url,
+                    imageArg.analyzedImageArgs.hash,
+                    algoId,
+                    18,
+                    JSON.stringify({
+                        nth_analysis: imageRecords,
+                    }),
+                    0,
+                ]);
+
+                original.push([
+                    data.batch_id,
+                    imageArg.originalImageArgs.url,
+                    imageArg.originalImageArgs.sys_url,
+                    imageArg.originalImageArgs.hash,
+                    algoId,
+                    21,
+                    JSON.stringify({
+                        nth_analysis: imageRecords,
+                    }),
+                    JSON.stringify({
+                        score: scores[i],
+                        raw: raw[i],
+                        computation_score: computation['computation_score']?.toFixed(2),
+                        questionnaire_score: computation['questionnaire_score'].toFixed(2),
+                        score_average: avg.toFixed(2),
+                        answers: data?.answers === undefined ? '' : data?.answers,
+                        keyWord: computation['keyWord'],
+                    }),
+                ]);
+
+                //  Image saving
+                const savingData = this.AlgoAnalysis.offlineCBBSaveImage(
+                    files?.originalImage[i].buffer,
+                    files?.analyzedImage[i].buffer,
+                    imageArg,
+                    data,
+                );
+                savingPromise.push(savingData);
+            }
+
+            const saveOriginal = original.map((item) => {
+                returnOriginal.push({
+                    batchId: data.batch_id,
+                    algorithm_type: data.type,
+                    score: promitive === true ? JSON.parse(item[7]).score : item[7].score,
+                    originalImage: {
+                        id: item[3],
+                        url: item[1],
+                    },
+                });
+                return {
+                    batch_id: item[0],
+                    url: item[1],
+                    sys_url: item[2],
+                    hash: item[3],
+                    type_measurement_id: item[4],
+                    type_image_id: item[5],
+                    args: item[6],
+                    scores: item[7],
+                };
+            });
+            //return original
+
+            const saveAnalyzed = analyzed.map((item) => {
+                retunAnalyzed.push({
+                    analyzedImage: {
+                        id: item[3],
+                        url: item[1],
+                    },
+                });
+                return {
+                    batch_id: item[0],
+                    url: item[1],
+                    sys_url: item[2],
+                    hash: item[3],
+                    type_measurement_id: item[4],
+                    type_image_id: item[5],
+                    args: item[6],
+                    scores: item[7],
+                };
+            });
+
+            const newArray = returnOriginal.map((item, index) => {
+                return {
+                    ...item,
+                    analyzedImage: retunAnalyzed[index].analyzedImage,
+                };
+            });
+
+            const savedResult = [...saveAnalyzed, ...saveOriginal];
+
+            this.AlgoAnalysis.offlineCBBSaveData(savedResult);
+
+            console.log();
+            let promise1 = new Promise(function (resolve, reject) {
+                resolve(
+                    res.send({
+                        status: 200,
+                        message: 'Success',
+                        body: {
+                            computation_score: computation['computation_score']?.toFixed(2),
+                            questionnaire_score: computation['questionnaire_score']?.toFixed(2),
+                            score_average: avg.toFixed(2),
+                            keyWord: computation['keyWord'],
+                            keyword_id: computation['keyword_id'],
+                            result: [...newArray],
+                        },
+                    }),
+                );
+            });
+
+            await Promise.all(savingPromise).catch((e) => {
+                Promise.all(savingPromise).catch((e) => {
+                    fs.appendFile('error.log', this.AlgoAnalysis.getErrorLog(data.barch_id), 'utf8', (err) => {
+                        if (err) throw err;
+                    });
+                });
+            });
+            await this.AlgoAnalysis.updateData(data, '');
+        } catch (error) {
+            console.error(error);
+            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }
 }

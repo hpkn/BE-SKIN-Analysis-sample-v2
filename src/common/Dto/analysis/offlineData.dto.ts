@@ -14,28 +14,6 @@ import { Type } from 'class-transformer';
 import { isNull } from 'util';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
-export class MultiArgsDTO {
-    @ApiProperty({
-        description: 'array of Scores',
-        type: [Number],
-        example: [1, 23],
-    })
-    @IsArray()
-    @ArrayNotEmpty()
-    @IsInt({ each: true })
-    score?: number[];
-
-    @ApiProperty({
-        description: 'array of raw Scores',
-        type: [Number],
-        example: [1, 23],
-    })
-    @IsArray()
-    @ArrayNotEmpty()
-    @IsInt({ each: true })
-    raw?: number[];
-}
-
 export class ArgsDTO {
     @ApiProperty({
         type: Number,
@@ -55,6 +33,148 @@ export class AlgoDTO {
     })
     algoName?: string;
 }
+
+export class MultiArgsEncryptionDTO {
+    @ApiProperty({
+        description: 'array of Scores',
+        type: [String],
+        example: ['am', 'amHPC'],
+    })
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsInt({ each: true })
+    score?: string[];
+
+    @ApiProperty({
+        description: 'array of raw Scores',
+        type: [String],
+        example: ['am', 'amHPC'],
+    })
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsInt({ each: true })
+    raw?: string[];
+}
+
+/* 
+    CBB Encryption
+*/
+
+export class EncryptedCBBDTO {
+    @ApiProperty({
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+    })
+    @IsNotEmpty()
+    // @IsArray()
+    originalImage: string[];
+
+    @ApiProperty({
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+    })
+    @IsNotEmpty()
+    // @IsArray()
+    analyzedImage: string[];
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 5462,
+    })
+    @IsNotEmpty()
+    batchId?: number;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is required',
+    })
+    answers?: string | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 5462,
+    })
+    @IsNotEmpty()
+    birthYear?: number;
+
+    @ApiProperty({
+        type: Number,
+        description: 'This is required',
+        example: 1,
+    })
+    @IsString()
+    type?: any | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 'Samsung',
+    })
+    deviceModel?: string | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 'Android',
+    })
+    deviceOS?: String | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 'V_0.0.1',
+    })
+    appVersion?: String | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 45,
+    })
+    lat?: number | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 0,
+    })
+    long?: number | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 20,
+    })
+    temperature?: number | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 0,
+    })
+    humidity?: number | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 20,
+    })
+    uv_index?: number | null;
+
+    @IsOptional()
+    task?: AlgoDTO;
+
+    @ApiProperty({ description: 'Nested object containing score and raw data', type: MultiArgsEncryptionDTO })
+    @IsObject()
+    @ValidateNested()
+    @Type(() => MultiArgsEncryptionDTO)
+    args: MultiArgsEncryptionDTO;
+}
+/* 
+    CBB and offline upload
+*/
 
 export class OfflineDatasDTO {
     @ApiProperty({
@@ -173,6 +293,28 @@ export class OfflineDatasDTO {
     appVersion?: String | null;
 }
 
+export class MultiArgsDTO {
+    @ApiProperty({
+        description: 'array of Scores',
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsInt({ each: true })
+    score?: number[];
+
+    @ApiProperty({
+        description: 'array of raw Scores',
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsArray()
+    @ArrayNotEmpty()
+    @IsInt({ each: true })
+    raw?: number[];
+}
+
 export class OfflineDataCBBDTO {
     @ApiProperty({
         type: 'array',
@@ -285,4 +427,3 @@ export class OfflineDataCBBDTO {
     @Type(() => MultiArgsDTO)
     args: MultiArgsDTO;
 }
-

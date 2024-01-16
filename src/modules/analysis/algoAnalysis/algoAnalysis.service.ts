@@ -1826,5 +1826,50 @@ export class AlgoAnalysisService {
     isPrimitive(obj: any): boolean {
         return (typeof obj !== 'object' && typeof obj !== 'function') || obj === null;
     }
-}
 
+    scoreDecrypt(input: string) {
+        const firstDigitMap: any = {
+            'P5': '0',
+            'am': '1',
+            '!0': '2',
+            'c0': '3',
+            '3d': '4',
+            '*l': '5',
+            '~~': '6',
+            'zt': '7',
+            '=y': '8',
+            '?.': '9',
+        };
+
+        const secondDigitMap: any = {
+            'HPC': '0',
+            '*v7': '1',
+            '-ua': '2',
+            'zgq': '3',
+            'x91': '4',
+            'man': '5',
+            'pan': '6',
+            'aZH': '7',
+            '++8': '8',
+            'kim': '9',
+        };
+
+        if (input.length === 2) {
+            return Number(firstDigitMap[input]);
+        } else if (input.length > 2) {
+            let firstPart: any = input.slice(0, 2);
+
+            firstPart = firstDigitMap[firstPart];
+
+            let secondPart: any = input.slice(2);
+            secondPart = secondDigitMap[secondPart];
+
+            console.log(secondPart, firstPart);
+            const concatResult = Number(firstPart + secondPart);
+
+            return concatResult;
+        } else {
+            return null;
+        }
+    }
+}
