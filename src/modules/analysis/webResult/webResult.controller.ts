@@ -10,8 +10,6 @@ export class WebResultController {
     constructor(private readonly webResult: WebResultService) {}
 
     @Get('/cndpskin/:batch_id')
-    // @UseGuards(ApiKeyGuard)
-    // @UseGuards(AuthGuard('bearer'))
     async getBatchId(@Param('batch_id') batch_id: number, @Res() res: Response) {
         try {
             const result = await this.webResult.webResult(batch_id);
@@ -99,3 +97,4 @@ export class WebResultController {
         }
     }
 }
+
