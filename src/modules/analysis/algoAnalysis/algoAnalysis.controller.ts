@@ -861,7 +861,6 @@ export class AlgoAnalysisController {
         @Res() res: Response,
     ) {
         try {
-            console.log(data);
             if (!files?.analyzedImage || !files?.originalImage) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
                     status: 40002,
