@@ -418,6 +418,30 @@ export class OfflineDataCBBDTO {
     })
     uv_index?: number | null;
 
+    /* Optional customer data. */
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is optional',
+        example: 'Male',
+    })
+    gender?: String | null;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is optional',
+        example: 'SG1',
+    })
+    skin_color_group?: String | null;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is optional',
+        example: 'Dark Skin',
+    })
+    ethnicities?: String | null;
+
+    /* Optional customer data. */
+
     @IsOptional()
     task?: AlgoDTO;
 
@@ -427,3 +451,18 @@ export class OfflineDataCBBDTO {
     @Type(() => MultiArgsDTO)
     args: MultiArgsDTO;
 }
+
+// SG1
+// SG2
+// SG3
+// SG4
+// SG5
+// SG6
+
+// East Asian
+// South Asian
+// Caucasian
+// Dark Skin
+// Hispanic
+// Middle East
+// Southeast Asian

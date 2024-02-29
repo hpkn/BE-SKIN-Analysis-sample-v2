@@ -1574,7 +1574,11 @@ export class AlgoAnalysisService {
             humidity: data.humidity,
             uv_index: data.uv_index,
             appVersion: data.appVersion,
+            gender: data.gender ?? '',
+            skin_color_group: data.skin_color_group ?? '',
+            ethnicities: data.ethnicities ?? '',
         };
+
         await this.updateEnvironment(data.batch_id, environment);
     }
 
