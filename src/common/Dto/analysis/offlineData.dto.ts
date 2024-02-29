@@ -302,7 +302,7 @@ export class MultiArgsDTO {
     @IsArray()
     @ArrayNotEmpty()
     @IsInt({ each: true })
-    score?: number[];
+    score?: number[] | any[];
 
     @ApiProperty({
         description: 'array of raw Scores',
@@ -312,7 +312,7 @@ export class MultiArgsDTO {
     @IsArray()
     @ArrayNotEmpty()
     @IsInt({ each: true })
-    raw?: number[];
+    raw?: number[] | any[];
 }
 
 export class OfflineDataCBBDTO {
@@ -449,20 +449,14 @@ export class OfflineDataCBBDTO {
     @IsObject()
     @ValidateNested()
     @Type(() => MultiArgsDTO)
-    args: MultiArgsDTO;
+    args: MultiArgsDTO | any;
+
+    @IsOptional()
+    batch_id: any;
+
+    @IsOptional()
+    encryptedCBB: boolean = false;
+
+    @IsOptional()
+    kHeadSpa: boolean = false;
 }
-
-// SG1
-// SG2
-// SG3
-// SG4
-// SG5
-// SG6
-
-// East Asian
-// South Asian
-// Caucasian
-// Dark Skin
-// Hispanic
-// Middle East
-// Southeast Asian
