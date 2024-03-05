@@ -97,6 +97,7 @@ export class WebResultService {
             if (sScoreT >= 49 && sScoreT < 81) tZoneType = oily;
             if (sScoreT >= 81 && sScoreT <= 99) tZoneType = veryOily;
         }
+
         if (mScoreT >= 6 && mScoreT < 16) {
             if (sScoreT >= 0 && sScoreT < 6) tZoneType = dry;
             if (sScoreT >= 6 && sScoreT < 16) tZoneType = dry;
@@ -104,6 +105,7 @@ export class WebResultService {
             if (sScoreT >= 49 && sScoreT < 81) tZoneType = oily;
             if (sScoreT >= 81 && sScoreT <= 99) tZoneType = veryOily;
         }
+
         if (mScoreT >= 16 && mScoreT < 49) {
             if (sScoreT >= 0 && sScoreT < 6) tZoneType = dry;
             if (sScoreT >= 6 && sScoreT < 16) tZoneType = normal;
@@ -111,6 +113,7 @@ export class WebResultService {
             if (sScoreT >= 49 && sScoreT < 81) tZoneType = oily; // Here
             if (sScoreT >= 81 && sScoreT <= 99) tZoneType = veryOily;
         }
+
         if (mScoreT >= 49 && mScoreT < 81) {
             if (sScoreT >= 0 && sScoreT < 6) tZoneType = normal;
             if (sScoreT >= 6 && sScoreT < 16) tZoneType = normal;
@@ -199,8 +202,6 @@ export class WebResultService {
             if (uZoneType == oily) skinCondition = oily;
             if (uZoneType == veryOily) skinCondition = veryOily;
         }
-
-        console.log('------------========', tZoneType, uZoneType, skinCondition);
 
         let keyword_value = '';
 
@@ -301,8 +302,6 @@ export class WebResultService {
         return result;
     }
 
-    // Check
-
     async webResultAverage(batch_id: number) {
         const result = await this.database.executeQuery(
             `
@@ -389,5 +388,73 @@ export class WebResultService {
 
         return result;
     }
-}
 
+    // Analysis Web Result
+    async getBatchId(batch_id: number) {
+        const result = await this.webResult(batch_id);
+        const avg = await this.webResultAverage(batch_id);
+        const skinAge = await this.getSkinAge(batch_id);
+
+        let moistureT = null;
+        let moistureU = null;
+        let sebumT = null;
+        let sebumU = null;
+
+        for (let i = 0; i < result.length; i++) {
+            if (result[i]['measurement'] === 'moistureT' || result[i]['measurement'] === 'moistureU') {
+                result[i]['analyzed_image_url'] = null;
+                result[i]['original_image_url'] = null;
+            }
+
+            result[i].value = +result[i].value;
+            for (let j = 0; j < avg.length; j++) {
+                if (avg[j].measurement === 'moistureT') moistureT = avg[j].avg;
+                if (avg[j].measurement === 'moistureU') moistureU = avg[j].avg;
+                if (avg[j].measurement === 'sebumT') sebumT = avg[j].avg;
+                if (avg[j].measurement === 'sebumU') sebumU = avg[j].avg;
+
+                if (result[i]['measurement'] === avg[j].measurement) {
+                    result[i]['avg_value'] = parseFloat(avg[j].avg);
+                    result[i]['keyword_value'] = avg[j]['keyword_value'];
+                    result[i]['keyword_id'] = parseFloat(avg[j].keyword_id);
+                }
+
+                if (result[i]['computation_score']) {
+                    result[i]['computation_score'] = Number(result[i]['computation_score']);
+                }
+            }
+        }
+
+        const condition = this.skinCondition(Number(moistureT), Number(moistureU), Number(sebumT), Number(sebumU));
+        const conditionResult = this.check(condition.moisture, condition.sebum);
+
+        if (moistureT !== null || moistureU !== null || sebumT !== null || sebumU !== null) {
+            result.push({
+                measurement: 'Skin Condition',
+                value: null,
+                date: null,
+                time: null,
+                original_image_url: null,
+                analyzed_image_url: null,
+                avg_value: null,
+                keyword_value: conditionResult.keyword_value,
+                keyword_id: conditionResult.keyword_id,
+            });
+        }
+
+        if (skinAge[0]?.skin_age) {
+            result.push({
+                measurement: 'SkinAge',
+                value: Number(skinAge[0]?.skin_age),
+                date: skinAge[0]?.date,
+                time: skinAge[0]?.time,
+                original_image_url: null,
+                analyzed_image_url: null,
+                avg_value: null,
+                keyword_value: Number(skinAge[0]?.skin_age),
+                keyword_id: null,
+            });
+        }
+        return result;
+    }
+}

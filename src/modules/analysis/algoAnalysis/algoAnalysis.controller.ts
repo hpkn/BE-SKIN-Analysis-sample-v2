@@ -42,21 +42,11 @@ import { SkinToneDiorService } from 'src/modules/algorithms/skinToneDior/skinTon
 import { EncryptedCBBDTO, OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
-import {
-    ApiBearerAuth,
-    ApiBody,
-    ApiConsumes,
-    ApiExcludeController,
-    ApiExcludeEndpoint,
-    ApiOperation,
-    ApiResponse,
-    ApiTags,
-} from '@nestjs/swagger';
-
-import * as jwt from 'jsonwebtoken';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import * as fs from 'fs';
 import { toLower } from 'lodash';
 import { WebResultService } from '../webResult/webResult.service';
+import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
 
 @ApiTags('Analysis')
 @Controller('analysis')
@@ -282,8 +272,6 @@ export class AlgoAnalysisController {
     @Get('/history/result')
     async userAnalysisImageHistoryWithBatchId(@Query() param: BatchIdCheckerDto, @Res() res: Response) {
         let { batch_id } = param;
-
-        // let { customer_id } = body;
         try {
             const data = await this.AlgoAnalysis.userHistoryWithBatchId(Number(batch_id));
 
@@ -310,6 +298,13 @@ export class AlgoAnalysisController {
     @Post('/moistureU')
     async moistureU(@Res() res: Response, @Body() body: any) {
         try {
+            if (!body?.kHeadSpa) {
+                body.kHeadSpa = false;
+            }
+            if (body?.kHeadSpa === true) {
+                const newScore = await this.AlgoAnalysis.kheadSpaCheck(body.batch_id, 'moisture', body.score);
+                body.score = newScore?.computationScore ?? body.score;
+            }
             this.moisture_u.saveData(body);
 
             return res.status(201).send({
@@ -340,6 +335,14 @@ export class AlgoAnalysisController {
     @Post('/moistureT')
     async moistureT(@Res() res: Response, @Body() body: any) {
         try {
+            if (!body?.kHeadSpa) {
+                body.kHeadSpa = false;
+            }
+            if (body?.kHeadSpa === true) {
+                const newScore = await this.AlgoAnalysis.kheadSpaCheck(body.batch_id, 'moisture', body.score);
+                body.score = newScore?.computationScore ?? body.score;
+            }
+
             this.moisture_t.saveData(body);
 
             return res.status(201).send({
@@ -375,12 +378,14 @@ export class AlgoAnalysisController {
         ]),
     )
     async sebumU(
-        @Query() param: any,
         @Res() res: Response,
-        @Body() body: any,
+        @Body() body: MoistureDTO,
         @UploadedFiles()
         file: { originalImage: Express.Multer.File[]; analyzedImage: Express.Multer.File[] },
     ) {
+        if (!body?.kHeadSpa) {
+            body.kHeadSpa = false;
+        }
         if (!file['originalImage'][0] || !file['analyzedImage'][0])
             return res.send({ status: 40002, type: 'BadRequestError', message: 'There is no necassary image file!' });
 
@@ -392,6 +397,11 @@ export class AlgoAnalysisController {
         const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', '', 'sebumU');
 
         const originalImageArgs = this.S3Image.getImageArgs('originalImage', '', 'sebumU');
+
+        if (body?.kHeadSpa === true || body?.kHeadSpa === 'true') {
+            const newScore = await this.AlgoAnalysis.kheadSpaCheck(body.batch_id, 'sebum', body.score);
+            body.score = newScore?.computationScore ?? body.score;
+        }
 
         await this.sebum_u.saveData(body, analyzedImageArgs, originalImageArgs, imageRecords);
 
@@ -456,6 +466,9 @@ export class AlgoAnalysisController {
         @UploadedFiles()
         file: { originalImage: Express.Multer.File[]; analyzedImage: Express.Multer.File[] },
     ) {
+        if (!body?.kHeadSpa) {
+            body.kHeadSpa = false;
+        }
         body.batchId = Number(body.batch_id);
         if (!file['originalImage'][0] || !file['analyzedImage'][0])
             return res.send({ status: 40002, type: 'BadRequestError', message: 'There is no necassary image file!' });
@@ -467,6 +480,11 @@ export class AlgoAnalysisController {
         const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', '', 'sebumT');
 
         const originalImageArgs = this.S3Image.getImageArgs('originalImage', '', 'sebumT');
+
+        if (body?.kHeadSpa === true || body?.kHeadSpa === 'true') {
+            const newScore = await this.AlgoAnalysis.kheadSpaCheck(body.batch_id, 'sebum', body.score);
+            body.score = newScore?.computationScore ?? body.score;
+        }
 
         await this.sebum_t.saveData(body, analyzedImageArgs, originalImageArgs, imageRecords);
 
@@ -612,21 +630,6 @@ export class AlgoAnalysisController {
         FileFieldsInterceptor([
             { name: 'originalImage', maxCount: 1 },
             { name: 'analyzedImage', maxCount: 1 },
-            { name: 'analyzedImageS', maxCount: 1 },
-            { name: 'analyzedImageM', maxCount: 1 },
-            { name: 'analyzedImageB', maxCount: 1 },
-            { name: 'maskImage', maxCount: 1 },
-            { name: 'maskImageS', maxCount: 1 },
-            { name: 'maskImageM', maxCount: 1 },
-            { name: 'maskImageB', maxCount: 1 },
-            { name: 'analyzedImageRed', maxCount: 1 },
-            { name: 'analyzedImageGreen', maxCount: 1 },
-            { name: 'analyzedImageYellow', maxCount: 1 },
-            { name: 'analyzedImageOrange', maxCount: 1 },
-            { name: 'maskImageYellow', maxCount: 1 },
-            { name: 'maskImageOrange', maxCount: 1 },
-            { name: 'maskImageGreen', maxCount: 1 },
-            { name: 'maskImageBlack', maxCount: 1 },
         ]),
     )
     async offline(
@@ -645,8 +648,6 @@ export class AlgoAnalysisController {
 
             data.batchId = Number(data.batchId);
             const imageRecords = uuidv4();
-            // data.task.algoName = String(data.type);
-            // console.log(data);
 
             const analyzedImage = file.analyzedImage[0].buffer;
             const originalImage = file.originalImage[0].buffer;
@@ -691,7 +692,6 @@ export class AlgoAnalysisController {
                     });
                 });
         } catch (e) {
-            console.log(e);
             return res.send({
                 status: 500,
                 type: 'InternalServerError',
@@ -707,27 +707,10 @@ export class AlgoAnalysisController {
         try {
             let { customer_id } = param;
 
+            // Token From Header
             const token = req.headers.authorization?.split(' ')[1];
-            if (!token) {
-                return res.status(403).send({
-                    status: 10002,
-                    type: 'AuthenticationError',
-                    message: {
-                        en: 'You are unauthorized, try refreshing the page.',
-                    },
-                });
-            }
-            // getting consultant information from Token
-            const decoded: any = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
-            const args = {
-                consultant_id: decoded['consultant_id'],
-                email: decoded['email'],
-                app_id: decoded['app_id'],
-            };
-
-            const insert = await this.batchAnalysis.insertInAnalysis(customer_id, JSON.stringify(args));
-
+            const insert = await this.batchAnalysis.insertInAnalysis(customer_id, token);
             return res.status(200).json({
                 status: 200,
                 service: 'requestBatchId',
@@ -861,175 +844,19 @@ export class AlgoAnalysisController {
                 });
             }
 
-            data.batch_id = Number(data.batchId);
-
-            // data.task = this.AlgoAnalysis.getCBBTaskByAlgoType(Number(data.type));
-            let algo;
-            let algoId;
-            if (/[0-9]/.test(data.type)) {
-                algo = this.AlgoAnalysis.getCBBTaskByAlgoType(Number(data.type));
-                algoId = algo.id;
-            } else {
-                data.task = this.AlgoAnalysis.getTaskByAlgoType(data.type);
-                algoId = await this.AlgoAnalysis.getAlgoID(toLower(data.type));
-            }
-
-            // const algo = this.AlgoAnalysis.getCBBTaskByAlgoType(data.type);
-
-            const analyzed: any[] = [];
-            const original: any[] = [];
-            const retunAnalyzed: any[] = [];
-            const returnOriginal: any[] = [];
-            let scores: number[];
-            let raw: number[];
-            let promitive = this.AlgoAnalysis.isPrimitive(data.args);
-            if (promitive === true) {
-                scores = JSON.parse(data.args).score;
-                raw = JSON.parse(data.args).raw;
-            } else {
-                scores = data.args.score;
-                raw = data.args.raw;
-            }
-            console.log('check score', scores);
-            const savingPromise: Promise<any>[] = [];
-
-            let sum = 0;
-            sum = scores.reduce((accumulator, currentValue) => accumulator + currentValue);
-
-            const computation = this.computation.computationResult(
-                Number(data.type),
-                data?.answers === undefined ? '' : data?.answers,
-                scores,
-            );
-
-            const avg = sum / scores.length;
-
-            console.log(avg);
-            for (let i = 0; i < files.analyzedImage?.length; i++) {
-                const imageRecords = uuidv4();
-                const imageArg = this.AlgoAnalysis.handleCBBImageArg(data);
-                analyzed.push([
-                    data.batch_id,
-                    imageArg.analyzedImageArgs.url,
-                    imageArg.analyzedImageArgs.sys_url,
-                    imageArg.analyzedImageArgs.hash,
-                    algoId,
-                    18,
-                    JSON.stringify({
-                        nth_analysis: imageRecords,
-                    }),
-                    0,
-                ]);
-
-                original.push([
-                    data.batch_id,
-                    imageArg.originalImageArgs.url,
-                    imageArg.originalImageArgs.sys_url,
-                    imageArg.originalImageArgs.hash,
-                    algoId,
-                    21,
-                    JSON.stringify({
-                        nth_analysis: imageRecords,
-                    }),
-                    JSON.stringify({
-                        score: scores[i],
-                        raw: raw[i],
-                        computation_score: computation['computation_score']?.toFixed(2),
-                        questionnaire_score: computation['questionnaire_score'].toFixed(2),
-                        score_average: avg.toFixed(2),
-                        answers: data?.answers === undefined ? '' : data?.answers,
-                        keyWord: computation['keyWord'],
-                    }),
-                ]);
-
-                //  Image saving
-                const savingData = this.AlgoAnalysis.offlineCBBSaveImage(
-                    files?.originalImage[i].buffer,
-                    files?.analyzedImage[i].buffer,
-                    imageArg,
-                    data,
-                );
-                savingPromise.push(savingData);
-            }
-
-            const saveOriginal = original.map((item) => {
-                returnOriginal.push({
-                    batchId: data.batch_id,
-                    algorithm_type: data.type,
-                    score: promitive === true ? JSON.parse(item[7]).score : item[7].score,
-                    originalImage: {
-                        id: item[3],
-                        url: item[1],
-                    },
-                });
-                return {
-                    batch_id: item[0],
-                    url: item[1],
-                    sys_url: item[2],
-                    hash: item[3],
-                    type_measurement_id: item[4],
-                    type_image_id: item[5],
-                    args: item[6],
-                    scores: item[7],
-                };
-            });
-            //return original
-
-            const saveAnalyzed = analyzed.map((item) => {
-                retunAnalyzed.push({
-                    analyzedImage: {
-                        id: item[3],
-                        url: item[1],
-                    },
-                });
-                return {
-                    batch_id: item[0],
-                    url: item[1],
-                    sys_url: item[2],
-                    hash: item[3],
-                    type_measurement_id: item[4],
-                    type_image_id: item[5],
-                    args: item[6],
-                    scores: item[7],
-                };
-            });
-
-            const newArray = returnOriginal.map((item, index) => {
-                return {
-                    ...item,
-                    analyzedImage: retunAnalyzed[index].analyzedImage,
-                };
-            });
-
-            const savedResult = [...saveAnalyzed, ...saveOriginal];
-
-            this.AlgoAnalysis.offlineCBBSaveData(savedResult);
-
-            console.log();
-            let promise1 = new Promise(function (resolve, reject) {
+            const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
+            new Promise(function (resolve, reject) {
                 resolve(
                     res.send({
                         status: 200,
                         message: 'Success',
                         body: {
-                            computation_score: computation['computation_score']?.toFixed(2),
-                            questionnaire_score: computation['questionnaire_score']?.toFixed(2),
-                            score_average: avg.toFixed(2),
-                            keyWord: computation['keyWord'],
-                            keyword_id: computation['keyword_id'],
-                            result: [...newArray],
+                            result,
                         },
                     }),
                 );
             });
 
-            await Promise.all(savingPromise).catch((e) => {
-                Promise.all(savingPromise).catch((e) => {
-                    fs.appendFile('error.log', this.AlgoAnalysis.getErrorLog(data.barch_id), 'utf8', (err) => {
-                        if (err) throw err;
-                    });
-                });
-            });
             await this.AlgoAnalysis.updateData(data, '');
         } catch (error) {
             console.error(error);
@@ -1206,6 +1033,7 @@ export class AlgoAnalysisController {
         @UploadedFiles() files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
         @Res() res: Response,
     ) {
+        data.encryptedCBB = true;
         try {
             if (!files?.analyzedImage || !files?.originalImage) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
@@ -1223,195 +1051,140 @@ export class AlgoAnalysisController {
                 });
             }
 
-            data.batch_id = Number(data.batchId);
-
-            // data.task = this.AlgoAnalysis.getCBBTaskByAlgoType(Number(data.type));
-            let algo;
-            let algoId;
-            if (/[0-9]/.test(data.type)) {
-                algo = this.AlgoAnalysis.getCBBTaskByAlgoType(Number(data.type));
-                algoId = algo.id;
-            } else {
-                data.task = this.AlgoAnalysis.getTaskByAlgoType(data.type);
-                algoId = await this.AlgoAnalysis.getAlgoID(toLower(data.type));
-            }
-
-            // const algo = this.AlgoAnalysis.getCBBTaskByAlgoType(data.type);
-
-            const analyzed: any[] = [];
-            const original: any[] = [];
-            const retunAnalyzed: any[] = [];
-            const returnOriginal: any[] = [];
-            let scores: any[];
-            let raw: any[];
-            let decryptedScores = [];
-            let decryptedRaw = [];
-            let promitive = this.AlgoAnalysis.isPrimitive(data.args);
-            if (promitive === true) {
-                scores = JSON.parse(data.args).score;
-                raw = JSON.parse(data.args).raw;
-
-                console.log('check score --:', scores);
-
-                for (let i = 0; i < scores.length; i++) {
-                    decryptedScores.push(this.AlgoAnalysis.scoreDecrypt(scores[i]));
-                    decryptedRaw.push(this.AlgoAnalysis.scoreDecrypt(raw[i]));
-                }
-                scores = decryptedScores;
-                raw = decryptedRaw;
-            } else {
-                scores = data.args.score;
-                raw = data.args.raw;
-                for (let i = 0; i < scores.length; i++) {
-                    decryptedScores.push(this.AlgoAnalysis.scoreDecrypt(scores[i]));
-                    decryptedRaw.push(this.AlgoAnalysis.scoreDecrypt(raw[i]));
-                }
-                scores = decryptedScores;
-                raw = decryptedRaw;
-            }
-
-            console.log(scores);
-
-            const savingPromise: Promise<any>[] = [];
-
-            let sum = 0;
-            sum = scores.reduce((accumulator, currentValue) => accumulator + currentValue);
-
-            const computation = this.computation.computationResult(
-                Number(data.type),
-                data?.answers === undefined ? '' : data?.answers,
-                scores,
-            );
-
-            console.log(scores);
-
-            const avg = sum / scores.length;
-
-            for (let i = 0; i < files.analyzedImage?.length; i++) {
-                const imageRecords = uuidv4();
-                const imageArg = this.AlgoAnalysis.handleCBBImageArg(data);
-                analyzed.push([
-                    data.batch_id,
-                    imageArg.analyzedImageArgs.url,
-                    imageArg.analyzedImageArgs.sys_url,
-                    imageArg.analyzedImageArgs.hash,
-                    algoId,
-                    18,
-                    JSON.stringify({
-                        nth_analysis: imageRecords,
-                    }),
-                    0,
-                ]);
-
-                original.push([
-                    data.batch_id,
-                    imageArg.originalImageArgs.url,
-                    imageArg.originalImageArgs.sys_url,
-                    imageArg.originalImageArgs.hash,
-                    algoId,
-                    21,
-                    JSON.stringify({
-                        nth_analysis: imageRecords,
-                    }),
-                    JSON.stringify({
-                        score: scores[i],
-                        raw: raw[i],
-                        computation_score: computation['computation_score']?.toFixed(2),
-                        questionnaire_score: computation['questionnaire_score'].toFixed(2),
-                        score_average: avg.toFixed(2),
-                        answers: data?.answers === undefined ? '' : data?.answers,
-                        keyWord: computation['keyWord'],
-                    }),
-                ]);
-
-                //  Image saving
-                const savingData = this.AlgoAnalysis.offlineCBBSaveImage(
-                    files?.originalImage[i].buffer,
-                    files?.analyzedImage[i].buffer,
-                    imageArg,
-                    data,
-                );
-                savingPromise.push(savingData);
-            }
-
-            const saveOriginal = original.map((item) => {
-                returnOriginal.push({
-                    batchId: data.batch_id,
-                    algorithm_type: data.type,
-                    score: promitive === true ? JSON.parse(item[7]).score : item[7].score,
-                    originalImage: {
-                        id: item[3],
-                        url: item[1],
-                    },
-                });
-                return {
-                    batch_id: item[0],
-                    url: item[1],
-                    sys_url: item[2],
-                    hash: item[3],
-                    type_measurement_id: item[4],
-                    type_image_id: item[5],
-                    args: item[6],
-                    scores: item[7],
-                };
-            });
-            //return original
-
-            const saveAnalyzed = analyzed.map((item) => {
-                retunAnalyzed.push({
-                    analyzedImage: {
-                        id: item[3],
-                        url: item[1],
-                    },
-                });
-                return {
-                    batch_id: item[0],
-                    url: item[1],
-                    sys_url: item[2],
-                    hash: item[3],
-                    type_measurement_id: item[4],
-                    type_image_id: item[5],
-                    args: item[6],
-                    scores: item[7],
-                };
-            });
-
-            const newArray = returnOriginal.map((item, index) => {
-                return {
-                    ...item,
-                    analyzedImage: retunAnalyzed[index].analyzedImage,
-                };
-            });
-
-            const savedResult = [...saveAnalyzed, ...saveOriginal];
-
-            this.AlgoAnalysis.offlineCBBSaveData(savedResult);
-
-            console.log();
-            let promise1 = new Promise(function (resolve, reject) {
+            const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
+            new Promise(function (resolve, reject) {
                 resolve(
                     res.send({
                         status: 200,
                         message: 'Success',
                         body: {
-                            computation_score: computation['computation_score']?.toFixed(2),
-                            questionnaire_score: computation['questionnaire_score']?.toFixed(2),
-                            score_average: avg.toFixed(2),
-                            keyWord: computation['keyWord'],
-                            keyword_id: computation['keyword_id'],
-                            result: [...newArray],
+                            result,
                         },
                     }),
                 );
             });
 
-            await Promise.all(savingPromise).catch((e) => {
-                Promise.all(savingPromise).catch((e) => {
-                    fs.appendFile('error.log', this.AlgoAnalysis.getErrorLog(data.barch_id), 'utf8', (err) => {
-                        if (err) throw err;
-                    });
+            await this.AlgoAnalysis.updateData(data, '');
+        } catch (error) {
+            console.error(error);
+            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @ApiOperation({
+        summary:
+            'CBB offline analysis, Expecting multiple originalImage and analyzedImage. The response will include score average, computation and questionnaire',
+        security: [{ bearerToken: [] }],
+    })
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({ type: OfflineDataCBBDTO })
+    @ApiResponse({
+        status: 200,
+        description: 'Success',
+        schema: {
+            type: 'object',
+            properties: {
+                status: { type: 'number', example: 200 },
+                service: { type: 'string', example: 'Success' },
+                body: {
+                    type: 'object',
+                    properties: {
+                        computation_score: { type: 'number', example: 56.4 },
+                        questionnaire_score: { type: 'number', example: 70.0 },
+                        score_average: { type: 'number', example: 53.33 },
+                        keyWord: { type: 'string', example: 'Mild' },
+                        result: {
+                            type: 'array',
+                            example: [
+                                {
+                                    batchId: 426416,
+                                    algorithm_type: 'spots',
+                                    // ver: 'CDS_SP_2.1.2',
+                                    score: 60,
+                                    analyzedImage: {
+                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                    },
+                                    originalImage: {
+                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                    },
+                                    // maskImage: {
+                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    // },
+                                },
+                                {
+                                    batchId: 426416,
+                                    algorithm_type: 'spots',
+                                    // ver: 'CDS_SP_2.1.2',
+                                    score: 56,
+                                    analyzedImage: {
+                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                    },
+                                    originalImage: {
+                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                    },
+                                    // maskImage: {
+                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    // },
+                                },
+                            ],
+                        },
+                    },
+                },
+            },
+        },
+    })
+    // @UseGuards(AuthMiddleware)
+    @ApiBearerAuth('access-token')
+    @Post('kheadspa-cbb')
+    @HttpCode(200)
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'originalImage', maxCount: 5 },
+            { name: 'analyzedImage', maxCount: 5 },
+        ]),
+    )
+    async kheadSpa(
+        @Body() data: any,
+        @UploadedFiles() files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
+        @Res() res: Response,
+    ) {
+        data.kHeadSpa = true;
+        try {
+            if (!files?.analyzedImage || !files?.originalImage) {
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'No file!',
                 });
+            }
+
+            if (files?.analyzedImage.length !== files?.originalImage.length) {
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'The number of analyzed images does not match number of original images',
+                });
+            }
+
+            const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
+            new Promise(function (resolve, reject) {
+                resolve(
+                    res.send({
+                        status: 200,
+                        message: 'Success',
+                        body: {
+                            result,
+                        },
+                    }),
+                );
             });
+
             await this.AlgoAnalysis.updateData(data, '');
         } catch (error) {
             console.error(error);

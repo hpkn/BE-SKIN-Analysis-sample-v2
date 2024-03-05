@@ -8,6 +8,7 @@ export class ApiKeyMiddleware implements NestMiddleware {
     use(req: Request, res: Response, next: NextFunction) {
         try {
             const token = req.headers.authorization?.split(' ')[1];
+            console.log(token);
             if (this.secretKey !== token) {
                 // Token not provided, handle accordingly (e.g., return unauthorized response)
                 return res.status(403).send({
