@@ -7,7 +7,6 @@ import fs from 'fs';
 import { FileUploadService } from '../../../common/FileUpload/fileUpload.service';
 import { KeratinService } from 'src/modules/algorithms/keratin/keratin.service';
 import { PoresService } from 'src/modules/algorithms/pores/pores.service';
-import { LogError } from 'typeorm-model-generator/dist/src/Utils';
 import { PorphyrinService } from 'src/modules/algorithms/porphyrin/porphyrin.service';
 import { SebumService } from 'src/modules/algorithms/sebum/sebum.service';
 import { SebumTService } from 'src/modules/algorithms/sebumT/sebumT.service';
@@ -59,6 +58,7 @@ export class AlgoAnalysisService {
             }
         }
     };
+
     getTaskByAlgoType(type: string) {
         switch (type) {
             case 'keratin':
@@ -2213,39 +2213,6 @@ export class AlgoAnalysisService {
         } // from 0 toward 16~48
 
         return newScore;
-    }
-
-    //Hair
-    adjustHairLossDensityScores(oldComputedScore: number, currentComputedScore: number) {
-        let adjustedScore = -1;
-
-        let ratioOfChange = (oldComputedScore - currentComputedScore) / oldComputedScore;
-        if (ratioOfChange < -0.2) {
-            adjustedScore = currentComputedScore;
-        } else {
-            adjustedScore = oldComputedScore * 1.2;
-            if (adjustedScore > 99) adjustedScore = 99;
-        }
-
-        return Math.round(adjustedScore);
-    }
-
-    adjustKeratinSensitivityScores(oldComputedScore: number, currentComputedScore: number) {
-        let adjustedScore = -1;
-
-        if (currentComputedScore < 10 && oldComputedScore < 10) {
-            if (currentComputedScore == 0) adjustedScore = 0; // nothing is detected.
-            if (currentComputedScore == 1) adjustedScore = 1; // Something is detected, score should not be further reduced to 0.
-            if (currentComputedScore > 1) adjustedScore = oldComputedScore - 1;
-        } else {
-            let ratioOfChange = (oldComputedScore - currentComputedScore) / oldComputedScore;
-            if (ratioOfChange >= 0.2) adjustedScore = currentComputedScore;
-            else {
-                adjustedScore = oldComputedScore * 0.8;
-            }
-        }
-
-        return Math.round(adjustedScore);
     }
 
     // Adjust scores scalp sebum/oiliness/shine:
