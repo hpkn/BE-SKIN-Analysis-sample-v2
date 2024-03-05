@@ -51,6 +51,6 @@ export class AppModule {
     // Timing MiddleWare
     configure(consumer: MiddlewareConsumer) {
         consumer.apply(TimingMiddleware).forRoutes('*');
-        consumer.apply(AuthMiddleware).forRoutes('web-result/*');
+        // consumer.apply(AuthMiddleware).forRoutes('web-result/*');
     }
 }
