@@ -1491,7 +1491,7 @@ export class AlgoAnalysisService {
 
     // MoistureU
     // CBB offline saving
-    offlineCBBSaveData(imageRecords: any, dataObject: any[]) {
+    offlineCBBSaveData(dataObject: any[]) {
         if (!dataObject || dataObject.length === 0) {
             return;
         }
@@ -1757,6 +1757,9 @@ export class AlgoAnalysisService {
             revisitCountInThisMonthDict: revisitCountInThisMonthDict,
             revisitSum: revisitSum,
         };
+    }
+    isPrimitive(obj: any): boolean {
+        return (typeof obj !== 'object' && typeof obj !== 'function') || obj === null;
     }
 }
 

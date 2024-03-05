@@ -897,7 +897,6 @@ export class AlgoAnalysisController {
 
             let sum = 0;
             sum = scores.reduce((accumulator, currentValue) => accumulator + currentValue);
-            const imageRecords = uuidv4();
             const computation = this.computation.computationResult(
                 Number(data.type),
                 data?.answers === undefined ? '' : data?.answers,
@@ -906,8 +905,10 @@ export class AlgoAnalysisController {
 
             const avg = sum / scores.length;
 
-            console.log(avg);
+   
             for (let i = 0; i < files.analyzedImage?.length; i++) {
+                const imageRecords = uuidv4();
+
                 const imageArg = this.AlgoAnalysis.handleCBBImageArg(data);
                 analyzed.push([
                     data.batch_id,
@@ -1004,7 +1005,7 @@ export class AlgoAnalysisController {
 
             const savedResult = [...saveAnalyzed, ...saveOriginal];
 
-            this.AlgoAnalysis.offlineCBBSaveData(imageRecords, savedResult);
+            this.AlgoAnalysis.offlineCBBSaveData(savedResult);
 
             console.log();
             let promise1 = new Promise(function (resolve, reject) {
@@ -1031,7 +1032,7 @@ export class AlgoAnalysisController {
                     });
                 });
             });
-            await this.AlgoAnalysis.updateData(data, imageRecords);
+            await this.AlgoAnalysis.updateData(data, '');
         } catch (error) {
             console.error(error);
             throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
