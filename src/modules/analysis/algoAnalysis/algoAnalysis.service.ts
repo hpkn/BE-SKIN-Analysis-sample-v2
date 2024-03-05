@@ -1735,13 +1735,16 @@ export class AlgoAnalysisService {
 
     saveSkinCondtion(batch_id: number, skinCondtion: any, skinAge: any) {
         const condition = skinCondtion.length === 0 ? '-1' : skinCondtion;
+        console.log('condition', condition);
         try {
             const update = `
                 INSERT INTO measurements (batch_id, type_measurement_id, type_image_id, scores)
-                VALUES ($3, 18, 21, '{"skinCondtion": $1, "skinAge": $2}')
+                VALUES (${batch_id}, 18, 21, '{"skinCondtion": ${JSON.stringify(
+                condition,
+            )}, "skinAge": ${JSON.stringify(skinAge)}}')
             `;
 
-            this.database.executeQuery(update, [JSON.stringify(condition), JSON.stringify(skinAge), batch_id]);
+            this.database.executeQuery(update);
             return update;
         } catch (e) {
             console.log('check', e);
