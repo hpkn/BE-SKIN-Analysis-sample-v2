@@ -863,9 +863,7 @@ export class AlgoAnalysisController {
                     res.send({
                         status: 200,
                         message: 'Success',
-                        body: {
-                            result,
-                        },
+                        body: result,
                     }),
                 );
             });
@@ -1195,9 +1193,7 @@ export class AlgoAnalysisController {
                     res.send({
                         status: 200,
                         message: 'Success',
-                        body: {
-                            result,
-                        },
+                        body: result,
                     }),
                 );
             });
