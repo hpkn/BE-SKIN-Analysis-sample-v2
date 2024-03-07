@@ -366,7 +366,7 @@ export class WebResultService {
                 SELECT 
                     tp.NAME as Name,
                     tp."id" as id,
-                    ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2) AS AVG_SCORE
+                    COALESCE(ROUND(AVG((to_json(scores)->>'computation_score')::NUMERIC), 2), ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2)) AS AVG_SCORE
                 FROM measurements AS ms
                 JOIN type_measurements AS tp ON tp."id" = ms.type_measurement_id 
                 WHERE batch_id = $1 AND type_image_id = 21

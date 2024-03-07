@@ -15,14 +15,12 @@ import {
     Delete,
     Req,
     HttpStatus,
-    ConsoleLogger,
 } from '@nestjs/common';
 import * as celery from 'celery-node';
 import e, { Request, Response } from 'express';
 import { AlgoAnalysisService } from './algoAnalysis.service';
-import { FileInterceptor, FilesInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
+import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
-    AlgoAnalysisCBBDTO,
     AlgoAnalysisDTO,
     BatchIdCheckerDto,
     SkinAgeConditionDto,
@@ -850,9 +848,7 @@ export class AlgoAnalysisController {
                     res.send({
                         status: 200,
                         message: 'Success',
-                        body: {
-                            result,
-                        },
+                        body: result,
                     }),
                 );
             });
@@ -1178,9 +1174,7 @@ export class AlgoAnalysisController {
                     res.send({
                         status: 200,
                         message: 'Success',
-                        body: {
-                            result,
-                        },
+                        body: result,
                     }),
                 );
             });
