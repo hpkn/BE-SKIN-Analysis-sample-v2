@@ -1,27 +1,16 @@
-import { Injectable, Inject, HttpException, ConsoleLogger, BadRequestException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from 'src/database/database.service';
+import { AlgoAnalysisService } from '../algoAnalysis/algoAnalysis.service';
+import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 
 @Injectable()
 export class WebResultService {
-    constructor(private database: DatabaseService) {}
-
-    skinCondition(moistureT: number, moistureU: number, sebumT: number, sebumU: number) {
-        console.log('chack data', moistureT, moistureU, sebumT, sebumU, sebumU);
-        let moisture = null;
-        if (moistureT !== null || moistureU !== null) {
-            moisture = (Number(moistureT) + Number(moistureU)) / 2;
-        }
-        let sebum = null;
-        if (sebumT !== null || sebumU !== null) {
-            sebum = (Number(sebumT) + Number(moistureU)) / 2;
-        }
-        console.log('check', moisture, sebum);
-        return {
-            moisture: moisture,
-            sebum: sebum,
-        };
-    }
+    constructor(
+        private database: DatabaseService,
+        private readonly AlgoAnalysis: AlgoAnalysisService,
+        private readonly computation: ComputationService,
+    ) {}
 
     getSkinCondition(mScoreT: number, sScoreT: number, mScoreU: number, sScoreU: number, sebumQAScore: number) {
         const veryDry = 1;
@@ -34,8 +23,6 @@ export class WebResultService {
         let tZoneType = 0;
         let uZoneType = 0;
         let skinCondition = 0;
-
-        console.log(sebumQAScore);
 
         if (sebumQAScore >= 0 && sScoreT >= 0) {
             sScoreT = Math.round(0.8 * sScoreT + 0.2 * sebumQAScore);
@@ -229,34 +216,42 @@ export class WebResultService {
         return keyword_value;
     }
 
-    check(moisture: number, sebum: number) {
-        if ((moisture === null && sebum === null) || moisture === null) {
+    keywordValue(keyword_value: string) {
+        if (keyword_value === 'normal') {
+            return {
+                keyword_value: 'Normal',
+                keyword_id: 1,
+            };
+        } else if (keyword_value === 'combination') {
+            return {
+                keyword_value: 'Combination',
+                keyword_id: 2,
+            };
+        } else if (keyword_value === 'oily') {
+            return {
+                keyword_value: 'Oily',
+                keyword_id: 3,
+            };
+        } else if (keyword_value === 'very_oily') {
+            return {
+                keyword_value: 'Very Oily',
+                keyword_id: 4,
+            };
+        } else if (keyword_value === 'dry') {
+            return {
+                keyword_value: 'Dry',
+                keyword_id: 5,
+            };
+        } else if (keyword_value === 'very_dry') {
+            return {
+                keyword_value: 'Very Dry',
+                keyword_id: 6,
+            };
+        } else {
             return {
                 keyword_value: '',
                 keyword_id: 0,
             };
-        } else if ((moisture <= 33 && sebum <= 33) || moisture <= 33) {
-            return {
-                keyword_value: 'Dry',
-                keyword_id: 1,
-            }; // 1; //Dry
-        } else if (sebum >= 66) {
-            return {
-                keyword_value: 'Oily',
-                keyword_id: 4,
-            }; //4; //Oily
-        } else if ((sebum <= 34 && sebum <= 66) || sebum !== 50 || moisture !== 50) {
-            return {
-                keyword_value: 'Combination',
-                keyword_id: 3,
-            }; //3; // combination
-        } else if ((moisture === 50 && sebum === 50) || moisture === 50) {
-            return {
-                keyword_value: 'Normal',
-                keyword_id: 2,
-            };
-        } else {
-            return null;
         }
     }
 
@@ -389,7 +384,9 @@ export class WebResultService {
         return result;
     }
 
-    // Analysis Web Result
+    /* 
+        Analysis Web Result
+    */
     async getBatchId(batch_id: number) {
         const result = await this.webResult(batch_id);
         const avg = await this.webResultAverage(batch_id);
@@ -405,7 +402,6 @@ export class WebResultService {
                 result[i]['analyzed_image_url'] = null;
                 result[i]['original_image_url'] = null;
             }
-
             result[i].value = +result[i].value;
             for (let j = 0; j < avg.length; j++) {
                 if (avg[j].measurement === 'moistureT') moistureT = avg[j].avg;
@@ -425,8 +421,22 @@ export class WebResultService {
             }
         }
 
-        const condition = this.skinCondition(Number(moistureT), Number(moistureU), Number(sebumT), Number(sebumU));
-        const conditionResult = this.check(condition.moisture, condition.sebum);
+        const answers = await this.AlgoAnalysis.fetchQuestion(Number(batch_id));
+
+        let questFr = -1;
+        if (answers !== null) {
+            questFr = this.computation.questionnaireFrequency(answers, 5);
+        }
+
+        const getSkinCondition = this.getSkinCondition(
+            Number(moistureT),
+            Number(moistureU),
+            Number(sebumT),
+            Number(sebumU),
+            questFr,
+        );
+
+        const conditionResult = this.keywordValue(getSkinCondition);
 
         if (moistureT !== null || moistureU !== null || sebumT !== null || sebumU !== null) {
             result.push({
@@ -442,16 +452,16 @@ export class WebResultService {
             });
         }
 
-        if (skinAge[0]?.skin_age) {
+        if (skinAge[0]?.skin_age && skinAge[0]?.skin_age !== null) {
             result.push({
                 measurement: 'SkinAge',
-                value: Number(skinAge[0]?.skin_age),
+                value: skinAge[0].skin_age,
                 date: skinAge[0]?.date,
                 time: skinAge[0]?.time,
                 original_image_url: null,
                 analyzed_image_url: null,
                 avg_value: null,
-                keyword_value: Number(skinAge[0]?.skin_age),
+                keyword_value: skinAge[0]?.skin_age,
                 keyword_id: null,
             });
         }
