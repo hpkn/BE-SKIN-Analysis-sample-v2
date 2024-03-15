@@ -11,6 +11,7 @@ import { CustomerModule } from './modules/customer/customer.module';
 import { BullModule } from '@nestjs/bull';
 import { AuthMiddleware } from './common/middleWare/authMiddlware/auth.middleware';
 import { TimingMiddleware } from './common/middleWare/timingMiddleware/timing.middleware';
+import { ErrorNotificationFilter } from './common/exceptions/errorNotification/errorNotification.filter';
 import { ApiKeyModule } from './modules/apiKey-auth/apikey.module';
 import { ApiKeyMiddleware } from './common/middleWare/authMiddlware/apikey.middleware';
 
@@ -40,6 +41,10 @@ import { ApiKeyMiddleware } from './common/middleWare/authMiddlware/apikey.middl
         {
             provide: APP_FILTER,
             useClass: AllExceptionsFilter,
+        },
+        {
+            provide: APP_FILTER,
+            useClass: ErrorNotificationFilter,
         },
         AuthMiddleware,
         FileUploaddModule,

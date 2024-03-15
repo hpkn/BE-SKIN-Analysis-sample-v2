@@ -48,12 +48,11 @@ export class BatchAnalysisService {
     }
 
     async deleleBatch(batch_id: number) {
-
-       await this.database.executeQuery(
+        await this.database.executeQuery(
             `DELETE FROM measurements
             WHERE batch_id = ${batch_id};`,
         );
-        
+
         const result = await this.database.executeQuery(
             `DELETE FROM analysis
             WHERE batch_id = ${batch_id};`,
