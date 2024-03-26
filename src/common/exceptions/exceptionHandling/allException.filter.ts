@@ -17,6 +17,12 @@ export class AllExceptionsFilter implements ExceptionFilter {
             const errorResponse = exception.getResponse();
 
             errorMessage = (errorResponse as HttpExceptionResponse)?.error || exception?.message;
+        } else if (this.isPostgresError(exception)) {
+            // Handle PostgreSQL-related errors
+            errorMessage = 'PostgreSQL Error:';
+
+            console.error('PostgreSQL Error:');
+            // res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({ error: 'Internal Server Error' });
         } else {
             status = HttpStatus.INTERNAL_SERVER_ERROR;
 
@@ -64,5 +70,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
             if (err) throw err;
         });
     };
-}
 
+    private isPostgresError(error: any): boolean {
+        // Check if the error is a PostgreSQL error
+        return error && error.code && error.severity && error.detail;
+    }
+}

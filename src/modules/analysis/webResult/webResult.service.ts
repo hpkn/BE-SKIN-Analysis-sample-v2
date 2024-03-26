@@ -377,7 +377,7 @@ export class WebResultService {
         const result = await this.database.executeQuery(
             `SELECT scores ->> 'skinAge' as skin_age, created_time::date as date, created_time::time as time
             FROM measurements 
-            WHERE batch_id = $1 AND type_image_id = 21 AND type_measurement_id = 5`,
+            WHERE batch_id = $1 AND type_image_id = 21 AND type_measurement_id = 18`,
             [batch_id],
         );
 
@@ -430,8 +430,8 @@ export class WebResultService {
 
         const getSkinCondition = this.getSkinCondition(
             Number(moistureT),
-            Number(moistureU),
             Number(sebumT),
+            Number(moistureU),
             Number(sebumU),
             questFr,
         );
@@ -452,7 +452,9 @@ export class WebResultService {
             });
         }
 
-        if (skinAge[0]?.skin_age && skinAge[0]?.skin_age !== null) {
+        console.log('skinAge --->', skinAge);
+
+        if (skinAge.length > 0) {
             result.push({
                 measurement: 'SkinAge',
                 value: skinAge[0].skin_age,
@@ -468,3 +470,4 @@ export class WebResultService {
         return result;
     }
 }
+
