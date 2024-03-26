@@ -430,8 +430,8 @@ export class WebResultService {
 
         const getSkinCondition = this.getSkinCondition(
             Number(moistureT),
-            Number(moistureU),
             Number(sebumT),
+            Number(moistureU),
             Number(sebumU),
             questFr,
         );

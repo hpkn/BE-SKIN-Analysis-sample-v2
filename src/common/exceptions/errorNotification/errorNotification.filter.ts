@@ -40,6 +40,7 @@ export class ErrorNotificationFilter implements ExceptionFilter {
 
         this.errorOccurrences[errorKey].count++;
 
+        console.log();
         if (
             this.errorOccurrences[errorKey].count === Number(process.env.THRESHOLD) &&
             Date.now() - this.errorOccurrences[errorKey].lastOccurred <= Number(process.env.TIMEFRAME)
@@ -84,7 +85,7 @@ export class ErrorNotificationFilter implements ExceptionFilter {
         };
 
         try {
-            await this.transporter.sendMail(mailOptions);
+            const result = await this.transporter.sendMail(mailOptions);
         } catch (error) {
             console.error('Error sending email notification:', error);
         }
@@ -142,7 +143,7 @@ export class ErrorNotificationFilter implements ExceptionFilter {
         service: process.env.SMTP_SERVICE,
         host: process.env.EMAIL_HOST,
         port: Number(process.env.SMTP_PORT),
-        secure: true,
+        secure: false,
         auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASSWORD,
