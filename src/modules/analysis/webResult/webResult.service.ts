@@ -452,7 +452,7 @@ export class WebResultService {
             });
         }
 
-        if (skinAge[0]?.skin_age && skinAge[0]?.skin_age !== null) {
+        if (skinAge.length > 0) {
             result.push({
                 measurement: 'SkinAge',
                 value: skinAge[0].skin_age,
