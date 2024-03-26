@@ -38,15 +38,14 @@ import { SebumUService } from 'src/modules/algorithms/sebumU/sebumU.service';
 import { SebumTService } from 'src/modules/algorithms/sebumT/sebumT.service';
 import { SkinToneDiorService } from 'src/modules/algorithms/skinToneDior/skinToneDior.service';
 import { EncryptedCBBDTO, OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
-import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { WebResultService } from '../webResult/webResult.service';
+import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
 
 @ApiTags('Analysis')
 @Controller('analysis')
-// @UseGuards(AuthMiddleware)
 // @ApiBearerAuth('access-token')
 export class AlgoAnalysisController {
     constructor(
@@ -62,7 +61,6 @@ export class AlgoAnalysisController {
         private readonly webResult: WebResultService,
     ) {}
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @ApiOperation({
@@ -177,7 +175,6 @@ export class AlgoAnalysisController {
             });
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Get('/getAnalysisData/:batch_id')
     async getAnalysisData(@Param('batch_id') batch_id: number, @Res() res: Response) {
@@ -205,7 +202,6 @@ export class AlgoAnalysisController {
         }
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Post('/history/')
     async userAnalysisHistory(@Query() param: paginationDTO, @Res() res: Response, @Body() body: historyDTO) {
@@ -238,7 +234,6 @@ export class AlgoAnalysisController {
             });
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Post('/history/image')
     async userAnalysisImageHistory(@Query() param: paginationDTO, @Res() res: Response, @Body() body: historyDTO) {
@@ -269,7 +264,6 @@ export class AlgoAnalysisController {
         }
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Get('/history/result')
     async userAnalysisImageHistoryWithBatchId(@Query() param: BatchIdCheckerDto, @Res() res: Response) {
@@ -294,7 +288,6 @@ export class AlgoAnalysisController {
         }
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: MoistureDTO })
@@ -332,7 +325,6 @@ export class AlgoAnalysisController {
         }
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: MoistureDTO })
@@ -371,7 +363,6 @@ export class AlgoAnalysisController {
         }
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: MoistureDTO })
@@ -455,7 +446,6 @@ export class AlgoAnalysisController {
             });
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: MoistureDTO })
@@ -538,7 +528,6 @@ export class AlgoAnalysisController {
             });
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: MoistureDTO })
@@ -629,7 +618,6 @@ export class AlgoAnalysisController {
         }
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @Post('/offline')
@@ -709,7 +697,6 @@ export class AlgoAnalysisController {
         }
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Get('/requestBatchId')
     async getBatchId(@Query() param: historyDTO, @Res() res: Response, @Req() req: Request) {
@@ -730,7 +717,6 @@ export class AlgoAnalysisController {
         }
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Delete('/deleteAnalysisData/:batch_id')
     async deleteBatch(@Param('batch_id') batch_id: number, @Res() res: Response) {
@@ -823,7 +809,6 @@ export class AlgoAnalysisController {
             },
         },
     })
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Post('offlineCBB')
     @HttpCode(200)
@@ -873,7 +858,6 @@ export class AlgoAnalysisController {
         }
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Post('/countConsultation')
     async analysisCount(@Body() body: countCustomerDto, @Res() res: Response) {
@@ -893,7 +877,6 @@ export class AlgoAnalysisController {
         }
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Post('/allConsultation')
     async calculateRevisit(@Res() res: Response, @Body() body: allCustomerDto) {
@@ -912,7 +895,6 @@ export class AlgoAnalysisController {
         }
     }
 
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Post('/skinAgeCondition')
     async skinAgeCondition(@Body() body: SkinAgeConditionDto, @Res() res: Response) {
@@ -1031,7 +1013,6 @@ export class AlgoAnalysisController {
             },
         },
     })
-    @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Post('encryptedCBB')
     @HttpCode(200)
@@ -1152,7 +1133,7 @@ export class AlgoAnalysisController {
             },
         },
     })
-    @UseGuards(AuthMiddleware)
+    // @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Post('kheadspa-cbb')
     @HttpCode(200)
@@ -1203,3 +1184,4 @@ export class AlgoAnalysisController {
         }
     }
 }
+

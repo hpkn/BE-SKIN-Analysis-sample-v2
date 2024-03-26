@@ -7,7 +7,7 @@ import * as fs from 'fs';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { HttpException, UnauthorizedException } from '@nestjs/common/exceptions';
 import { HttpStatus } from '@nestjs/common/enums';
-import * as morgan from 'morgan';
+import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 
 // const logStream = fs.createWriteStream('api.log', {
 //   flags: 'a',
@@ -63,7 +63,14 @@ async function bootstrap() {
         }),
     );
     // app.use(morgan('tiny', { stream: logStream }));
-    app.enableCors();
+    const corsOptions: CorsOptions = {
+        origin: '*',
+        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
+        preflightContinue: false,
+        optionsSuccessStatus: 204,
+        credentials: true,
+    };
+    app.enableCors(corsOptions);
     app.enableShutdownHooks();
     await app.listen(port, hostname, () => {
         const address = 'http' + (ssl ? 's' : '') + '://' + hostname + ':' + port + '/';
