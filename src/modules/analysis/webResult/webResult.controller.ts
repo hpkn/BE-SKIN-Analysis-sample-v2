@@ -11,6 +11,13 @@ export class WebResultController {
     @Get('/cndpskin/:batch_id')
     async getBatchId(@Param('batch_id') batch_id: number, @Res() res: Response, @Query('check') checkExpiration: boolean) {
         try {
+
+            const requestDate = await this.webResult.getRequestDate(batch_id);
+
+            if (!requestDate) {
+                await this.webResult.addRequestDate(batch_id);
+            }
+
             if (checkExpiration) {
                 const isExpired = await this.webResult.checkExpiration(batch_id);
                 if (isExpired) {

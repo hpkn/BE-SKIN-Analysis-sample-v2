@@ -488,5 +488,25 @@ export class WebResultService {
 
         return differenceInHours > 24;
     }
+
+    async getRequestDate(batch_id: number) {
+
+        const result = await this.database.executeQuery(
+            `SELECT request_date FROM analysis WHERE batch_id = $1`,
+            [batch_id],
+        )
+
+        return result[0].request_date;
+    }
+
+    async addRequestDate(batch_id: number) {
+
+        const result = await this.database.executeQuery(
+            `UPDATE analysis SET request_date = $1 WHERE batch_id = $2`,
+            [new Date(), batch_id],
+        )
+
+        return result;
+    }
 }
 
