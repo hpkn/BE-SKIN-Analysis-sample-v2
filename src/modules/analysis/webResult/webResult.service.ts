@@ -10,7 +10,7 @@ export class WebResultService {
         private database: DatabaseService,
         private readonly AlgoAnalysis: AlgoAnalysisService,
         private readonly computation: ComputationService,
-    ) {}
+    ) { }
 
     getSkinCondition(mScoreT: number, sScoreT: number, mScoreU: number, sScoreU: number, sebumQAScore: number) {
         const veryDry = 1;
@@ -468,6 +468,25 @@ export class WebResultService {
             });
         }
         return result;
+    }
+
+    async checkExpiration(batch_id: number) {
+
+        const result = await this.database.executeQuery(
+            `SELECT request_date FROM analysis WHERE batch_id = $1`,
+            [batch_id],
+        )
+
+        if (result.length === 0) {
+            return true;
+        }
+
+        const requestDate = new Date(result[0].request_date);
+
+        const differenceInMs = new Date().getTime() - requestDate.getTime();
+        const differenceInHours = differenceInMs / (1000 * 3600);
+
+        return differenceInHours > 24;
     }
 }
 
