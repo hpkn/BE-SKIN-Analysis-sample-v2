@@ -1,17 +1,26 @@
-import { Controller, Body, Get, Res, Param, UseGuards } from '@nestjs/common';
+import { Controller, Get, Res, Param, Query } from '@nestjs/common';
 import { Response } from 'express';
 import { WebResultService } from './webResult.service';
 import { ApiTags } from '@nestjs/swagger';
-import { AuthGuard } from '@nestjs/passport';
 
 @ApiTags('WebResult')
 @Controller('web-result')
 export class WebResultController {
-    constructor(private readonly webResult: WebResultService) {}
+    constructor(private readonly webResult: WebResultService) { }
 
     @Get('/cndpskin/:batch_id')
-    async getBatchId(@Param('batch_id') batch_id: number, @Res() res: Response) {
+    async getBatchId(@Param('batch_id') batch_id: number, @Res() res: Response, @Query('check') checkExpiration: boolean) {
         try {
+            if (checkExpiration) {
+                const isExpired = await this.webResult.checkExpiration(batch_id);
+                if (isExpired) {
+                    return res.status(410).json({
+                        status: 410,
+                        message: 'Web result is expired',
+                    });
+                }
+            }
+
             const result = await this.webResult.getBatchId(batch_id);
 
             return res.status(200).json({
