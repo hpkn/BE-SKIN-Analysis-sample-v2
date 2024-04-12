@@ -452,9 +452,7 @@ export class WebResultService {
             });
         }
 
-        console.log('skinAge --->', skinAge);
-
-        if (skinAge.length > 0) {
+        if (skinAge?.length > 0) {
             result.push({
                 measurement: 'SkinAge',
                 value: skinAge[0].skin_age,
@@ -470,4 +468,3 @@ export class WebResultService {
         return result;
     }
 }
-

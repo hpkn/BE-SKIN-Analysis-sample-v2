@@ -4,6 +4,7 @@
     "version": "1.0.0",
     "description": "Nest TypeScript starter repository",
     "license": "MIT",
+    "type": "module",
     "scripts": {
         "typeorm": "ts-node ./node_modules/typeorm/cli",
         "typeorm:run-migrations": "npm run typeorm migration:run -- -d ./config/typeOrm.config.ts",
