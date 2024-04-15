@@ -3,6 +3,11 @@ name: Production Release
 on:
     push:
         branches: [main]
+    workflow_dispatch:
+
+concurrency:
+    group: ${{ github.head_ref }}
+    cancel-in-progress: true
 jobs:
     china-build:
         runs-on: [ubuntu-latest]
@@ -27,7 +32,7 @@ jobs:
     europe-build:
         runs-on: [ubuntu-latest]
 
-        if: (github.ref == 'refs/heads/master')
+        if: (github.ref == 'refs/heads/main')
         steps:
             - name: Checkout Repository
               uses: actions/checkout@v3
