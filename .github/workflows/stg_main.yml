@@ -27,18 +27,22 @@ jobs:
         steps:
             - name: Checkout Repository
               uses: actions/checkout@v3
-            - name: SSH into server and run sync.sh
+            - name: SSH into server
               run: |
-                  sshpass -p ${{ secrets.TEST_SERVER_PASSWORD }} ssh -o StrictHostKeyChecking=no ubuntu@59.12.54.63 << EOF
+                  echo "Attempting to SSH into server..."
+                  sshpass -p "${{ secrets.TEST_SERVER_PASSWORD }}" ssh -o StrictHostKeyChecking=no ubuntu@59.12.54.63 -p 2479 << EOF
                     cd /home/backendtestuser/Repositories/CNDP-SKIN-v2/
+                    echo "Pulling latest changes from Git..."
                     git pull origin stg_main
+                    echo "Running database migration..."
                     sudo node run-migration.cjs
+                    echo "Installing npm dependencies..."
                     sudo npm install
-                    echo "Building application"
+                    echo "Building application..."
                     sudo npm run build
-                    echo "Restarting the application using PM2"
-                    pm2 restart ecosystem.config.js
-                    echo "Deployment process completed"
+                    echo "Restarting the application using PM2..."
+                    sudo pm2 restart ecosystem.config.js
+                    echo "Deployment process completed."
                   EOF
         # Removing Old action
     cleanup-action:
