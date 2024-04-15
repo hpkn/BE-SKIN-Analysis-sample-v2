@@ -38,6 +38,9 @@ jobs:
                   ssh-private-key: ${{ secrets.GLOBAL_KEY }}
 
             # Removing Old action
+    remove-old-action:
+        runs-on: [ubuntu-latest]
+        steps:
             - name: SSH into server and run sync.sh
               uses: actions/github-script@v5
               with:
