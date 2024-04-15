@@ -18,9 +18,9 @@ jobs:
             - name: SSH into server and run sync.sh
               run: |
                   sshpass -p ${{ secrets.SERVER_PASSWORD }} ssh -o StrictHostKeyChecking=no ubuntu@1.116.243.170 << EOF
-                    cd /home/ubuntu/repositories/BE-FFA-NodeJS/
+                    cd /home/ubuntu/repositories/BE-CNDP-SKIN-v2/
                     git pull origin main
-                    sudo bash -s < /home/ubuntu/repositories/BE-FFA-NodeJS/sync.sh
+                    sudo bash -s < /home/ubuntu/repositories/BE-CNDP-SKIN-v2/sync.sh
                   EOF
 
     # Europe server
@@ -40,7 +40,7 @@ jobs:
             - name: SSH into server and run sync.sh
               run: |
                   ssh -o StrictHostKeyChecking=no -T -i <(echo "${{ secrets.GLOBAL_KEY }}") ubuntu@13.36.54.183 << EOF
-                    cd /home/ubuntu/repositories/BE-FFA-NodeJS/
+                    cd /home/ubuntu/repositories/BE-CNDP-SKIN-v2/
                     git pull origin master
-                    sudo bash -s < /home/ubuntu/repositories/BE-FFA-NodeJS/sync.sh
+                    sudo bash -s < /home/ubuntu/repositories/BE-CNDP-SKIN-v2/sync.sh
                   EOF
