@@ -10,7 +10,7 @@ jobs:
         if: (github.ref == 'refs/heads/main')
         steps:
             - name: Checkout Repository
-              uses: actions/checkout@v3
+              uses: actions/checkout
 
             - name: Install sshpass
               run: sudo apt-get update && sudo apt-get install -y sshpass
@@ -36,6 +36,14 @@ jobs:
               uses: webfactory/ssh-agent@v0.5.3
               with:
                   ssh-private-key: ${{ secrets.GLOBAL_KEY }}
+
+            - name: SSH into server and run sync.sh
+              run: |
+                  ssh -o StrictHostKeyChecking=no -T -i <(echo "${{ secrets.GLOBAL_KEY }}") ubuntu@13.36.54.183 << EOF
+                    cd /home/ubuntu/repositories/BE-FFA-NodeJS/
+                    git pull origin master
+                    sudo bash -s < /home/ubuntu/repositories/BE-FFA-NodeJS/sync.sh
+                  EOF
 
             # Removing Old action
     cleanup-action:
