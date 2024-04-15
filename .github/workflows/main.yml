@@ -38,34 +38,22 @@ jobs:
                   ssh-private-key: ${{ secrets.GLOBAL_KEY }}
 
             # Removing Old action
-    remove-old-action:
+    cleanup-action:
         runs-on: [ubuntu-latest]
+        needs: europe-build
+        continue-on-error: true
         steps:
             - name: SSH into server and run sync.sh
-              uses: actions/github-script@v5
-              with:
-                  github-token: ${{ secrets.GITHUB_TOKEN }}
-                  script: |
-                      const { context, GitHub } = require('@actions/github');
-                      const octokit = new GitHub(process.env.GITHUB_TOKEN);
-                      const { owner, repo } = context.repo;
-                      const branch = context.ref.split('/').slice(2).join('/');
+              run: |
+                  echo "Removing old workflow runs..."
+                  RUNS=$(curl -s -X GET -G "https://api.github.com/repos/${{ github.repository }}/actions/runs" \
+                          -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                          -H "Accept: application/vnd.github.v3+json" \
+                          | jq -r '.workflow_runs[] | select(.id != ${{ github.run_id }}) | .id')
 
-                      const { data: runs } = await octokit.actions.listWorkflowRuns({
-                        owner,
-                        repo,
-                        branch,
-                        status: 'queued', // or 'in_progress'
-                      });
-
-                      // Keep the latest workflow run
-                      const latestRun = runs.pop();
-
-                      // Delete other workflow runs
-                      for (const run of runs) {
-                        await octokit.actions.cancelWorkflowRun({
-                          owner,
-                          repo,
-                          run_id: run.id,
-                        });
-                      }
+                  for run in $RUNS; do
+                    echo "Deleting workflow run $run"
+                    curl -X DELETE -G "https://api.github.com/repos/${{ github.repository }}/actions/runs/$run" \
+                      -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                      -H "Accept: application/vnd.github.v3+json"
+                  done
