@@ -14,11 +14,11 @@ echo "Pulling the latest changes from the Git repository"
 git pull origin main
 
 # RUN DB migration
+echo "Run DB Migration"
 node run-migration.cjs
 
 # Install all the dependencies
 echo "Installing dependencies"
-
 source ~/.bashrc  # Refresh the shell to include updated PATH
 
 
