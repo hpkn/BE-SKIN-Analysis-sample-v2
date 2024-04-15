@@ -51,7 +51,7 @@ jobs:
         needs: europe-build
         continue-on-error: true
         steps:
-            - name: SSH into server and run sync.sh
+            - name: Cleaning existing Actions
               run: |
                   echo "Removing old workflow runs..."
                   RUNS=$(curl -s -X GET -G "https://api.github.com/repos/${{ github.repository }}/actions/runs" \

@@ -17,15 +17,6 @@ import { ApiKeyMiddleware } from './common/middleWare/authMiddlware/apikey.middl
 
 @Module({
     imports: [
-        BullModule.forRoot({
-            redis: {
-                host: 'localhost',
-                port: 6379,
-            },
-        }),
-        BullModule.registerQueue({
-            name: 'dataSaving',
-        }),
         ConfigModule.forRoot({
             isGlobal: true,
             envFilePath: ['env/.env'],
@@ -59,4 +50,3 @@ export class AppModule {
         // consumer.apply(AuthMiddleware).forRoutes('web-result/*');
     }
 }
-

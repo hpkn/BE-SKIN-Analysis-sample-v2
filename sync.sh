@@ -29,3 +29,5 @@ echo "Restarting the application using PM2"
 pm2 restart ecosystem.config.js
 
 echo "Deployment process completed"
+
+
