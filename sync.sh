@@ -9,10 +9,6 @@ echo "Starting deployment process"
 # Change directory to where your application is located
 cd /home/ubuntu/repositories/BE-CNDP-SKIN-v2/
 
-# Pull the latest changes from the Git repository
-echo "Pulling the latest changes from the Git repository"
-git pull origin main
-
 # RUN DB migration
 echo "Run DB Migration"
 node run-migration.cjs
