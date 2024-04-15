@@ -8,7 +8,6 @@ import { APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/exceptions/exceptionHandling/allException.filter';
 import { AnalysisModule } from './modules/analysis/analysis.module';
 import { CustomerModule } from './modules/customer/customer.module';
-import { BullModule } from '@nestjs/bull';
 import { AuthMiddleware } from './common/middleWare/authMiddlware/auth.middleware';
 import { TimingMiddleware } from './common/middleWare/timingMiddleware/timing.middleware';
 import { ErrorNotificationFilter } from './common/exceptions/errorNotification/errorNotification.filter';
