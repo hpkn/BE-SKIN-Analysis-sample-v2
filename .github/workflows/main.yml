@@ -1,0 +1,71 @@
+# PRODUTION RELEASE SCRIPT
+name: Production Release
+on:
+    push:
+        branches: [main]
+jobs:
+    china-build:
+        runs-on: [ubuntu-latest]
+
+        if: (github.ref == 'refs/heads/main')
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v3
+
+            - name: Install sshpass
+              run: sudo apt-get update && sudo apt-get install -y sshpass
+
+            - name: SSH into server and run sync.sh
+              run: |
+                  sshpass -p ${{ secrets.SERVER_PASSWORD }} ssh -o StrictHostKeyChecking=no ubuntu@1.116.243.170 << EOF
+                    cd /home/ubuntu/repositories/BE-CNDP-SKIN-v2/
+                    git pull origin main
+                    sudo bash -s < /home/ubuntu/repositories/BE-CNDP-SKIN-v2/sync.sh
+                  EOF
+
+    # Europe server
+    europe-build:
+        runs-on: [ubuntu-latest]
+
+        if: (github.ref == 'refs/heads/main')
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v3
+
+            - name: Set up SSH
+              uses: webfactory/ssh-agent@v0.5.3
+              with:
+                  ssh-private-key: ${{ secrets.GLOBAL_KEY }}
+
+            # Removing Old action
+    remove-old-action:
+        runs-on: [ubuntu-latest]
+        steps:
+            - name: SSH into server and run sync.sh
+              uses: actions/github-script@v5
+              with:
+                  github-token: ${{ secrets.GITHUB_TOKEN }}
+                  script: |
+                      const { context, GitHub } = require('@actions/github');
+                      const octokit = new GitHub(process.env.GITHUB_TOKEN);
+                      const { owner, repo } = context.repo;
+                      const branch = context.ref.split('/').slice(2).join('/');
+
+                      const { data: runs } = await octokit.actions.listWorkflowRuns({
+                        owner,
+                        repo,
+                        branch,
+                        status: 'queued', // or 'in_progress'
+                      });
+
+                      // Keep the latest workflow run
+                      const latestRun = runs.pop();
+
+                      // Delete other workflow runs
+                      for (const run of runs) {
+                        await octokit.actions.cancelWorkflowRun({
+                          owner,
+                          repo,
+                          run_id: run.id,
+                        });
+                      }

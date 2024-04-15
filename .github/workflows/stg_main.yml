@@ -1,0 +1,55 @@
+name: Deploy NestJS API
+on:
+  push:
+    branches: [stg_main]
+jobs:
+  build:
+    runs-on: [ubuntu-latest]
+
+    if: (github.ref == 'refs/heads/stg_main')
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      - name: Install dependencies
+        run: npm install
+      - name: Run end-to-end tests
+        run: |
+          npm run test:e2e
+          if [ $? -ne 0 ]; then
+            echo "End-to-end tests failed. Exiting."
+            exit 1
+          fi
+      - name: Login to docker
+        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+      - name: Build Docker Image
+        # run: docker build -t chowisbackend/crm-nodejs-app .
+        run: docker-compose build
+      - name: Publish image to docker hub
+        # run: docker push chowisbackend/crm-nodejs-app:latest
+        run: docker-compose push
+
+  deploy:
+    needs: build
+    runs-on: [ffa-runner]
+    steps:
+      - name: Change repository and execute Docker Compose commands
+        run: |
+          cd /home/backendtestuser/Repositories/BE-FFA-NodeJS/
+          sudo docker-compose pull
+          docker-compose down --remove-orphans
+          sudo docker-compose up -d
+      # - name: change repository
+      #   run: cd /home/backendtestuser/Repositories/BE_nodejs_login_crm_v1/
+      # - name: Pull docker image
+      #   # run: sudo docker pull chowisbackend/crm-nodejs-app:latest
+      #   run: sudo docker-compose pull
+      # - name: Delete container to avoid conflictst
+      #   # run: sudo docker rm -f crm-nodejs-app-container
+      #   run: docker-compose down --remove-orphans
+      # - name: Run docker container
+      #   # run: sudo docker run -d -p 2024:2024 --name crm-nodejs-app-container chowisbackend/crm-nodejs-app:latest
+      #   run: sudo docker-compose up -d
+
+      # sudo docker run -d -p 2024:2024 --name test-container-container chowisbackend/test-container:latest
+      # sudo docker pull chowisbackend/test-container:latest
+      # certbot certonly --dns-google --agree-tos \ -d "*.example.com"git
