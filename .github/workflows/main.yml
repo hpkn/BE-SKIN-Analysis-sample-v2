@@ -3,10 +3,6 @@ name: Production Release
 on:
     push:
         branches: [main]
-
-concurrency:
-    group: ${{ github.head_ref }}
-    cancel-in-progress: true
 jobs:
     china-build:
         runs-on: [ubuntu-latest]
