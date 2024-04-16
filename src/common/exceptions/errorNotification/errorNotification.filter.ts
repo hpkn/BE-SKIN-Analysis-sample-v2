@@ -13,7 +13,6 @@ export class ErrorNotificationFilter implements ExceptionFilter {
     private errorOccurrences: ErrorOccurrences = {};
 
     catch(exception: unknown, host: ArgumentsHost) {
-
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<Response>();
         const request = ctx.getRequest<Request>();
@@ -41,6 +40,7 @@ export class ErrorNotificationFilter implements ExceptionFilter {
 
         this.errorOccurrences[errorKey].count++;
 
+        console.log();
         if (
             this.errorOccurrences[errorKey].count === Number(process.env.THRESHOLD) &&
             Date.now() - this.errorOccurrences[errorKey].lastOccurred <= Number(process.env.TIMEFRAME)
@@ -73,8 +73,8 @@ export class ErrorNotificationFilter implements ExceptionFilter {
                 <p><strong>Error:</strong> ${errorResponse.error}</p>
                 <p><strong>Status Code:</strong> ${JSON.stringify(statusCode)}</p>
                 <p><strong>Error Log:</strong> ${JSON.stringify(
-                exception instanceof HttpException ? exception.stack : error,
-            )}</p>
+                    exception instanceof HttpException ? exception.stack : error,
+                )}</p>
                 <p><strong>Endpoint:</strong> ${url}</p>
                 <p><strong>Method:</strong> ${method}</p>
                 <p><strong>Location:</strong> ${location}</p>
@@ -85,7 +85,7 @@ export class ErrorNotificationFilter implements ExceptionFilter {
         };
 
         try {
-            await this.transporter.sendMail(mailOptions);
+            const result = await this.transporter.sendMail(mailOptions);
         } catch (error) {
             console.error('Error sending email notification:', error);
         }
@@ -103,7 +103,7 @@ export class ErrorNotificationFilter implements ExceptionFilter {
         timeStamp: new Date(),
     });
 
-    private generateErrorDetails(exception: any): { impactAssessment: string, recommendedActions: string } {
+    private generateErrorDetails(exception: any): { impactAssessment: string; recommendedActions: string } {
         let impactAssessment = '';
         let recommendedActions = '';
 
@@ -111,22 +111,29 @@ export class ErrorNotificationFilter implements ExceptionFilter {
         if (exception.status === 404) {
             // For 404 Not Found
             impactAssessment = 'The requested resource or endpoint is not found, resulting in a "Not Found" error.';
-            recommendedActions = 'Check the requested URL and ensure that the corresponding route is correctly configured in the application. Verify that the server is running and accessible.';
+            recommendedActions =
+                'Check the requested URL and ensure that the corresponding route is correctly configured in the application. Verify that the server is running and accessible.';
         } else if (exception.status === 400) {
             // For 400 Bad Request
             if (exception.response && exception.response.isString === 'batch_id must be a string') {
                 // Specific error message for batch_id
-                impactAssessment = 'The request body is missing or incorrect, specifically the "batch_id" parameter is not provided as a string, resulting in a "Bad Request" error.';
-                recommendedActions = 'Review the request payload and ensure that all required parameters, including "batch_id", are provided and in the correct format. Implement validation checks on the server side to handle such cases gracefully and provide informative error messages to the client.';
+                impactAssessment =
+                    'The request body is missing or incorrect, specifically the "batch_id" parameter is not provided as a string, resulting in a "Bad Request" error.';
+                recommendedActions =
+                    'Review the request payload and ensure that all required parameters, including "batch_id", are provided and in the correct format. Implement validation checks on the server side to handle such cases gracefully and provide informative error messages to the client.';
             } else {
                 // Generic argument error
-                impactAssessment = 'The server encountered a "Bad Request" error due to invalid arguments in the request.';
-                recommendedActions = 'Refer to the API documentation to understand the correct request format and provide valid arguments.';
+                impactAssessment =
+                    'The server encountered a "Bad Request" error due to invalid arguments in the request.';
+                recommendedActions =
+                    'Refer to the API documentation to understand the correct request format and provide valid arguments.';
             }
         } else if (exception.status === 500) {
             // For 500 Internal Server Error
-            impactAssessment = 'The server encountered an internal error while processing the request, resulting in a "500 Internal Server Error".';
-            recommendedActions = 'Check the server logs for detailed error messages. Investigate and address any database-related issues.';
+            impactAssessment =
+                'The server encountered an internal error while processing the request, resulting in a "500 Internal Server Error".';
+            recommendedActions =
+                'Check the server logs for detailed error messages. Investigate and address any database-related issues.';
         }
 
         return { impactAssessment, recommendedActions };
@@ -136,7 +143,7 @@ export class ErrorNotificationFilter implements ExceptionFilter {
         service: process.env.SMTP_SERVICE,
         host: process.env.EMAIL_HOST,
         port: Number(process.env.SMTP_PORT),
-        secure: true,
+        secure: false,
         auth: {
             user: process.env.EMAIL_USER,
             pass: process.env.EMAIL_PASSWORD,

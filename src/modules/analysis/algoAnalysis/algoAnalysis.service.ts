@@ -7,7 +7,6 @@ import fs from 'fs';
 import { FileUploadService } from '../../../common/FileUpload/fileUpload.service';
 import { KeratinService } from 'src/modules/algorithms/keratin/keratin.service';
 import { PoresService } from 'src/modules/algorithms/pores/pores.service';
-import { LogError } from 'typeorm-model-generator/dist/src/Utils';
 import { PorphyrinService } from 'src/modules/algorithms/porphyrin/porphyrin.service';
 import { SebumService } from 'src/modules/algorithms/sebum/sebum.service';
 import { SebumTService } from 'src/modules/algorithms/sebumT/sebumT.service';
@@ -22,6 +21,9 @@ import { SensitivtyScalingService } from 'src/modules/algorithms/sensitivtyScali
 import { FitzSGService } from 'src/modules/algorithms/fitzSG/fitzSG.service';
 import * as moment from 'moment';
 import { OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
+import { toLower } from 'lodash';
+import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class AlgoAnalysisService {
@@ -42,6 +44,7 @@ export class AlgoAnalysisService {
         private sensitivityScaling: SensitivtyScalingService,
         private fitzSG: FitzSGService,
         private S3Image: FileUploadService,
+        private readonly computation: ComputationService,
     ) {}
 
     convertScoresToNumbers = (data: any) => {
@@ -55,6 +58,7 @@ export class AlgoAnalysisService {
             }
         }
     };
+
     getTaskByAlgoType(type: string) {
         switch (type) {
             case 'keratin':
@@ -1216,17 +1220,8 @@ export class AlgoAnalysisService {
     async userAnalysisImageHistory(customer_id: number, per: number, page: number) {
         let batchIds = await this.getCustomerBatchID(customer_id, per, page);
 
-        // const promises: Promise<any>[] = [];
-        // // geting result
-        // for (const batchId of batchIds) {
-        //     console.log('===>', batchId['batch_id']);
-        //     promises.push(this.getImageData(batchId['batch_id']));
-        // }
-
         try {
-            // const resultObj = await Promise.all(promises);
 
-            // const image: any[] = [];
             const imagePromises: Promise<any>[] = batchIds.map(async (batchId: any) => {
                 const rows = await this.getImageData(batchId['batch_id']);
                 if (rows.length > 0) {
@@ -1240,12 +1235,19 @@ export class AlgoAnalysisService {
 
             const image = await Promise.all(imagePromises);
             const result = image.filter((result) => result !== null);
+           
+            
             for (const entry of result) {
+                if (!entry) {
+                    continue; 
+                }
+
                 const analyzedImages = entry.images.filter(
                     (image: any) => image.type === 'analyzedImage' && image.score === null,
                 );
 
                 for (const analyzedImage of analyzedImages) {
+            
                     const { hash, analysis_type, url } = analyzedImage;
                     const originalImage = entry.images.find(
                         (image: any) =>
@@ -1253,12 +1255,13 @@ export class AlgoAnalysisService {
                             image.hash === hash &&
                             image.analysis_type === analysis_type,
                     );
-
+            
                     if (originalImage) {
                         analyzedImage.score = originalImage.score;
                     }
                 }
-                entry.images.map((val: any) => {
+
+                entry.images.forEach((val: any) => {
                     if (val.url === null) {
                         val.url = '';
                     }
@@ -1266,20 +1269,31 @@ export class AlgoAnalysisService {
                         val.hash = '';
                     }
                 });
-            }
 
-            return result;
+            }
+  
+            const filteredData = result.filter(item => item !== undefined);
+            return filteredData;
         } catch (error) {
             console.log(error);
             throw error;
         }
     }
 
+
+    // Remove identical object
+    removeIdenticalObjects = (arr: any[]) => {
+        const uniqueObjects = arr.filter(
+            (obj, index, self) => index === self.findIndex((o) => JSON.stringify(o) === JSON.stringify(obj)),
+        );
+        return uniqueObjects;
+    };
+
     async userHistoryWithBatchId(batch_id: number) {
         try {
             const result = await this.database.executeQuery(
                 `
-            SELECT
+                SELECT
                 analysis_type,
                 jsonb_agg ( TEMP ) 
             FROM
@@ -1326,7 +1340,8 @@ export class AlgoAnalysisService {
                             OR type_measurement_id = 4 
                         ) 
                         AND type_image_id = 21 
-                        AND batch_id = $1 
+                        AND batch_id = $1
+						
                     ) AS record
                     LEFT JOIN (
                     SELECT
@@ -1340,7 +1355,9 @@ export class AlgoAnalysisService {
                     FROM
                         measurements AS ms
                         LEFT JOIN type_images AS tpi ON tpi.ID = ms.type_image_id 
-                    ) AS img ON img.batch_id = record.batch_id 
+                        WHERE batch_id = $1
+
+                    ) AS img ON img.batch_id = record.batch_id AND img.type_measurement_id = record.type_measurement_id 
                     WHERE record.type_measurement_id = img.type_measurement_id 
                     AND (record.unique_id = img.unique_id OR record."analysis_type" = 'moistureT' OR record."analysis_type" = 'moistureU')
                 GROUP BY
@@ -1352,23 +1369,33 @@ export class AlgoAnalysisService {
                 ) TEMP 
             GROUP BY
                 analysis_type;
-                
             `,
                 [batch_id],
             );
+
+            // console.log(result);
+
+            // const removeDuplicate = this.removeIdenticalObjects(result);
+            // console.log(removeDuplicate);
 
             let respObj: any = {};
             for (let i = 0; i < result.length; i++) {
                 let obj: any = {};
                 for (let j = 0; j < result[i].jsonb_agg.length; j++) {
                     let imgObj: any = {};
+                    console.log('image check ', result[i].jsonb_agg[j]);
                     for (let k = 0; k < result[i].jsonb_agg[j].images.length; k++) {
+                        // console.log('Checking this --->', result[i].jsonb_agg[j]);
                         if (result[i].analysis_type === 'moistureT' || result[i].analysis_type === 'moistureU') {
                             continue;
                         }
-                        imgObj[result[i].jsonb_agg[j].images[k].type] = { ...result[i].jsonb_agg[j].images[k].url };
+                        // console.log(result[i].jsonb_agg[j].images[k].url);
+                        if (result[i].jsonb_agg[j].time === result[i].jsonb_agg[j].time) {
+                            imgObj[result[i].jsonb_agg[j].images[k].type] = { ...result[i].jsonb_agg[j].images[k].url };
+                        }
                     }
                     if (!obj[result[i].analysis_type]) {
+                        // console.log(imgObj);
                         obj[result[i].analysis_type] = [
                             {
                                 ...result[i].jsonb_agg[j].args,
@@ -1491,7 +1518,7 @@ export class AlgoAnalysisService {
 
     // MoistureU
     // CBB offline saving
-    offlineCBBSaveData(imageRecords: any, dataObject: any[]) {
+    offlineCBBSaveData(dataObject: any[]) {
         if (!dataObject || dataObject.length === 0) {
             return;
         }
@@ -1524,7 +1551,7 @@ export class AlgoAnalysisService {
 
     async getAlgoID(algorithm: string): Promise<any[]> {
         const result = await this.database.executeQuery(
-            `SELECT id FROM type_measurements WHERE name LIKE '${algorithm}'`,
+            `SELECT id, name FROM type_measurements WHERE name LIKE '${algorithm}'`,
         );
 
         return result;
@@ -1546,14 +1573,18 @@ export class AlgoAnalysisService {
         const environment = {
             deviceModel: data.deviceModel,
             deviceOS: data.deviceOS,
-            nth_analysis: imageRecords,
+            nth_analysis: '',
             lat: data.lat,
             long: data.long,
             temperature: data.temperature,
             humidity: data.humidity,
             uv_index: data.uv_index,
             appVersion: data.appVersion,
+            gender: data.gender ?? '',
+            skin_color_group: data.skin_color_group ?? '',
+            ethnicities: data.ethnicities ?? '',
         };
+
         await this.updateEnvironment(data.batch_id, environment);
     }
 
@@ -1706,13 +1737,16 @@ export class AlgoAnalysisService {
 
     saveSkinCondtion(batch_id: number, skinCondtion: any, skinAge: any) {
         const condition = skinCondtion.length === 0 ? '-1' : skinCondtion;
+        console.log('condition', condition);
         try {
             const update = `
                 INSERT INTO measurements (batch_id, type_measurement_id, type_image_id, scores)
-                VALUES ($3, 18, 21, '{"skinCondtion": $1, "skinAge": $2}')
+                VALUES (${batch_id}, 18, 21, '{"skinCondtion": ${JSON.stringify(
+                condition,
+            )}, "skinAge": ${JSON.stringify(skinAge)}}')
             `;
 
-            this.database.executeQuery(update, [JSON.stringify(condition), JSON.stringify(skinAge), batch_id]);
+            this.database.executeQuery(update);
             return update;
         } catch (e) {
             console.log('check', e);
@@ -1728,7 +1762,6 @@ export class AlgoAnalysisService {
 
         const result = await this.database.executeQuery(query, [CUSTOMER_ID_LIST]);
 
-        console.log(result);
         const analysisData = result;
 
         const analysisDf = analysisData.map((row: any) => ({
@@ -1805,5 +1838,529 @@ export class AlgoAnalysisService {
     isPrimitive(obj: any): boolean {
         return (typeof obj !== 'object' && typeof obj !== 'function') || obj === null;
     }
-}
 
+    scoreDecrypt(input: any) {
+        const firstDigitMap: any = {
+            'P5': '0',
+            'am': '1',
+            '!0': '2',
+            'c0': '3',
+            '3d': '4',
+            '*l': '5',
+            '~~': '6',
+            'zt': '7',
+            '=y': '8',
+            '?.': '9',
+        };
+
+        const secondDigitMap: any = {
+            'HPC': '0',
+            '*v7': '1',
+            '-ua': '2',
+            'zgq': '3',
+            'x91': '4',
+            'man': '5',
+            'pan': '6',
+            'aZH': '7',
+            '++8': '8',
+            'kim': '9',
+        };
+
+        if (input.length === 2) {
+            return Number(firstDigitMap[input]);
+        } else if (input.length > 2) {
+            let firstPart: any = input.slice(0, 2);
+
+            firstPart = firstDigitMap[firstPart];
+
+            let secondPart: any = input.slice(2);
+            secondPart = secondDigitMap[secondPart];
+
+            console.log(secondPart, firstPart);
+            const concatResult = Number(firstPart + secondPart);
+
+            return concatResult;
+        } else {
+            return null;
+        }
+    }
+
+    async offlineCbbOperation(
+        data: OfflineDataCBBDTO,
+        files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
+    ) {
+        data.batch_id = Number(data.batchId);
+        // data.task = this.AlgoAnalysis.getCBBTaskByAlgoType(Number(data.type));
+        let algo: any;
+        let algoId;
+        let algoName;
+        if (/[0-9]/.test(data.type)) {
+            algo = this.getCBBTaskByAlgoType(Number(data.type));
+            algoName = algo.algoName;
+            algoId = algo.id;
+        } else {
+            data.task = this.getTaskByAlgoType(data.type);
+            algo = await this.getAlgoID(toLower(data.type));
+            algoId = algo['id'];
+            algoName = algo['name'];
+        }
+
+        // const algo = this.AlgoAnalysis.getCBBTaskByAlgoType(data.type);
+
+        const analyzed: any[] = [];
+        const original: any[] = [];
+        const retunAnalyzed: any[] = [];
+        const returnOriginal: any[] = [];
+        let scores: number[];
+        let raw: number[];
+        let decryptedScores = [];
+        let decryptedRaw = [];
+        let promitive = this.isPrimitive(data.args);
+        if (promitive === true) {
+            scores = JSON.parse(data.args).score;
+            raw = JSON.parse(data.args).raw;
+
+            if (data.encryptedCBB === true) {
+                for (let i = 0; i < scores.length; i++) {
+                    decryptedScores.push(this.scoreDecrypt(scores[i]));
+                    decryptedRaw.push(this.scoreDecrypt(raw[i]));
+                }
+                scores = decryptedScores;
+                raw = decryptedRaw;
+            }
+        } else {
+            scores = data.args.score;
+            raw = data.args.raw;
+            if (data.encryptedCBB === true) {
+                for (let i = 0; i < scores.length; i++) {
+                    decryptedScores.push(this.scoreDecrypt(scores[i]));
+                    decryptedRaw.push(this.scoreDecrypt(raw[i]));
+                }
+                scores = decryptedScores;
+                raw = decryptedRaw;
+            }
+        }
+
+        const savingPromise: Promise<any>[] = [];
+
+        let sum = 0;
+        sum = scores.reduce((accumulator, currentValue) => accumulator + currentValue);
+
+        let computation = this.computation.computationResult(
+            Number(data.type),
+            data?.answers === undefined ? '' : data?.answers,
+            scores,
+        );
+
+        /*
+            K-HEADSPA LOGIC START 
+        */
+        if (data.kHeadSpa === true) {
+            const kHeadSpaResult = await this.kheadSpaCheck(data.batch_id, algoName, computation['computation_score']);
+
+            if (kHeadSpaResult.timeWith24h === true) {
+                computation['computation_score'] = kHeadSpaResult?.computationScore ?? computation['computation_score'];
+                computation['keyWord'] = kHeadSpaResult.keywordScaling?.keyWord ?? computation['keyWord'];
+                computation['keyword_id'] = kHeadSpaResult.keywordScaling?.keyword_id ?? computation['keyword_id'];
+            } else {
+                computation = computation;
+            }
+        }
+
+        /*
+            K-HEADSPA LOGIC END 
+        */
+
+        const avg = sum / scores.length;
+
+        for (let i = 0; i < files.analyzedImage?.length; i++) {
+            const imageRecords = uuidv4();
+            const imageArg = this.handleCBBImageArg(data);
+            analyzed.push([
+                data.batch_id,
+                imageArg.analyzedImageArgs.url,
+                imageArg.analyzedImageArgs.sys_url,
+                imageArg.analyzedImageArgs.hash,
+                algoId,
+                18,
+                JSON.stringify({
+                    nth_analysis: imageRecords,
+                }),
+                0,
+            ]);
+
+            original.push([
+                data.batch_id,
+                imageArg.originalImageArgs.url,
+                imageArg.originalImageArgs.sys_url,
+                imageArg.originalImageArgs.hash,
+                algoId,
+                21,
+                JSON.stringify({
+                    nth_analysis: imageRecords,
+                }),
+                JSON.stringify({
+                    score: scores[i],
+                    raw: raw[i],
+                    computation_score: computation['computation_score']?.toFixed(2),
+                    questionnaire_score: computation['questionnaire_score'].toFixed(2),
+                    score_average: avg.toFixed(2),
+                    answers: data?.answers === undefined ? '' : data?.answers,
+                    keyWord: computation['keyWord'],
+                }),
+            ]);
+
+            //Image saving
+            const savingData = this.offlineCBBSaveImage(
+                files?.originalImage[i].buffer,
+                files?.analyzedImage[i].buffer,
+                imageArg,
+                data,
+            );
+            savingPromise.push(savingData);
+        }
+
+        const saveOriginal = original.map((item) => {
+            returnOriginal.push({
+                batchId: data.batch_id,
+                algorithm_type: data.type,
+                score: promitive === true ? JSON.parse(item[7]).score : item[7].score,
+                originalImage: {
+                    id: item[3],
+                    url: item[1],
+                },
+            });
+            return {
+                batch_id: item[0],
+                url: item[1],
+                sys_url: item[2],
+                hash: item[3],
+                type_measurement_id: item[4],
+                type_image_id: item[5],
+                args: item[6],
+                scores: item[7],
+            };
+        });
+        //return original
+
+        const saveAnalyzed = analyzed.map((item) => {
+            retunAnalyzed.push({
+                analyzedImage: {
+                    id: item[3],
+                    url: item[1],
+                },
+            });
+            return {
+                batch_id: item[0],
+                url: item[1],
+                sys_url: item[2],
+                hash: item[3],
+                type_measurement_id: item[4],
+                type_image_id: item[5],
+                args: item[6],
+                scores: item[7],
+            };
+        });
+
+        const newArray = returnOriginal.map((item, index) => {
+            return {
+                ...item,
+                analyzedImage: retunAnalyzed[index].analyzedImage,
+            };
+        });
+
+        const savedResult = [...saveAnalyzed, ...saveOriginal];
+
+        this.offlineCBBSaveData(savedResult);
+
+        const retObject = {
+            computation_score: computation['computation_score']?.toFixed(2),
+            questionnaire_score: computation['questionnaire_score']?.toFixed(2),
+            score_average: avg.toFixed(2),
+            keyWord: computation['keyWord'],
+            keyword_id: computation['keyword_id'],
+            result: [...newArray],
+        };
+
+        // await Promise.all(savingPromise).catch((e) => {
+        //     Promise.all(savingPromise).catch((e) => {
+        //         fs.appendFile('error.log', this.getErrorLog(data.batch_id), 'utf8', (err) => {
+        //             if (err) throw err;
+        //         });
+        //     });
+        // });
+
+        Promise.all(savingPromise)
+            .then(() => {
+                console.log(`${data.type} : Success`);
+            })
+            .catch((error) => {
+                console.log(error);
+                // Handle errors that occurred during promise execution
+                fs.appendFile('error.log', this.getErrorLog(data.batch_id), 'utf8', (err) => {
+                    if (err) throw err;
+                });
+            });
+
+        return retObject;
+    }
+
+    /*
+        ------------ K-HeadSpa Manipulation START --------------------
+    */
+
+    getNewScore(oldScore: number, direction: number) {
+        let newScore = -1;
+
+        if (direction == -1) {
+            newScore = oldScore * 0.8;
+        }
+
+        // if skin was (very) dehydrated before, after tretment it should at least return to normal.
+        if (direction == 1) {
+            newScore = Math.floor(Math.random() * 33) + 16;
+        }
+
+        return Math.round(newScore);
+    }
+
+    // Adjust scores for pores, spots, wrinkles, impurites, keratin, and sensitivity, providing at least 20% of improvement.
+    adjustSkinScore(oldComputedScore: number, currentComputedScore: number) {
+        let adjustedScore = -1;
+        // Adjust scores according to our keyword scale.
+        // 0 - 5, clear
+        // 6 - 15, almost clear
+        // 16 - 48, mild
+        // 49 - 80, moderate
+        // 81 - 99, severe
+
+        let currentLevel = 0;
+        let oldLevel = 0;
+
+        // ----- (1) ----- obtain current keyword level.
+        if (currentComputedScore >= 0 && currentComputedScore < 6) currentLevel = 1;
+        if (currentComputedScore >= 6 && currentComputedScore < 16) currentLevel = 2;
+        if (currentComputedScore >= 16 && currentComputedScore < 49) currentLevel = 3;
+        if (currentComputedScore >= 49 && currentComputedScore < 81) currentLevel = 4;
+        if (currentComputedScore >= 81 && currentComputedScore <= 99) currentLevel = 5;
+        // exception handling
+        if (currentComputedScore < 0) currentLevel = 1;
+        if (currentComputedScore > 99) currentLevel = 5;
+
+        // ----- (2) ----- obtain previous keyword level.
+        if (oldComputedScore >= 0 && oldComputedScore < 6) oldLevel = 1;
+        if (oldComputedScore >= 6 && oldComputedScore < 16) oldLevel = 2;
+        if (oldComputedScore >= 16 && oldComputedScore < 49) oldLevel = 3;
+        if (oldComputedScore >= 49 && oldComputedScore < 81) oldLevel = 4;
+        if (oldComputedScore >= 81 && oldComputedScore <= 99) oldLevel = 5;
+        // exception handling
+        if (oldComputedScore < 0) oldLevel = 1;
+        if (oldComputedScore > 99) oldLevel = 5;
+
+        // Stay within 0 - 5, clear
+        if (currentLevel == 1 && oldLevel == 1) {
+            if (currentComputedScore == 0) adjustedScore = 0; // nothing detected.
+            if (currentComputedScore == 1) adjustedScore = 1; // something is detected, score should not be further reduced to 0.
+            if (currentComputedScore > 1) adjustedScore = oldComputedScore - 1;
+        } else {
+            const ratioOfChange = (oldComputedScore - currentComputedScore) / oldComputedScore;
+
+            if (ratioOfChange >= 0.2) adjustedScore = currentComputedScore;
+            else adjustedScore = oldComputedScore * 0.8;
+        }
+
+        return Math.round(adjustedScore);
+    }
+
+    adjustSkinMoistureScores(oldScore: number, currentScore: number) {
+        let newScore = -1;
+
+        // Sebum & Moisture keyword levels:
+        // 0 ~ 5, very dehydrated
+        // 6 ~ 15, dehydrated
+        // 16 ~ 48, normal
+        // 49 ~ 80, hydrated
+        // 81 ~ 99, very hydrated
+
+        // NOTE: Target Skin Condition is Normal. Math.floor(Math.random() * 33) + 16;
+        if (oldScore >= 16 && oldScore < 49)
+            newScore = oldScore + Math.floor(Math.random() * (49 - Math.floor(oldScore)));
+        else if (currentScore >= 16 && currentScore < 49) newScore = currentScore;
+        else if (oldScore >= 49) {
+            newScore = this.getNewScore(oldScore, -1);
+        } // from 99 toward 16~48.
+        else if (oldScore < 16) {
+            newScore = this.getNewScore(oldScore, 1);
+        } // from 0 toward 16~48
+
+        return newScore;
+    }
+
+    adjustSkinSebumShineScores(oldScore: number, currentScore: number) {
+        let newScore = -1;
+
+        // Sebum & Moisture keyword levels:
+        // 0 ~ 5, very dry
+        // 6 ~ 15, dry
+        // 16 ~ 48, normal
+        // 49 ~ 80, oily
+        // 81 ~ 99, very oily.
+
+        // NOTE: Target Skin Condition is Normal.
+        if (oldScore >= 16 && oldScore < 49) oldScore - Math.floor(Math.random() * (Math.floor(oldScore) - 16));
+        else if (currentScore >= 16 && currentScore < 49) newScore = currentScore;
+        else if (oldScore >= 49) {
+            newScore = this.getNewScore(oldScore, -1);
+        } // from 99 toward 16~48.
+        else if (oldScore < 16) {
+            newScore = this.getNewScore(oldScore, 1);
+        } // from 0 toward 16~48
+
+        return newScore;
+    }
+
+    // Adjust scores scalp sebum/oiliness/shine:
+    // ---- providing 20% of improvement toward normal if old-score is >= 49.
+    // ---- ensure score is in normal range if old-score is < 16.
+    // ---- if old score already is in normal range, further improve results by decresing old score
+    adjustScalpSebumShineScores(oldScore: number, currentScore: number) {
+        let newScore = -1;
+        // Sebum & Moisture keyword levels:
+        // 0 ~ 5, very dry
+        // 6 ~ 15, dry
+        // 16 ~ 48, normal
+        // 49 ~ 80, oily
+        // 81 ~ 99, very oily.
+
+        // NOTE: Target Skin Condition is Normal.
+        if (oldScore >= 16 && oldScore < 49) oldScore - Math.floor(Math.random() * (Math.floor(oldScore) - 16));
+        else if (currentScore >= 16 && currentScore < 49) {
+            newScore = currentScore;
+        } else if (oldScore >= 49) {
+            newScore = this.getNewScore(oldScore, -1);
+        } // from 99 toward 16~48.
+        else if (oldScore < 16) {
+            newScore = this.getNewScore(oldScore, 1);
+        } // from 0 toward 16~48
+
+        return newScore;
+    }
+    /*
+        ------------ K-HeadSpa Manipulation END --------------------
+    */
+
+    // Time is within 24 hours
+    isWithin24Hours(time1: Date, time2: Date): boolean {
+        // Calculate the difference in milliseconds
+        const diffInMilliseconds = Math.abs(time1.getTime() - time2.getTime());
+
+        // Convert the difference to hours
+        const diffInHours = diffInMilliseconds / (1000 * 60 * 60);
+
+        // Check if the difference is less than or equal to 24 hours
+        return diffInHours <= 24;
+    }
+
+    // Previous Batch_id of the customer
+
+    async getPreviousBatchId(batchId: number) {
+        const result = await this.database.executeQuery(
+            `
+                SELECT
+                    batch_id, 
+                    MIN(created_time) AS oldest_created_time
+                FROM
+                    analysis 
+                WHERE
+                    customer_id = ( SELECT customer_id FROM analysis WHERE batch_id = $1 )
+                GROUP BY
+                    batch_id	
+                ORDER BY batch_id DESC, created_time ASC 
+                LIMIT 2
+            `,
+            [batchId],
+        );
+
+        // Check if there is a previous batch_id
+        const timeWith24h = this.isWithin24Hours(result[0]['oldest_created_time'], result[0]['oldest_created_time']);
+
+        let batchAnalysis;
+        if (result.length === 1) {
+            batchAnalysis = result[0]['batch_id'];
+        } else {
+            batchAnalysis = result[1]['batch_id'];
+        }
+
+        return {
+            batchId: batchAnalysis,
+            timeWith24h: timeWith24h,
+        };
+    }
+
+    async AllAnaysisScore(batchId: number) {
+        const result = await this.database.executeQuery(
+            `
+            SELECT
+                ROUND(AVG_SCORE, 2) AS computation,
+                NAME AS measurement
+            FROM (
+                SELECT 
+                    tp.NAME as Name,
+                    tp."id" as id,
+                    ROUND(
+                        COALESCE(
+                            AVG(CAST(scores->>'computation_score' AS NUMERIC)),
+                            AVG(CAST(scores->>'score' AS NUMERIC))
+                        ),
+                    2) AS AVG_SCORE
+                FROM measurements AS ms
+                JOIN type_measurements AS tp ON tp."id" = ms.type_measurement_id 
+                WHERE batch_id = $1 AND type_image_id = 21
+                GROUP BY tp.NAME, tp."id"
+            ) AS subquery;
+            `,
+            [batchId],
+        );
+
+        return result;
+    }
+
+    async kheadSpaCheck(batchId: number, algoName: any, computation: number) {
+        // Retrieve analysis scores for the specified batchId
+        const previousBatch = await this.getPreviousBatchId(batchId);
+        const result = await this.AllAnaysisScore(previousBatch.batchId);
+
+      
+        let computationScore: any;
+
+        // Filter the relevant measurement based on algoName
+        const relevantMeasurement = result.find((val: any) => val.measurement === algoName);
+        console.log('====>', relevantMeasurement);
+        let keywordScaling;
+        // If relevant measurement found, adjust the skin score accordingly
+        if (relevantMeasurement) {
+            if (
+                algoName === 'shine' ||
+                algoName === 'spots' ||
+                algoName === 'pores' ||
+                algoName === 'porphyrin' ||
+                algoName === 'wrinkles' ||
+                algoName === 'sensitivityredness' ||
+                algoName === 'keratin'
+            ) {
+                computationScore = this.adjustSkinScore(relevantMeasurement.computation, computation);
+                keywordScaling = this.computation.keywordScaling(computationScore);
+            } else if (toLower(algoName.includes) === 'sebum') {
+                computationScore = this.adjustSkinSebumShineScores(relevantMeasurement.computation, computation);
+            } else if (toLower(algoName.includes) === 'moisture') {
+                computationScore = this.adjustSkinMoistureScores(relevantMeasurement.computation, computation);
+            }
+        }
+
+        return {
+            computationScore: computationScore ?? computation,
+            keywordScaling: keywordScaling,
+            timeWith24h: previousBatch.timeWith24h,
+        };
+    }
+}

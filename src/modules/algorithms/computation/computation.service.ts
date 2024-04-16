@@ -222,7 +222,6 @@ export class ComputationService {
     computationResult(type: number, answers: string, score: any) {
         try {
             let final_response: any = {};
-
             let myScores: number[];
             if (Array.isArray(score) === false) {
                 myScores.push(score);
@@ -230,35 +229,13 @@ export class ComputationService {
                 myScores = score;
             }
 
-            // computed_score
-            // questionnaire_score
             const { computed_score, questionnaire_score } = this.cndp_computation(type, myScores, answers);
 
-            let keyWord;
-            let keyword_id;
-
-            if (computed_score >= 0 && computed_score < 6) {
-                keyWord = 'Clear';
-                keyword_id = 1;
-            } else if (computed_score >= 6 && computed_score < 16) {
-                keyWord = 'Almost Clear';
-                keyword_id = 2;
-            } else if (computed_score >= 16 && computed_score < 49) {
-                keyWord = 'Mild';
-                keyword_id = 3;
-            } else if (computed_score >= 49 && computed_score < 81) {
-                keyWord = 'Moderate';
-                keyword_id = 4;
-            } else if (computed_score >= 81 && computed_score <= 100) {
-                keyWord = 'Severe';
-                keyword_id = 5;
-            } else {
-                keyWord = 'Unknown'; // Handle the case when the number is outside the defined ranges
-            }
+            const keyWordScalling = this.keywordScaling(computed_score);
             final_response.computation_score = computed_score;
             final_response.questionnaire_score = questionnaire_score;
-            final_response.keyWord = keyWord;
-            final_response.keyword_id = keyword_id;
+            final_response.keyWord = keyWordScalling.keyWord;
+            final_response.keyword_id = keyWordScalling.keyword_id;
 
             return final_response;
         } catch (e) {
@@ -266,5 +243,39 @@ export class ComputationService {
             throw new Error('error');
         }
     }
-}
 
+    // 0 - 5, clear
+    // 6 - 15, almost clear
+    // 16 - 48, mild
+    // 49 - 80, moderate
+    // 81 - 99, severe
+
+    keywordScaling(computed_score: number) {
+        let keyWord;
+        let keyword_id;
+
+        if (computed_score >= 0 && computed_score < 6) {
+            keyWord = 'Clear';
+            keyword_id = 1;
+        } else if (computed_score >= 6 && computed_score < 16) {
+            keyWord = 'Almost Clear';
+            keyword_id = 2;
+        } else if (computed_score >= 16 && computed_score < 49) {
+            keyWord = 'Mild';
+            keyword_id = 3;
+        } else if (computed_score >= 49 && computed_score < 81) {
+            keyWord = 'Moderate';
+            keyword_id = 4;
+        } else if (computed_score >= 81 && computed_score <= 100) {
+            keyWord = 'Severe';
+            keyword_id = 5;
+        } else {
+            keyWord = 'Unknown'; // Handle the case when the number is outside the defined ranges
+        }
+
+        return {
+            keyWord: keyWord,
+            keyword_id: keyword_id,
+        };
+    }
+}

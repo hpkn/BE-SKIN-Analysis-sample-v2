@@ -1,28 +1,24 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
-import * as jwt from 'jsonwebtoken';
+
 @Injectable()
-export class AuthMiddleware implements NestMiddleware {
-    private readonly secretKey = process.env.ACCESS_TOKEN_SECRET;
+export class ApiKeyMiddleware implements NestMiddleware {
+    private readonly secretKey = process.env.API_KEY;
 
     use(req: Request, res: Response, next: NextFunction) {
-        const token = req.headers.authorization?.split(' ')[1];
-        console.log('not checking');
-        if (!token) {
-            // Token not provided, handle accordingly (e.g., return unauthorized response)
-            return res.status(403).send({
-                status: 10002,
-                type: 'AuthenticationError',
-                message: {
-                    en: 'You are unauthorized, try refreshing the page.',
-                },
-            });
-        }
-
         try {
-            const decoded = jwt.verify(token, this.secretKey);
-
-            console.log(decoded);
+            const token = req.headers.authorization?.split(' ')[1];
+            console.log(token);
+            if (this.secretKey !== token) {
+                // Token not provided, handle accordingly (e.g., return unauthorized response)
+                return res.status(403).send({
+                    status: 10002,
+                    type: 'AuthenticationError',
+                    message: {
+                        en: 'You are unauthorized, try refreshing the page.',
+                    },
+                });
+            }
             // return decoded;
             // Do further verification or processing if needed
             next();

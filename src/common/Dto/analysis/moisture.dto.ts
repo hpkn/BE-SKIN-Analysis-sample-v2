@@ -41,13 +41,13 @@ export class MoistureDTO {
     @IsNotEmpty()
     batch_id?: number;
 
-    @ApiProperty({
-        type: String,
-        description: 'This is required',
-        example: 'density',
-    })
-    @IsString()
-    type?: string | null;
+    // @ApiProperty({
+    //     type: String,
+    //     description: 'This is required',
+    //     example: 'density',
+    // })
+    // @IsString()
+    // type?: string | null;
 
     @ApiPropertyOptional({
         type: String,
@@ -148,5 +148,7 @@ export class MoistureDTO {
     })
     @IsOptional()
     score: any;
-}
 
+    @IsOptional()
+    kHeadSpa: any;
+}

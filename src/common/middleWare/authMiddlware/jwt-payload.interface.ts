@@ -6,4 +6,3 @@ export interface JwtPayload {
     app_id: number;
     // Add any other properties you want to include in the payload
 }
-

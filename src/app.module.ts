@@ -12,18 +12,11 @@ import { BullModule } from '@nestjs/bull';
 import { AuthMiddleware } from './common/middleWare/authMiddlware/auth.middleware';
 import { TimingMiddleware } from './common/middleWare/timingMiddleware/timing.middleware';
 import { ErrorNotificationFilter } from './common/exceptions/errorNotification/errorNotification.filter';
+import { ApiKeyModule } from './modules/apiKey-auth/apikey.module';
+import { ApiKeyMiddleware } from './common/middleWare/authMiddlware/apikey.middleware';
 
 @Module({
     imports: [
-        BullModule.forRoot({
-            redis: {
-                host: 'localhost',
-                port: 6379,
-            },
-        }),
-        BullModule.registerQueue({
-            name: 'dataSaving',
-        }),
         ConfigModule.forRoot({
             isGlobal: true,
             envFilePath: ['env/.env'],
@@ -46,11 +39,14 @@ import { ErrorNotificationFilter } from './common/exceptions/errorNotification/e
         },
         AuthMiddleware,
         FileUploaddModule,
+        ApiKeyModule,
+        ApiKeyMiddleware,
     ],
 })
 export class AppModule {
     // Timing MiddleWare
     configure(consumer: MiddlewareConsumer) {
         consumer.apply(TimingMiddleware).forRoutes('*');
+        // consumer.apply(AuthMiddleware).forRoutes('web-result/*');
     }
 }

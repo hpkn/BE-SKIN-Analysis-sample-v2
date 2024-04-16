@@ -157,6 +157,7 @@ export class AlgoAnalysisDTO {
     @IsNotEmpty()
     // @IsArray()
     image: string[];
+
     @ApiProperty({
         type: Number,
         description: 'This is requiredd',
@@ -271,4 +272,3 @@ export class allCustomerDto {
     })
     month: string;
 }
-
