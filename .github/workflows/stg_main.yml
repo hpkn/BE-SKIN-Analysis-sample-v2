@@ -29,7 +29,7 @@ jobs:
               uses: actions/checkout@v3
             - name: SSH into server
               run: |
-                  sshpass -p ${{ secrets.TEST_SERVER_PASSWORD }} ssh -p 2479 ubuntu@59.12.54.63 << EOF
+                  sshpass -p ${{ secrets.TEST_SERVER_PASSWORD }} ssh -o StrictHostKeyChecking=no -p 2479 ubuntu@59.12.54.63 << EOF
                     cd /home/backendtestuser/Repositories/CNDP-SKIN-v2/
                     echo "Pulling latest changes from Git..."
                     git pull origin stg_main
