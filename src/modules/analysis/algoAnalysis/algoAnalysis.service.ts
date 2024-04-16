@@ -1220,17 +1220,8 @@ export class AlgoAnalysisService {
     async userAnalysisImageHistory(customer_id: number, per: number, page: number) {
         let batchIds = await this.getCustomerBatchID(customer_id, per, page);
 
-        // const promises: Promise<any>[] = [];
-        // // geting result
-        // for (const batchId of batchIds) {
-        //     console.log('===>', batchId['batch_id']);
-        //     promises.push(this.getImageData(batchId['batch_id']));
-        // }
-
         try {
-            // const resultObj = await Promise.all(promises);
 
-            // const image: any[] = [];
             const imagePromises: Promise<any>[] = batchIds.map(async (batchId: any) => {
                 const rows = await this.getImageData(batchId['batch_id']);
                 if (rows.length > 0) {
@@ -1244,12 +1235,19 @@ export class AlgoAnalysisService {
 
             const image = await Promise.all(imagePromises);
             const result = image.filter((result) => result !== null);
+           
+            
             for (const entry of result) {
+                if (!entry) {
+                    continue; 
+                }
+
                 const analyzedImages = entry.images.filter(
                     (image: any) => image.type === 'analyzedImage' && image.score === null,
                 );
 
                 for (const analyzedImage of analyzedImages) {
+            
                     const { hash, analysis_type, url } = analyzedImage;
                     const originalImage = entry.images.find(
                         (image: any) =>
@@ -1257,12 +1255,13 @@ export class AlgoAnalysisService {
                             image.hash === hash &&
                             image.analysis_type === analysis_type,
                     );
-
+            
                     if (originalImage) {
                         analyzedImage.score = originalImage.score;
                     }
                 }
-                entry.images.map((val: any) => {
+
+                entry.images.forEach((val: any) => {
                     if (val.url === null) {
                         val.url = '';
                     }
@@ -1270,14 +1269,17 @@ export class AlgoAnalysisService {
                         val.hash = '';
                     }
                 });
-            }
 
-            return result;
+            }
+  
+            const filteredData = result.filter(item => item !== undefined);
+            return filteredData;
         } catch (error) {
             console.log(error);
             throw error;
         }
     }
+
 
     // Remove identical object
     removeIdenticalObjects = (arr: any[]) => {
@@ -1760,7 +1762,6 @@ export class AlgoAnalysisService {
 
         const result = await this.database.executeQuery(query, [CUSTOMER_ID_LIST]);
 
-        console.log(result);
         const analysisData = result;
 
         const analysisDf = analysisData.map((row: any) => ({
@@ -2329,7 +2330,7 @@ export class AlgoAnalysisService {
         const previousBatch = await this.getPreviousBatchId(batchId);
         const result = await this.AllAnaysisScore(previousBatch.batchId);
 
-        console.log('=======>', computation);
+      
         let computationScore: any;
 
         // Filter the relevant measurement based on algoName
