@@ -8,7 +8,6 @@ import { APP_FILTER } from '@nestjs/core';
 import { AllExceptionsFilter } from './common/exceptions/exceptionHandling/allException.filter';
 import { AnalysisModule } from './modules/analysis/analysis.module';
 import { CustomerModule } from './modules/customer/customer.module';
-import { BullModule } from '@nestjs/bull';
 import { AuthMiddleware } from './common/middleWare/authMiddlware/auth.middleware';
 import { TimingMiddleware } from './common/middleWare/timingMiddleware/timing.middleware';
 import { ErrorNotificationFilter } from './common/exceptions/errorNotification/errorNotification.filter';
@@ -17,15 +16,6 @@ import { ApiKeyMiddleware } from './common/middleWare/authMiddlware/apikey.middl
 
 @Module({
     imports: [
-        BullModule.forRoot({
-            redis: {
-                host: 'localhost',
-                port: 6379,
-            },
-        }),
-        BullModule.registerQueue({
-            name: 'dataSaving',
-        }),
         ConfigModule.forRoot({
             isGlobal: true,
             envFilePath: ['env/.env'],
@@ -59,4 +49,3 @@ export class AppModule {
         // consumer.apply(AuthMiddleware).forRoutes('web-result/*');
     }
 }
-
