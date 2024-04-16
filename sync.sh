@@ -9,16 +9,12 @@ echo "Starting deployment process"
 # Change directory to where your application is located
 cd /home/ubuntu/repositories/BE-CNDP-SKIN-v2/
 
-# Pull the latest changes from the Git repository
-echo "Pulling the latest changes from the Git repository"
-git pull origin main
-
 # RUN DB migration
+echo "Run DB Migration"
 node run-migration.cjs
 
 # Install all the dependencies
 echo "Installing dependencies"
-
 source ~/.bashrc  # Refresh the shell to include updated PATH
 
 
@@ -33,3 +29,5 @@ echo "Restarting the application using PM2"
 pm2 restart ecosystem.config.js
 
 echo "Deployment process completed"
+
+
