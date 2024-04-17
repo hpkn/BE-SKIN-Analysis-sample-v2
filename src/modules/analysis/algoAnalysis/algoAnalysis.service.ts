@@ -1905,8 +1905,6 @@ export class AlgoAnalysisService {
             algoName = algo['name'];
         }
 
-        // const algo = this.AlgoAnalysis.getCBBTaskByAlgoType(data.type);
-
         const analyzed: any[] = [];
         const original: any[] = [];
         const retunAnalyzed: any[] = [];
@@ -1973,6 +1971,7 @@ export class AlgoAnalysisService {
 
         const avg = sum / scores.length;
 
+        console.log('computation -->', computation);
         for (let i = 0; i < files.analyzedImage?.length; i++) {
             const imageRecords = uuidv4();
             const imageArg = this.handleCBBImageArg(data);
@@ -2003,8 +2002,8 @@ export class AlgoAnalysisService {
                     score: scores[i],
                     raw: raw[i],
                     computation_score: computation['computation_score']?.toFixed(2),
-                    questionnaire_score: computation['questionnaire_score'].toFixed(2),
-                    score_average: avg.toFixed(2),
+                    questionnaire_score: computation['questionnaire_score']?.toFixed(2),
+                    score_average: avg?.toFixed(2),
                     answers: data?.answers === undefined ? '' : data?.answers,
                     keyWord: computation['keyWord'],
                 }),

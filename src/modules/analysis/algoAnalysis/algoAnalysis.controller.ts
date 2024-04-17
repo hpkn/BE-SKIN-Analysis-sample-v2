@@ -739,8 +739,6 @@ export class AlgoAnalysisController {
         }
     }
 
-    // CBB offline analysis
-
     @ApiOperation({
         summary:
             'CBB offline analysis, Expecting multiple originalImage and analyzedImage. The response will include score average, computation and questionnaire',
@@ -1184,4 +1182,3 @@ export class AlgoAnalysisController {
         }
     }
 }
-

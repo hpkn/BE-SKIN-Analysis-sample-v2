@@ -55,7 +55,6 @@ export class ComputationService {
         let length = ansArr.length;
         let result = 0;
 
-        // console.log(===> ansArr)
         let questionnaire_score = 0;
         for (let i = 0; i < ansArr.length; i++) {
             if (ansArr[i] === 'A' || ansArr[i] === '1') {
@@ -70,9 +69,11 @@ export class ComputationService {
                 questionnaire_score += 2.5;
             }
         }
+
         if (questionnaire_score === 0) return 0;
         result = (questionnaire_score - length) / (4 * length - length);
         result = Math.round(result * 99);
+
         return result;
     }
     // Questionnaire managament
@@ -81,10 +82,9 @@ export class ComputationService {
         // 5. Oiliness --> Q1, 10. Redness --> Q2, 6. Spots ----> Q3, 7. Wrinkles ---> Q4
         let extractAnswer = '';
         let questionnaireScore = 0;
+        console.log('answers.length', answers.length);
         if (!answers || answers?.length === 0) {
             console.log(answers);
-            console.log('---->', questionnaireScore);
-
             return questionnaireScore;
         }
         if (answers.length === 4) {
@@ -107,8 +107,36 @@ export class ComputationService {
             } else {
                 questionnaireScore = 0;
             }
+
+            // 5. Oiliness --> Q0, Q1, Q2, 10. Redness --> Q3, Q4, 6. Spots ----> Q5, Q6, 7. Wrinkles ---> Q7, Q8, Q9
+        } else if (answers.length === 10) {
+            if (algoId === 5) {
+                extractAnswer = answers.slice(0, 3);
+
+                console.log('5', extractAnswer);
+                questionnaireScore = this.quest_score(extractAnswer);
+            } else if (algoId === 10) {
+                extractAnswer = answers.slice(3, 5);
+
+                console.log('10', extractAnswer);
+
+                questionnaireScore = this.quest_score(extractAnswer);
+            } else if (algoId === 6) {
+                extractAnswer = answers.slice(5, 7);
+                console.log('6', extractAnswer);
+
+                questionnaireScore = this.quest_score(extractAnswer);
+            } else if (algoId === 7) {
+                extractAnswer = answers.slice(7, 10);
+                console.log('7', extractAnswer);
+
+                questionnaireScore = this.quest_score(extractAnswer);
+                console.log('questionnaireScore', questionnaireScore);
+            } else {
+                questionnaireScore = 0;
+            }
             // .slice(0, 9)
-            // 6. Oiliness --> Q0 - Q4, 10. Redness --> Q4 - Q9, 6. Spots ----> Q9 ---> Q12, 7. Wrinkles ---> Q12 - Q17
+            // 5. Oiliness --> Q0 - Q4, 10. Redness --> Q4 - Q9, 6. Spots ----> Q9 ---> Q12, 7. Wrinkles ---> Q12 - Q17
         } else {
             if (algoId === 5) {
                 extractAnswer = answers.slice(0, 4);
@@ -129,9 +157,8 @@ export class ComputationService {
             } else {
                 questionnaireScore = 0;
             }
-
-            return questionnaireScore;
         }
+        return questionnaireScore;
     }
 
     cndp_computation(analysis_type: any, scores: number[], answers: any) {
@@ -142,6 +169,7 @@ export class ComputationService {
         // wrinkles
         if (analysis_type === 7) {
             questionnaire_score = this.questionnaireFrequency(answers, 7);
+            console.log('wrinkles', questionnaire_score);
             combined_scores = scores.reduce((accumulator, currentValue) => accumulator + currentValue);
             const avg = Math.round(combined_scores / scores.length);
             // quest_score

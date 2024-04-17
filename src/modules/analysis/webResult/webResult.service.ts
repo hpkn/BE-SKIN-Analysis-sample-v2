@@ -467,4 +467,48 @@ export class WebResultService {
         }
         return result;
     }
+
+    async checkExpiration(batch_id: number) {
+        const result = await this.database.executeQuery(`SELECT request_date FROM analysis WHERE batch_id = $1`, [
+            batch_id,
+        ]);
+
+        if (result.length === 0) {
+            return true;
+        }
+
+        const requestDate = new Date(result[0].request_date);
+
+        const differenceInMs = new Date().getTime() - requestDate.getTime();
+        const differenceInHours = differenceInMs / (1000 * 3600);
+
+        return differenceInHours > 24;
+    }
+
+    async getRequestDate(batch_id: number) {
+        const result = await this.database.executeQuery(`SELECT request_date FROM analysis WHERE batch_id = $1`, [
+            batch_id,
+        ]);
+
+        return result[0].request_date;
+    }
+
+    async addRequestDate(batch_id: number) {
+        const result = await this.database.executeQuery(`UPDATE analysis SET request_date = $1 WHERE batch_id = $2`, [
+            new Date(),
+            batch_id,
+        ]);
+
+        return result;
+    }
+
+    numberToBoolean(number: any) {
+        if (number === 1) {
+            return true;
+        } else if (number === 0) {
+            return false;
+        } else {
+            return true;
+        }
+    }
 }
