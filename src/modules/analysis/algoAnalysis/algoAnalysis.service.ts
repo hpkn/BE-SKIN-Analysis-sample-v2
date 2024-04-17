@@ -45,7 +45,7 @@ export class AlgoAnalysisService {
         private fitzSG: FitzSGService,
         private S3Image: FileUploadService,
         private readonly computation: ComputationService,
-    ) {}
+    ) { }
 
     convertScoresToNumbers = (data: any) => {
         for (const key in data) {
@@ -1206,6 +1206,9 @@ export class AlgoAnalysisService {
                 END AS analysis_type,
                 type_images.name as type,
                 to_json ( scores ) ->> 'score' as score, 
+                to_json ( scores ) ->> 'label' as label, 
+                to_json ( scores ) ->> 'comment' as comment, 
+                to_json ( scores ) ->> 'xy_cordinates' as xy_cordinates, 
                 to_json(args) ->> 'nth_analysis' as hash,
                 created_time
             FROM measurements record
@@ -1235,11 +1238,11 @@ export class AlgoAnalysisService {
 
             const image = await Promise.all(imagePromises);
             const result = image.filter((result) => result !== null);
-           
-            
+
+
             for (const entry of result) {
                 if (!entry) {
-                    continue; 
+                    continue;
                 }
 
                 const analyzedImages = entry.images.filter(
@@ -1247,7 +1250,7 @@ export class AlgoAnalysisService {
                 );
 
                 for (const analyzedImage of analyzedImages) {
-            
+
                     const { hash, analysis_type, url } = analyzedImage;
                     const originalImage = entry.images.find(
                         (image: any) =>
@@ -1255,7 +1258,7 @@ export class AlgoAnalysisService {
                             image.hash === hash &&
                             image.analysis_type === analysis_type,
                     );
-            
+
                     if (originalImage) {
                         analyzedImage.score = originalImage.score;
                     }
@@ -1271,7 +1274,7 @@ export class AlgoAnalysisService {
                 });
 
             }
-  
+
             const filteredData = result.filter(item => item !== undefined);
             return filteredData;
         } catch (error) {
@@ -1304,14 +1307,14 @@ export class AlgoAnalysisService {
                     record.args AS args,
                     record.type_image,
                     record.DATE AS DATE,
-                    record.TIME AS TIME 
+                    record.TIME AS TIME
                 FROM
                     (
                     SELECT
                         tm."name" AS analysis_type,
                         type_image_id AS type_image,
                         type_measurement_id,
-                        args ->> 'nth_analysis' as unique_id,
+                        args ->> 'nth_analysis' as unique_id,                        
                         CASE
                             WHEN type_image_id = 21 THEN
                             scores 
@@ -1351,7 +1354,10 @@ export class AlgoAnalysisService {
                         tpi.NAME AS TYPE,
                         scores || jsonb_build_object ( 'nth_analysis', to_json ( args ) ->> 'nth_analysis' ) AS args,
                         json_build_object ( 'id', to_json ( args ) ->> 'nth_analysis', 'url', url ) AS url,
-                        args ->> 'nth_analysis' as unique_id 
+                        args ->> 'nth_analysis' as unique_id,
+                        to_json(scores) ->> 'label' AS label,
+                        to_json(scores) ->> 'comment' AS comment,
+                        to_json(scores) ->> 'xy_coordinates' AS xy_cordinates
                     FROM
                         measurements AS ms
                         LEFT JOIN type_images AS tpi ON tpi.ID = ms.type_image_id 
@@ -1365,7 +1371,7 @@ export class AlgoAnalysisService {
                     record.args,
                     record.DATE,
                     record.TIME,
-                    record.type_image 
+                    record.type_image
                 ) TEMP 
             GROUP BY
                 analysis_type;
@@ -1383,7 +1389,7 @@ export class AlgoAnalysisService {
                 let obj: any = {};
                 for (let j = 0; j < result[i].jsonb_agg.length; j++) {
                     let imgObj: any = {};
-                    console.log('image check ', result[i].jsonb_agg[j]);
+                    // console.log('image check ', result[i].jsonb_agg[j]);
                     for (let k = 0; k < result[i].jsonb_agg[j].images.length; k++) {
                         // console.log('Checking this --->', result[i].jsonb_agg[j]);
                         if (result[i].analysis_type === 'moistureT' || result[i].analysis_type === 'moistureU') {
@@ -2330,7 +2336,7 @@ export class AlgoAnalysisService {
         const previousBatch = await this.getPreviousBatchId(batchId);
         const result = await this.AllAnaysisScore(previousBatch.batchId);
 
-      
+
         let computationScore: any;
 
         // Filter the relevant measurement based on algoName
