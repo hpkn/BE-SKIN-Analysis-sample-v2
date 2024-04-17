@@ -45,7 +45,7 @@ export class AlgoAnalysisService {
         private fitzSG: FitzSGService,
         private S3Image: FileUploadService,
         private readonly computation: ComputationService,
-    ) {}
+    ) { }
 
     convertScoresToNumbers = (data: any) => {
         for (const key in data) {
@@ -1235,11 +1235,11 @@ export class AlgoAnalysisService {
 
             const image = await Promise.all(imagePromises);
             const result = image.filter((result) => result !== null);
-           
-            
+
+
             for (const entry of result) {
                 if (!entry) {
-                    continue; 
+                    continue;
                 }
 
                 const analyzedImages = entry.images.filter(
@@ -1247,7 +1247,7 @@ export class AlgoAnalysisService {
                 );
 
                 for (const analyzedImage of analyzedImages) {
-            
+
                     const { hash, analysis_type, url } = analyzedImage;
                     const originalImage = entry.images.find(
                         (image: any) =>
@@ -1255,7 +1255,7 @@ export class AlgoAnalysisService {
                             image.hash === hash &&
                             image.analysis_type === analysis_type,
                     );
-            
+
                     if (originalImage) {
                         analyzedImage.score = originalImage.score;
                     }
@@ -1271,7 +1271,7 @@ export class AlgoAnalysisService {
                 });
 
             }
-  
+
             const filteredData = result.filter(item => item !== undefined);
             return filteredData;
         } catch (error) {
@@ -1970,8 +1970,10 @@ export class AlgoAnalysisService {
         /*
             K-HEADSPA LOGIC END 
         */
-
         const avg = sum / scores.length;
+        const addLabel = data.label?.length === files.analyzedImage?.length;
+        const addComment = data.comment?.length === files.analyzedImage?.length;
+        const addXY = data.xy_cordinates?.length === files.analyzedImage?.length;
 
         for (let i = 0; i < files.analyzedImage?.length; i++) {
             const imageRecords = uuidv4();
@@ -2007,6 +2009,9 @@ export class AlgoAnalysisService {
                     score_average: avg.toFixed(2),
                     answers: data?.answers === undefined ? '' : data?.answers,
                     keyWord: computation['keyWord'],
+                    label: addLabel ? data.label[i] : null,
+                    comment: addComment ? data.comment[i] : null,
+                    xy_cordinates: addXY ? data.xy_cordinates[i] : null,
                 }),
             ]);
 
@@ -2330,7 +2335,7 @@ export class AlgoAnalysisService {
         const previousBatch = await this.getPreviousBatchId(batchId);
         const result = await this.AllAnaysisScore(previousBatch.batchId);
 
-      
+
         let computationScore: any;
 
         // Filter the relevant measurement based on algoName

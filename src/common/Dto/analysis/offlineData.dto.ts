@@ -1,6 +1,4 @@
 import {
-    IsNumber,
-    Min,
     IsOptional,
     IsString,
     IsNotEmpty,
@@ -11,7 +9,6 @@ import {
     ArrayNotEmpty,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { isNull } from 'util';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ArgsDTO {
@@ -61,6 +58,34 @@ export class MultiArgsEncryptionDTO {
 */
 
 export class EncryptedCBBDTO {
+
+    @ApiProperty({
+        type: String,
+        isArray: true,
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    label: string[];
+
+    @ApiProperty({
+        type: String,
+        isArray: true,
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    comment: String[];
+
+    @ApiProperty({
+        type: String,
+        isArray: true,
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    xy_cordinates: String[];
+
     @ApiProperty({
         type: 'array',
         items: { type: 'string', format: 'binary' },
@@ -316,6 +341,34 @@ export class MultiArgsDTO {
 }
 
 export class OfflineDataCBBDTO {
+
+    @ApiProperty({
+        type: String,
+        isArray: true,
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    label: string[];
+
+    @ApiProperty({
+        type: String,
+        isArray: true,
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    comment: String[];
+
+    @ApiProperty({
+        type: String,
+        isArray: true,
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    xy_cordinates: String[];
+
     @ApiProperty({
         type: 'array',
         items: { type: 'string', format: 'binary' },
