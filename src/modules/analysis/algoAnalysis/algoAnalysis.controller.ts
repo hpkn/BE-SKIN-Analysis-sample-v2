@@ -59,7 +59,7 @@ export class AlgoAnalysisController {
         private readonly batchAnalysis: BatchAnalysisService,
         private readonly computation: ComputationService,
         private readonly webResult: WebResultService,
-    ) {}
+    ) { }
 
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
@@ -837,6 +837,9 @@ export class AlgoAnalysisController {
                     message: 'The number of analyzed images does not match number of original images',
                 });
             }
+            data.label = data.label.split(',').map((str: string) => str.trim());
+            data.comment = data.comment.split(',').map((str: string) => str.trim());
+            data.xy_cordinates = data.xy_cordinates.split(',').map((str: string) => str.trim());
 
             const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
             new Promise(function (resolve, reject) {
@@ -1042,6 +1045,9 @@ export class AlgoAnalysisController {
                     message: 'The number of analyzed images does not match number of original images',
                 });
             }
+            data.label = data.label.split(',').map((str: string) => str.trim());
+            data.comment = data.comment.split(',').map((str: string) => str.trim());
+            data.xy_cordinates = data.xy_cordinates.split(',').map((str: string) => str.trim());
 
             const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
             new Promise(function (resolve, reject) {

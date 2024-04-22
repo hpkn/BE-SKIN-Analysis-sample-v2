@@ -1974,8 +1974,10 @@ export class AlgoAnalysisService {
         /*
             K-HEADSPA LOGIC END 
         */
-
         const avg = sum / scores.length;
+        const addLabel = data.label?.length === files.analyzedImage?.length;
+        const addComment = data.comment?.length === files.analyzedImage?.length;
+        const addXY = data.xy_cordinates?.length === files.analyzedImage?.length;
 
         console.log('computation -->', computation);
         for (let i = 0; i < files.analyzedImage?.length; i++) {
@@ -2012,6 +2014,9 @@ export class AlgoAnalysisService {
                     score_average: avg?.toFixed(2),
                     answers: data?.answers === undefined ? '' : data?.answers,
                     keyWord: computation['keyWord'],
+                    label: addLabel ? data.label[i] : null,
+                    comment: addComment ? data.comment[i] : null,
+                    xy_cordinates: addXY ? data.xy_cordinates[i] : null,
                 }),
             ]);
 
