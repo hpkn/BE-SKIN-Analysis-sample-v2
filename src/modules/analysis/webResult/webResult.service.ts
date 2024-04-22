@@ -470,7 +470,7 @@ export class WebResultService {
         return result;
     }
 
-    async checkExpiration(batch_id: number) {
+    async checkExpiration(batch_id: number, checkDuration: number) {
 
         const result = await this.database.executeQuery(
             `SELECT request_date FROM analysis WHERE batch_id = $1`,
@@ -480,13 +480,22 @@ export class WebResultService {
         if (result.length === 0) {
             return true;
         }
+        if (result[0].request_date === null) {
+            const update = `
+                    UPDATE analysis
+                    SET request_date = $1
+                    WHERE batch_id = $2
+                  `;
 
+            this.database.executeQuery(update, [new Date(), batch_id]);
+            return true;
+        }
         const requestDate = new Date(result[0].request_date);
 
         const differenceInMs = new Date().getTime() - requestDate.getTime();
-        const differenceInHours = differenceInMs / (1000 * 3600);
+        const differenceInSeconds = differenceInMs / 1000;
 
-        return differenceInHours > 24;
+        return differenceInSeconds > checkDuration;
     }
 }
 
