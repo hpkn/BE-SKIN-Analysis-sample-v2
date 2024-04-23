@@ -9,20 +9,10 @@ export class WebResultController {
     constructor(private readonly webResult: WebResultService) {}
 
     @Get('/cndpskin/:batch_id')
-    async getBatchId(
-        @Param('batch_id') batch_id: number,
-        @Res() res: Response,
-        @Query('check') checkExpiration: number,
-    ) {
+    async getBatchId(@Param('batch_id') batch_id: number, @Res() res: Response, @Query('check') checkDuration: number) {
         try {
-            const requestDate = await this.webResult.getRequestDate(batch_id);
-
-            if (!requestDate) {
-                await this.webResult.addRequestDate(batch_id);
-            }
-
-            if (this.webResult.numberToBoolean(Number(checkExpiration))) {
-                const isExpired = await this.webResult.checkExpiration(batch_id);
+            if (checkDuration) {
+                const isExpired = await this.webResult.checkExpiration(batch_id, checkDuration);
                 if (isExpired) {
                     return res.status(410).json({
                         status: 410,
