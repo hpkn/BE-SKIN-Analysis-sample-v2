@@ -1649,6 +1649,7 @@ export class AlgoAnalysisService {
             `,
                 [batchId],
             );
+            console.log('update', update);
             return update;
         } catch (e) {
             console.log('check', e);
@@ -1943,6 +1944,7 @@ export class AlgoAnalysisService {
         const savingPromise: Promise<any>[] = [];
 
         let sum = 0;
+        scores = this.convertToNumbers(scores);
         sum = scores.reduce((accumulator, currentValue) => accumulator + currentValue);
 
         let computation = this.computation.computationResult(
@@ -2366,5 +2368,16 @@ export class AlgoAnalysisService {
             keywordScaling: keywordScaling,
             timeWith24h: previousBatch.timeWith24h,
         };
+    }
+
+    convertToNumbers(input: any): any {
+        // Check if the input is an array
+        if (Array.isArray(input)) {
+            // If it's an array, map each element to a number
+            return input.map(Number);
+        } else {
+            // If it's not an array, convert the input to a number directly
+            return [Number(input)];
+        }
     }
 }
