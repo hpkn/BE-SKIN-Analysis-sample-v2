@@ -59,32 +59,32 @@ export class MultiArgsEncryptionDTO {
 
 export class EncryptedCBBDTO {
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         type: String,
         isArray: true,
     })
     @IsArray()
     @IsString({ each: true })
     @IsOptional()
-    label: string[];
+    label?: string[];
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         type: String,
         isArray: true,
     })
     @IsArray()
     @IsString({ each: true })
     @IsOptional()
-    comment: String[];
+    comment?: string[];
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         type: String,
         isArray: true,
     })
     @IsArray()
     @IsString({ each: true })
     @IsOptional()
-    xy_cordinates: String[];
+    xy_cordinates?: string[];
 
     @ApiProperty({
         type: 'array',
@@ -342,32 +342,29 @@ export class MultiArgsDTO {
 
 export class OfflineDataCBBDTO {
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         type: String,
         isArray: true,
     })
     @IsArray()
     @IsString({ each: true })
     @IsOptional()
-    label: string[];
+    label?: string[];
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         type: String,
         isArray: true,
     })
-    @IsArray()
-    @IsString({ each: true })
-    @IsOptional()
-    comment: String[];
+    comment?: string[];
 
-    @ApiProperty({
+    @ApiPropertyOptional({
         type: String,
         isArray: true,
     })
     @IsArray()
     @IsString({ each: true })
     @IsOptional()
-    xy_cordinates: String[];
+    xy_cordinates?: string[];
 
     @ApiProperty({
         type: 'array',
