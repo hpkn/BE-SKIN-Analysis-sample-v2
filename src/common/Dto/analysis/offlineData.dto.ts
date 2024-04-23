@@ -197,7 +197,7 @@ export class EncryptedCBBDTO {
     @IsArray()
     @IsString({ each: true })
     @IsOptional()
-    xy_cordinates?: string[];
+    xy_coordinates?: string[];
 }
 /* 
     CBB and offline upload
@@ -516,5 +516,5 @@ export class OfflineDataCBBDTO {
     @IsArray()
     @IsString({ each: true })
     @IsOptional()
-    xy_cordinates?: string[];
+    xy_coordinates?: string[];
 }
