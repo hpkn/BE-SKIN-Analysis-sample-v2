@@ -72,4 +72,3 @@ export class AnalysisModule {
             .forRoutes('analysis');
     }
 }
-

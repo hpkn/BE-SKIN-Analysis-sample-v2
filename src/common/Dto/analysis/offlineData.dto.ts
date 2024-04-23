@@ -58,7 +58,6 @@ export class MultiArgsEncryptionDTO {
 */
 
 export class EncryptedCBBDTO {
-
     @ApiPropertyOptional({
         type: String,
         isArray: true,
@@ -341,31 +340,6 @@ export class MultiArgsDTO {
 }
 
 export class OfflineDataCBBDTO {
-
-    @ApiPropertyOptional({
-        type: String,
-        isArray: true,
-    })
-    @IsArray()
-    @IsString({ each: true })
-    @IsOptional()
-    label?: string[];
-
-    @ApiPropertyOptional({
-        type: String,
-        isArray: true,
-    })
-    comment?: string[];
-
-    @ApiPropertyOptional({
-        type: String,
-        isArray: true,
-    })
-    @IsArray()
-    @IsString({ each: true })
-    @IsOptional()
-    xy_cordinates?: string[];
-
     @ApiProperty({
         type: 'array',
         items: { type: 'string', format: 'binary' },
@@ -509,4 +483,29 @@ export class OfflineDataCBBDTO {
 
     @IsOptional()
     kHeadSpa: boolean = false;
+
+    // New Fields
+    @ApiPropertyOptional({
+        type: String,
+        isArray: true,
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    label?: string[];
+
+    @ApiPropertyOptional({
+        type: String,
+        isArray: true,
+    })
+    comment?: string[];
+
+    @ApiPropertyOptional({
+        type: String,
+        isArray: true,
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    xy_cordinates?: string[];
 }
