@@ -846,9 +846,9 @@ export class AlgoAnalysisController {
                 ? data.comment?.map((str: string) => str.trim())
                 : data.comment?.split(',').map((str: string) => str.trim());
 
-            data.xy_cordinates = Array.isArray(data.xy_cordinates)
-                ? data.xy_cordinates?.map((str: string) => str.trim())
-                : data.xy_cordinates?.split(',').map((str: string) => str.trim());
+            data.xy_coordinates = Array.isArray(data.xy_coordinates)
+                ? data.xy_coordinates?.map((str: string) => str.trim())
+                : data.xy_coordinates?.split(',').map((str: string) => str.trim());
 
             const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
             new Promise(function (resolve, reject) {
@@ -1061,9 +1061,9 @@ export class AlgoAnalysisController {
                 ? data.comment?.map((str: string) => str.trim())
                 : data.comment?.split(',').map((str: string) => str.trim());
 
-            data.xy_cordinates = Array.isArray(data.xy_cordinates)
-                ? data.xy_cordinates?.map((str: string) => str.trim())
-                : data.xy_cordinates?.split(',').map((str: string) => str.trim());
+            data.xy_coordinates = Array.isArray(data.xy_coordinates)
+                ? data.xy_coordinates?.map((str: string) => str.trim())
+                : data.xy_coordinates?.split(',').map((str: string) => str.trim());
 
             const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
             new Promise(function (resolve, reject) {
@@ -1194,9 +1194,9 @@ export class AlgoAnalysisController {
                 ? data.comment?.map((str: string) => str.trim())
                 : data.comment?.split(',').map((str: string) => str.trim());
 
-            data.xy_cordinates = Array.isArray(data.xy_cordinates)
-                ? data.xy_cordinates?.map((str: string) => str.trim())
-                : data.xy_cordinates?.split(',').map((str: string) => str.trim());
+            data.xy_coordinates = Array.isArray(data.xy_coordinates)
+                ? data.xy_coordinates?.map((str: string) => str.trim())
+                : data.xy_coordinates?.split(',').map((str: string) => str.trim());
 
             const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
             new Promise(function (resolve, reject) {

@@ -45,7 +45,7 @@ export class AlgoAnalysisService {
         private fitzSG: FitzSGService,
         private S3Image: FileUploadService,
         private readonly computation: ComputationService,
-    ) { }
+    ) {}
 
     convertScoresToNumbers = (data: any) => {
         for (const key in data) {
@@ -1208,7 +1208,7 @@ export class AlgoAnalysisService {
                 to_json ( scores ) ->> 'score' as score, 
                 to_json ( scores ) ->> 'label' as label, 
                 to_json ( scores ) ->> 'comment' as comment, 
-                to_json ( scores ) ->> 'xy_cordinates' as xy_cordinates, 
+                to_json ( scores ) ->> 'xy_coordinates' as xy_coordinates, 
                 to_json(args) ->> 'nth_analysis' as hash,
                 created_time
             FROM measurements record
@@ -1224,7 +1224,6 @@ export class AlgoAnalysisService {
         let batchIds = await this.getCustomerBatchID(customer_id, per, page);
 
         try {
-
             const imagePromises: Promise<any>[] = batchIds.map(async (batchId: any) => {
                 const rows = await this.getImageData(batchId['batch_id']);
                 if (rows.length > 0) {
@@ -1239,7 +1238,6 @@ export class AlgoAnalysisService {
             const image = await Promise.all(imagePromises);
             const result = image.filter((result) => result !== null);
 
-
             for (const entry of result) {
                 if (!entry) {
                     continue;
@@ -1250,7 +1248,6 @@ export class AlgoAnalysisService {
                 );
 
                 for (const analyzedImage of analyzedImages) {
-
                     const { hash, analysis_type, url } = analyzedImage;
                     const originalImage = entry.images.find(
                         (image: any) =>
@@ -1272,17 +1269,15 @@ export class AlgoAnalysisService {
                         val.hash = '';
                     }
                 });
-
             }
 
-            const filteredData = result.filter(item => item !== undefined);
+            const filteredData = result.filter((item) => item !== undefined);
             return filteredData;
         } catch (error) {
             console.log(error);
             throw error;
         }
     }
-
 
     // Remove identical object
     removeIdenticalObjects = (arr: any[]) => {
@@ -1357,7 +1352,7 @@ export class AlgoAnalysisService {
                         args ->> 'nth_analysis' as unique_id,
                         to_json(scores) ->> 'label' AS label,
                         to_json(scores) ->> 'comment' AS comment,
-                        to_json(scores) ->> 'xy_coordinates' AS xy_cordinates
+                        to_json(scores) ->> 'xy_coordinates' AS xy_coordinates
                     FROM
                         measurements AS ms
                         LEFT JOIN type_images AS tpi ON tpi.ID = ms.type_image_id 
@@ -1977,7 +1972,7 @@ export class AlgoAnalysisService {
         const avg = sum / scores.length;
         const addLabel = data.label?.length === files.analyzedImage?.length;
         const addComment = data.comment?.length === files.analyzedImage?.length;
-        const addXY = data.xy_cordinates?.length === files.analyzedImage?.length;
+        const addXY = data.xy_coordinates?.length === files.analyzedImage?.length;
 
         console.log('computation -->', computation);
         for (let i = 0; i < files.analyzedImage?.length; i++) {
@@ -2016,7 +2011,7 @@ export class AlgoAnalysisService {
                     keyWord: computation['keyWord'],
                     label: addLabel ? data.label[i] : null,
                     comment: addComment ? data.comment[i] : null,
-                    xy_cordinates: addXY ? data.xy_cordinates[i] : null,
+                    xy_coordinates: addXY ? data.xy_coordinates[i] : null,
                 }),
             ]);
 
@@ -2339,7 +2334,6 @@ export class AlgoAnalysisService {
         // Retrieve analysis scores for the specified batchId
         const previousBatch = await this.getPreviousBatchId(batchId);
         const result = await this.AllAnaysisScore(previousBatch.batchId);
-
 
         let computationScore: any;
 
