@@ -58,33 +58,6 @@ export class MultiArgsEncryptionDTO {
 */
 
 export class EncryptedCBBDTO {
-    @ApiPropertyOptional({
-        type: String,
-        isArray: true,
-    })
-    @IsArray()
-    @IsString({ each: true })
-    @IsOptional()
-    label?: string[];
-
-    @ApiPropertyOptional({
-        type: String,
-        isArray: true,
-    })
-    @IsArray()
-    @IsString({ each: true })
-    @IsOptional()
-    comment?: string[];
-
-    @ApiPropertyOptional({
-        type: String,
-        isArray: true,
-    })
-    @IsArray()
-    @IsString({ each: true })
-    @IsOptional()
-    xy_cordinates?: string[];
-
     @ApiProperty({
         type: 'array',
         items: { type: 'string', format: 'binary' },
@@ -195,6 +168,36 @@ export class EncryptedCBBDTO {
     @ValidateNested()
     @Type(() => MultiArgsEncryptionDTO)
     args: MultiArgsEncryptionDTO;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'Label about the image result',
+        example: ['Deep Wrinkles found', 'Check Spots again'],
+        isArray: true,
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    label?: string[];
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'Comment on the image result',
+        example: ['Evaluate in 2 weeks', 'Spots need more analysis'],
+        isArray: true,
+    })
+    comment?: string[];
+
+    @ApiPropertyOptional({
+        type: String,
+        isArray: true,
+        description: 'Coodinate of the commented image erea',
+        example: ['coordinate1', 'coodinate2'],
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    xy_cordinates?: string[];
 }
 /* 
     CBB and offline upload
@@ -487,6 +490,8 @@ export class OfflineDataCBBDTO {
     // New Fields
     @ApiPropertyOptional({
         type: String,
+        description: 'Label about the image result',
+        example: ['Deep Wrinkles found', 'Check Spots again'],
         isArray: true,
     })
     @IsArray()
@@ -496,6 +501,8 @@ export class OfflineDataCBBDTO {
 
     @ApiPropertyOptional({
         type: String,
+        description: 'Comment on the image result',
+        example: ['Evaluate in 2 weeks', 'Spots need more analysis'],
         isArray: true,
     })
     comment?: string[];
@@ -503,6 +510,8 @@ export class OfflineDataCBBDTO {
     @ApiPropertyOptional({
         type: String,
         isArray: true,
+        description: 'Coodinate of the commented image erea',
+        example: ['coordinate1', 'coodinate2'],
     })
     @IsArray()
     @IsString({ each: true })

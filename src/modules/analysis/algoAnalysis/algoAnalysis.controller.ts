@@ -1186,6 +1186,18 @@ export class AlgoAnalysisController {
                 });
             }
 
+            data.label = Array.isArray(data.label)
+                ? data.label?.map((str: any) => str.trim())
+                : data.label?.split(',').map((str: string) => str.trim());
+
+            data.comment = Array.isArray(data.comment)
+                ? data.comment?.map((str: string) => str.trim())
+                : data.comment?.split(',').map((str: string) => str.trim());
+
+            data.xy_cordinates = Array.isArray(data.xy_cordinates)
+                ? data.xy_cordinates?.map((str: string) => str.trim())
+                : data.xy_cordinates?.split(',').map((str: string) => str.trim());
+
             const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
             new Promise(function (resolve, reject) {
                 resolve(
