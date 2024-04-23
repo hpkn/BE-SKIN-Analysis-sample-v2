@@ -1221,7 +1221,6 @@ export class AlgoAnalysisService {
         let batchIds = await this.getCustomerBatchID(customer_id, per, page);
 
         try {
-
             const imagePromises: Promise<any>[] = batchIds.map(async (batchId: any) => {
                 const rows = await this.getImageData(batchId['batch_id']);
                 if (rows.length > 0) {
@@ -1235,11 +1234,10 @@ export class AlgoAnalysisService {
 
             const image = await Promise.all(imagePromises);
             const result = image.filter((result) => result !== null);
-           
-            
+
             for (const entry of result) {
                 if (!entry) {
-                    continue; 
+                    continue;
                 }
 
                 const analyzedImages = entry.images.filter(
@@ -1247,7 +1245,6 @@ export class AlgoAnalysisService {
                 );
 
                 for (const analyzedImage of analyzedImages) {
-            
                     const { hash, analysis_type, url } = analyzedImage;
                     const originalImage = entry.images.find(
                         (image: any) =>
@@ -1255,7 +1252,7 @@ export class AlgoAnalysisService {
                             image.hash === hash &&
                             image.analysis_type === analysis_type,
                     );
-            
+
                     if (originalImage) {
                         analyzedImage.score = originalImage.score;
                     }
@@ -1269,17 +1266,15 @@ export class AlgoAnalysisService {
                         val.hash = '';
                     }
                 });
-
             }
-  
-            const filteredData = result.filter(item => item !== undefined);
+
+            const filteredData = result.filter((item) => item !== undefined);
             return filteredData;
         } catch (error) {
             console.log(error);
             throw error;
         }
     }
-
 
     // Remove identical object
     removeIdenticalObjects = (arr: any[]) => {
@@ -1942,6 +1937,8 @@ export class AlgoAnalysisService {
         const savingPromise: Promise<any>[] = [];
 
         let sum = 0;
+
+        scores = this.convertToNumbers(scores);
         sum = scores.reduce((accumulator, currentValue) => accumulator + currentValue);
 
         let computation = this.computation.computationResult(
@@ -2329,7 +2326,6 @@ export class AlgoAnalysisService {
         const previousBatch = await this.getPreviousBatchId(batchId);
         const result = await this.AllAnaysisScore(previousBatch.batchId);
 
-      
         let computationScore: any;
 
         // Filter the relevant measurement based on algoName
@@ -2361,5 +2357,16 @@ export class AlgoAnalysisService {
             keywordScaling: keywordScaling,
             timeWith24h: previousBatch.timeWith24h,
         };
+    }
+
+    convertToNumbers(input: any): any {
+        // Check if the input is an array
+        if (Array.isArray(input)) {
+            // If it's an array, map each element to a number
+            return input.map(Number);
+        } else {
+            // If it's not an array, convert the input to a number directly
+            return [Number(input)];
+        }
     }
 }
