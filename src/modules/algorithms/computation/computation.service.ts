@@ -318,13 +318,13 @@ export class ComputationService {
         let keyword_id;
 
         if (computed_score >= 0 && computed_score < 26) {
-            keyWord = 'preventive_care';
+            keyWord = 'Preventive Care';
             keyword_id = 1;
         } else if (computed_score >= 26 && computed_score < 71) {
-            keyWord = 'protective_care';
+            keyWord = 'Protective Care';
             keyword_id = 2;
         } else if (computed_score >= 71 && computed_score < 100) {
-            keyWord = 'intensive_care';
+            keyWord = 'Intensive Care';
             keyword_id = 3;
         } else {
             keyWord = 'Unknown';
