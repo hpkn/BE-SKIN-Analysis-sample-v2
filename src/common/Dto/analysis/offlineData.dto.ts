@@ -487,6 +487,37 @@ export class OfflineDataCBBDTO {
     @IsOptional()
     kHeadSpa: boolean = false;
 
+    // New Fields
+    @ApiPropertyOptional({
+        type: String,
+        description: 'Label about the image result',
+        example: ['Deep Wrinkles found', 'Check Spots again'],
+        isArray: true,
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    label?: string[];
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'Comment on the image result',
+        example: ['Evaluate in 2 weeks', 'Spots need more analysis'],
+        isArray: true,
+    })
+    comment?: string[];
+
+    @ApiPropertyOptional({
+        type: String,
+        isArray: true,
+        description: 'Coodinate of the commented image erea',
+        example: ['coordinate1', 'coodinate2'],
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    xy_coordinates?: string[];
+
     @IsOptional()
     kiosk: boolean = false;
 }
