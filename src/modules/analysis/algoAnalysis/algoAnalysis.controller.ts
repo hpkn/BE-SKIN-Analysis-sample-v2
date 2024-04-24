@@ -334,6 +334,7 @@ export class AlgoAnalysisController {
             if (!body?.kHeadSpa) {
                 body.kHeadSpa = false;
             }
+
             if (body?.kHeadSpa === true) {
                 const newScore = await this.AlgoAnalysis.kheadSpaCheck(body.batch_id, 'moisture', body.score);
                 body.score = newScore?.computationScore ?? body.score;
@@ -353,7 +354,6 @@ export class AlgoAnalysisController {
                 },
             });
         } catch (error) {
-            console.log(error);
             return res.send({
                 status: 500,
                 type: 'InternalServerError',
@@ -1153,7 +1153,6 @@ export class AlgoAnalysisController {
             },
         },
     })
-    // @UseGuards(AuthMiddleware)
     @ApiBearerAuth('access-token')
     @Post('kheadspa-cbb')
     @HttpCode(200)
@@ -1197,6 +1196,115 @@ export class AlgoAnalysisController {
             data.xy_coordinates = Array.isArray(data.xy_coordinates)
                 ? data.xy_coordinates?.map((str: string) => str.trim())
                 : data.xy_coordinates?.split(',').map((str: string) => str.trim());
+
+            const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
+            new Promise(function (resolve, reject) {
+                resolve(
+                    res.send({
+                        status: 200,
+                        message: 'Success',
+                        body: result,
+                    }),
+                );
+            });
+
+            await this.AlgoAnalysis.updateData(data, '');
+        } catch (error) {
+            console.error(error);
+            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @ApiOperation({
+        summary: 'CBB API For Kiosk',
+        security: [{ bearerToken: [] }],
+    })
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({ type: OfflineDataCBBDTO })
+    @ApiResponse({
+        status: 200,
+        description: 'Success',
+        schema: {
+            type: 'object',
+            properties: {
+                status: { type: 'number', example: 200 },
+                service: { type: 'string', example: 'Success' },
+                body: {
+                    type: 'object',
+                    properties: {
+                        computation_score: { type: 'number', example: 56.4 },
+                        questionnaire_score: { type: 'number', example: 70.0 },
+                        score_average: { type: 'number', example: 53.33 },
+                        keyWord: { type: 'string', example: 'Mild' },
+                        result: {
+                            type: 'array',
+                            example: [
+                                {
+                                    batchId: 426416,
+                                    algorithm_type: 'spots',
+                                    // ver: 'CDS_SP_2.1.2',
+                                    score: 60,
+                                    analyzedImage: {
+                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                    },
+                                    originalImage: {
+                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                    },
+                                },
+                                {
+                                    batchId: 426416,
+                                    algorithm_type: 'spots',
+                                    // ver: 'CDS_SP_2.1.2',
+                                    score: 56,
+                                    analyzedImage: {
+                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                    },
+                                    originalImage: {
+                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                    },
+                                },
+                            ],
+                        },
+                    },
+                },
+            },
+        },
+    })
+    @ApiBearerAuth('access-token')
+    @Post('kiosk-cbb')
+    @HttpCode(200)
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'originalImage', maxCount: 5 },
+            { name: 'analyzedImage', maxCount: 5 },
+        ]),
+    )
+    async kioskCbb(
+        @Body() data: any,
+        @UploadedFiles() files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
+        @Res() res: Response,
+    ) {
+        data.kiosk = true;
+        try {
+            if (!files?.analyzedImage || !files?.originalImage) {
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'No file!',
+                });
+            }
+
+            if (files?.analyzedImage.length !== files?.originalImage.length) {
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'The number of analyzed images does not match number of original images',
+                });
+            }
 
             const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
             new Promise(function (resolve, reject) {

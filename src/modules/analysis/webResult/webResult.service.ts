@@ -297,7 +297,7 @@ export class WebResultService {
         return result;
     }
 
-    async webResultAverage(batch_id: number) {
+    async webResultAverageGeneral(batch_id: number) {
         const result = await this.database.executeQuery(
             `
             SELECT 
@@ -382,6 +382,19 @@ export class WebResultService {
         );
 
         return result;
+    }
+
+    // Check Kiosk
+    async checkIfkiosk(batch_id: number) {
+        const result = await this.database.executeQuery(
+            `
+                SELECT args ->> 'kiosk' as kiosk 
+                FROM analysis WHERE batch_id = $1
+            `,
+            [batch_id],
+        );
+
+        return result[0];
     }
 
     /* 
@@ -493,6 +506,7 @@ export class WebResultService {
 
         return differenceInSeconds > checkDuration;
     }
+<<<<<<< HEAD
 
     // async checkExpiration(batch_id: number) {
     //     const result = await this.database.executeQuery(`SELECT request_date FROM analysis WHERE batch_id = $1`, [
@@ -510,6 +524,8 @@ export class WebResultService {
 
     //     return differenceInHours > 24;
     // }
+=======
+>>>>>>> 87ae84a6b99d23b5f4bf6d3ac9736a2274a71cbe
 
     async getRequestDate(batch_id: number) {
         const result = await this.database.executeQuery(`SELECT request_date FROM analysis WHERE batch_id = $1`, [
@@ -536,5 +552,70 @@ export class WebResultService {
         } else {
             return true;
         }
+    }
+
+    async webResultAverageKiosk(batch_id: number) {
+        const result = await this.database.executeQuery(
+            `
+            SELECT 
+                ROUND(AVG_SCORE, 2) AS avg,
+                NAME AS measurement,
+                CASE
+                    WHEN id IN (16, 17) THEN 
+                        CASE 
+                            WHEN AVG_SCORE BETWEEN 71 AND 100 THEN 'Hydrated'
+                            WHEN AVG_SCORE BETWEEN 26 AND 70.99 THEN 'Normal'
+                            WHEN AVG_SCORE BETWEEN 0 AND 25.99 THEN 'Dehydrated'
+                        END
+                    ELSE
+                        CASE 
+                            WHEN AVG_SCORE BETWEEN 0 AND 25.99 THEN 'Preventive Care'
+                            WHEN AVG_SCORE BETWEEN 26 AND 70.99 THEN 'Protective Care'
+                            WHEN AVG_SCORE BETWEEN 71 AND 99.99 THEN 'Intensive Care'
+                            ELSE NULL 
+                        END
+                END AS keyword_value,
+                CASE
+                    WHEN id IN (16, 17) THEN 
+                        CASE 
+                            WHEN AVG_SCORE BETWEEN 71 AND 100 THEN 3
+                            WHEN AVG_SCORE BETWEEN 26 AND 70.99 THEN 2
+                            WHEN AVG_SCORE BETWEEN 0 AND 25.99 THEN 1
+                        END
+                    ELSE
+                        CASE 
+                            WHEN AVG_SCORE BETWEEN 0 AND 25.99 THEN 1
+                            WHEN AVG_SCORE BETWEEN 26 AND 70.99 THEN 2
+                            WHEN AVG_SCORE BETWEEN 71 AND 99.99 THEN 3
+                            ELSE NULL 
+                        END
+                END AS keyword_id
+            FROM (
+                SELECT 
+                    tp.NAME as Name,
+                    tp."id" as id,
+                    COALESCE(ROUND(AVG((to_json(scores)->>'computation_score')::NUMERIC), 2), ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2)) AS AVG_SCORE
+                FROM measurements AS ms
+                JOIN type_measurements AS tp ON tp."id" = ms.type_measurement_id 
+                WHERE batch_id = $1 AND type_image_id = 21
+                GROUP BY tp.NAME, tp."id"
+            ) AS subquery;
+            `,
+            [batch_id],
+        );
+        return result;
+    }
+
+    async webResultAverage(batch_id: number) {
+        let result;
+        const checkKiosk = await this.checkIfkiosk(batch_id);
+
+        result = this.webResultAverageGeneral(batch_id);
+
+        if (checkKiosk?.kiosk === 'true' || checkKiosk?.kiosk === true) {
+            result = this.webResultAverageKiosk(batch_id);
+        }
+
+        return result;
     }
 }
