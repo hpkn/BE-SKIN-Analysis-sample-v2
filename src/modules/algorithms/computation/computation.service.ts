@@ -89,7 +89,6 @@ export class ComputationService {
         // 5. Oiliness --> Q1, 10. Redness --> Q2, 6. Spots ----> Q3, 7. Wrinkles ---> Q4
         let extractAnswer = '';
         let questionnaireScore = 0;
-        console.log('answers.length', answers.length);
         if (!answers || answers?.length === 0) {
             console.log(answers);
             return questionnaireScore;
@@ -256,7 +255,7 @@ export class ComputationService {
         }
     }
 
-    computationResult(type: number, answers: string, score: any) {
+    computationResult(type: number, answers: string, score: any, kiosk: any) {
         try {
             let final_response: any = {};
             let myScores: number[];
@@ -268,7 +267,14 @@ export class ComputationService {
 
             const { computed_score, questionnaire_score } = this.cndp_computation(type, myScores, answers);
 
-            const keyWordScalling = this.keywordScaling(computed_score);
+            let keyWordScalling;
+
+            if (kiosk === true) {
+                keyWordScalling = this.keywordKosk(computed_score);
+            } else {
+                keyWordScalling = this.keywordScaling(computed_score);
+            }
+
             final_response.computation_score = computed_score;
             final_response.questionnaire_score = questionnaire_score;
             final_response.keyWord = keyWordScalling.keyWord;
@@ -276,7 +282,6 @@ export class ComputationService {
 
             return final_response;
         } catch (e) {
-            console.log(e);
             throw new Error('error');
         }
     }
@@ -308,6 +313,30 @@ export class ComputationService {
             keyword_id = 5;
         } else {
             keyWord = 'Unknown'; // Handle the case when the number is outside the defined ranges
+        }
+
+        return {
+            keyWord: keyWord,
+            keyword_id: keyword_id,
+        };
+    }
+
+    // KEWORDS FOR KIOSK
+    keywordKosk(computed_score: number) {
+        let keyWord;
+        let keyword_id;
+
+        if (computed_score >= 0 && computed_score < 26) {
+            keyWord = 'Preventive Care';
+            keyword_id = 1;
+        } else if (computed_score >= 26 && computed_score < 71) {
+            keyWord = 'Protective Care';
+            keyword_id = 2;
+        } else if (computed_score >= 71 && computed_score < 100) {
+            keyWord = 'Intensive Care';
+            keyword_id = 3;
+        } else {
+            keyWord = 'Unknown';
         }
 
         return {
