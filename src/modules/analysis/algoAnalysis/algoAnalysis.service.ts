@@ -1578,6 +1578,7 @@ export class AlgoAnalysisService {
             gender: data.gender ?? '',
             skin_color_group: data.skin_color_group ?? '',
             ethnicities: data.ethnicities ?? '',
+            kiosk: data?.kiosk ?? false,
         };
 
         await this.updateEnvironment(data.batch_id, environment);
@@ -1885,7 +1886,7 @@ export class AlgoAnalysisService {
         files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
     ) {
         data.batch_id = Number(data.batchId);
-        // data.task = this.AlgoAnalysis.getCBBTaskByAlgoType(Number(data.type));
+
         let algo: any;
         let algoId;
         let algoName;
@@ -1935,9 +1936,7 @@ export class AlgoAnalysisService {
         }
 
         const savingPromise: Promise<any>[] = [];
-
         let sum = 0;
-
         scores = this.convertToNumbers(scores);
         sum = scores.reduce((accumulator, currentValue) => accumulator + currentValue);
 
@@ -1945,6 +1944,7 @@ export class AlgoAnalysisService {
             Number(data.type),
             data?.answers === undefined ? '' : data?.answers,
             scores,
+            data?.kiosk ?? false,
         );
 
         /*
@@ -1965,10 +1965,8 @@ export class AlgoAnalysisService {
         /*
             K-HEADSPA LOGIC END 
         */
-
         const avg = sum / scores.length;
 
-        console.log('computation -->', computation);
         for (let i = 0; i < files.analyzedImage?.length; i++) {
             const imageRecords = uuidv4();
             const imageArg = this.handleCBBImageArg(data);
@@ -1994,6 +1992,7 @@ export class AlgoAnalysisService {
                 21,
                 JSON.stringify({
                     nth_analysis: imageRecords,
+                    kiosk: data.kiosk,
                 }),
                 JSON.stringify({
                     score: scores[i],
@@ -2037,7 +2036,6 @@ export class AlgoAnalysisService {
                 scores: item[7],
             };
         });
-        //return original
 
         const saveAnalyzed = analyzed.map((item) => {
             retunAnalyzed.push({
@@ -2078,14 +2076,6 @@ export class AlgoAnalysisService {
             result: [...newArray],
         };
 
-        // await Promise.all(savingPromise).catch((e) => {
-        //     Promise.all(savingPromise).catch((e) => {
-        //         fs.appendFile('error.log', this.getErrorLog(data.batch_id), 'utf8', (err) => {
-        //             if (err) throw err;
-        //         });
-        //     });
-        // });
-
         Promise.all(savingPromise)
             .then(() => {
                 console.log(`${data.type} : Success`);
@@ -2112,7 +2102,6 @@ export class AlgoAnalysisService {
             newScore = oldScore * 0.8;
         }
 
-        // if skin was (very) dehydrated before, after tretment it should at least return to normal.
         if (direction == 1) {
             newScore = Math.floor(Math.random() * 33) + 16;
         }
@@ -2120,7 +2109,6 @@ export class AlgoAnalysisService {
         return Math.round(newScore);
     }
 
-    // Adjust scores for pores, spots, wrinkles, impurites, keratin, and sensitivity, providing at least 20% of improvement.
     adjustSkinScore(oldComputedScore: number, currentComputedScore: number) {
         let adjustedScore = -1;
         // Adjust scores according to our keyword scale.
@@ -2330,7 +2318,7 @@ export class AlgoAnalysisService {
 
         // Filter the relevant measurement based on algoName
         const relevantMeasurement = result.find((val: any) => val.measurement === algoName);
-        console.log('====>', relevantMeasurement);
+
         let keywordScaling;
         // If relevant measurement found, adjust the skin score accordingly
         if (relevantMeasurement) {

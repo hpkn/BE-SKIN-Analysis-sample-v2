@@ -459,4 +459,7 @@ export class OfflineDataCBBDTO {
 
     @IsOptional()
     kHeadSpa: boolean = false;
+
+    @IsOptional()
+    kiosk: boolean = false;
 }
