@@ -24,14 +24,19 @@ export class WebResultService {
         let uZoneType = 0;
         let skinCondition = 0;
 
-        if (sebumQAScore >= 0 && sScoreT >= 0) {
+        if (sebumQAScore >= 0 && sScoreT > 0) {
+            console.log('1 sScoreT, sScoreU', sScoreT, sScoreU);
             sScoreT = Math.round(0.8 * sScoreT + 0.2 * sebumQAScore);
+            console.log('final 1 --->', sScoreT, 'null sebum');
         }
 
         // Logic for determining skin condition
         // ...
         // Combine t-zone sebum score with sebum Q&A score.
-        if (sebumQAScore >= 0 && sScoreT >= 0) sScoreT = Math.round(0.8 * sScoreT + 0.2 * sebumQAScore);
+        if (sebumQAScore >= 0 && sScoreT === null) {
+            sScoreT = Math.round(sebumQAScore);
+            console.log('final --->', sScoreT, 'null sebum');
+        }
 
         // ---------- (1) ----------
         // When either one of the mositure scores is not available, we define skin/scalp condition with sebum scores.
