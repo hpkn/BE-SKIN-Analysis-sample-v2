@@ -838,6 +838,18 @@ export class AlgoAnalysisController {
                 });
             }
 
+            data.label = Array.isArray(data.label)
+                ? data.label?.map((str: any) => str.trim())
+                : data.label?.split(',').map((str: string) => str.trim());
+
+            data.comment = Array.isArray(data.comment)
+                ? data.comment?.map((str: string) => str.trim())
+                : data.comment?.split(',').map((str: string) => str.trim());
+
+            data.xy_coordinates = Array.isArray(data.xy_coordinates)
+                ? data.xy_coordinates?.map((str: string) => str.trim())
+                : data.xy_coordinates?.split(',').map((str: string) => str.trim());
+
             const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
             new Promise(function (resolve, reject) {
                 resolve(
@@ -912,8 +924,6 @@ export class AlgoAnalysisController {
             if (answers !== null) {
                 questFr = this.computation.questionnaireFrequency(answers, 5);
             }
-
-            console.log('check here', moistureT, moistureU, sebumT, sebumU, questFr);
 
             const skinCondition = this.webResult.getSkinCondition(moistureT, sebumT, moistureU, sebumU, questFr);
 
@@ -1043,6 +1053,18 @@ export class AlgoAnalysisController {
                 });
             }
 
+            data.label = Array.isArray(data.label)
+                ? data.label?.map((str: any) => str.trim())
+                : data.label?.split(',').map((str: string) => str.trim());
+
+            data.comment = Array.isArray(data.comment)
+                ? data.comment?.map((str: string) => str.trim())
+                : data.comment?.split(',').map((str: string) => str.trim());
+
+            data.xy_coordinates = Array.isArray(data.xy_coordinates)
+                ? data.xy_coordinates?.map((str: string) => str.trim())
+                : data.xy_coordinates?.split(',').map((str: string) => str.trim());
+
             const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
             new Promise(function (resolve, reject) {
                 resolve(
@@ -1162,6 +1184,18 @@ export class AlgoAnalysisController {
                     message: 'The number of analyzed images does not match number of original images',
                 });
             }
+
+            data.label = Array.isArray(data.label)
+                ? data.label?.map((str: any) => str.trim())
+                : data.label?.split(',').map((str: string) => str.trim());
+
+            data.comment = Array.isArray(data.comment)
+                ? data.comment?.map((str: string) => str.trim())
+                : data.comment?.split(',').map((str: string) => str.trim());
+
+            data.xy_coordinates = Array.isArray(data.xy_coordinates)
+                ? data.xy_coordinates?.map((str: string) => str.trim())
+                : data.xy_coordinates?.split(',').map((str: string) => str.trim());
 
             const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
             new Promise(function (resolve, reject) {

@@ -7,7 +7,6 @@ import { ApiTags } from '@nestjs/swagger';
 @Controller('web-result')
 export class WebResultController {
     constructor(private readonly webResult: WebResultService) {}
-
     @Get('/cndpskin/:batch_id')
     async getBatchId(@Param('batch_id') batch_id: number, @Res() res: Response, @Query('check') checkDuration: number) {
         try {

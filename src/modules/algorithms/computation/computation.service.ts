@@ -9,7 +9,12 @@ export class ComputationService {
         let now_year = new Date().getFullYear();
         let biologic_age = Number(now_year) - Number(birth_year);
 
+        console.log(wrinkleCal, pigmCalc, birth_year);
+
+        console.log('biologic_age', biologic_age);
         let skin_age = Math.round(100 - (Number(wrinkleCal) + Number(pigmCalc)) / 2);
+
+        console.log('biologic_age', biologic_age, 'skin_age', skin_age);
 
         if (!wrinkleCal || !pigmCalc || wrinkleCal === null || pigmCalc === null) return biologic_age;
 
@@ -40,6 +45,8 @@ export class ComputationService {
         if (skin_age >= 85 && skin_age <= 100) {
             skin_age = biologic_age - 4;
         }
+
+        console.log(skin_age);
 
         return skin_age;
     }
@@ -168,8 +175,10 @@ export class ComputationService {
         // wrinkles
         if (analysis_type === 7) {
             questionnaire_score = this.questionnaireFrequency(answers, 7);
-            console.log('wrinkles', questionnaire_score);
             combined_scores = scores.reduce((accumulator, currentValue) => accumulator + currentValue);
+
+            console.log('wrinkles', scores, combined_scores);
+
             const avg = Math.round(combined_scores / scores.length);
             // quest_score
             computed_score = 0.8 * avg + 0.2 * questionnaire_score;
