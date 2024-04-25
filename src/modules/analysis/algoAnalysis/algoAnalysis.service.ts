@@ -2384,7 +2384,7 @@ export class AlgoAnalysisService {
             const deviceMode = data?.deviceModel?.toLowerCase()
             const check = 'duple'
 
-            if (kioskAppId.includes(Number(app_id)) || deviceMode.include(check)) {
+            if (kioskAppId.includes(Number(app_id)) || deviceMode.includes(check)) {
                 return true
             }else{
                 return false;
