@@ -935,7 +935,7 @@ export class AlgoAnalysisController {
             if (answers !== null) {
                 questFr = this.computation.questionnaireFrequency(answers, 5);
             }
-            const obj = {deviceModel: ''}
+            const obj = {deviceModel: 'device'}
             const token = req.headers.authorization?.split(' ')[1];
             const isKiosk = this.AlgoAnalysis.checkIfKiosk(token, obj);
 
