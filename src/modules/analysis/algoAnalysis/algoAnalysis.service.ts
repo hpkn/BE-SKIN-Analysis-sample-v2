@@ -2379,8 +2379,15 @@ export class AlgoAnalysisService {
             const kioskAppId: number[] = [110, 51, 42];
             const app_id = decoded['app_id'];
 
-            if (kioskAppId.includes(Number(app_id))) return true;
-            return false;
+
+            console.log(Number(app_id), kioskAppId.includes(Number(app_id)))
+
+
+            if (kioskAppId.includes(Number(app_id))) {
+                return true
+            }else{
+                return false;
+            }
         } catch (e) {
             console.log(e);
         }
