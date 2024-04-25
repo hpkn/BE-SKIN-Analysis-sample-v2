@@ -2372,14 +2372,15 @@ export class AlgoAnalysisService {
         }
     }
 
-    checkIfKiosk(token: any) {
+    checkIfKiosk(token: any, data: any) {
         try {
             const decoded: any = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
             const kioskAppId: number[] = [110, 51, 42];
             const app_id = Number(decoded['app_id']);
+            const mainString = data?.deviceModel.toLowerCase();
 
-            if (kioskAppId.includes(app_id)) return true;
+            if (kioskAppId.includes(app_id) || mainString.includes('duple')) return true;
             return false;
         } catch (e) {
             console.log(e);
