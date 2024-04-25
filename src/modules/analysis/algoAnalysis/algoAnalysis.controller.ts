@@ -820,8 +820,13 @@ export class AlgoAnalysisController {
         @Body() data: any,
         @UploadedFiles() files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
         @Res() res: Response,
+        @Req() req: Request,
     ) {
         try {
+            const token = req.headers.authorization?.split(' ')[1];
+            data.kiosk = this.AlgoAnalysis.checkIfKiosk(token);
+
+            console.log('--->', data.kiosk);
             if (!files?.analyzedImage || !files?.originalImage) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
                     status: 40002,
@@ -907,8 +912,10 @@ export class AlgoAnalysisController {
 
     @ApiBearerAuth('access-token')
     @Post('/skinAgeCondition')
-    async skinAgeCondition(@Body() body: SkinAgeConditionDto, @Res() res: Response) {
+    async skinAgeCondition(@Body() body: SkinAgeConditionDto, @Res() res: Response, @Req() req: Request) {
         let { batch_id, bithYear } = body;
+        let skinCondition;
+
         try {
             const { spots, wrinkles, moistureT, sebumT, moistureU, sebumU } = await this.AlgoAnalysis.skinAgeOperation(
                 Number(batch_id),
@@ -924,8 +931,13 @@ export class AlgoAnalysisController {
             if (answers !== null) {
                 questFr = this.computation.questionnaireFrequency(answers, 5);
             }
+            const token = req.headers.authorization?.split(' ')[1];
+            const isKiosk = this.AlgoAnalysis.checkIfKiosk(token);
 
-            const skinCondition = this.webResult.getSkinCondition(moistureT, sebumT, moistureU, sebumU, questFr);
+            skinCondition = this.webResult.getSkinCondition(moistureT, sebumT, moistureU, sebumU, questFr);
+            if (isKiosk) {
+                skinCondition = this.webResult.computationSkinConditionKiosk100(moistureU, questFr);
+            }
 
             // const skinCondition = this.webResult.check(moisture, sebum);
             console.log(answers, questFr, skinCondition);
