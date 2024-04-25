@@ -935,8 +935,9 @@ export class AlgoAnalysisController {
             if (answers !== null) {
                 questFr = this.computation.questionnaireFrequency(answers, 5);
             }
+            const obj = {deviceModel: ''}
             const token = req.headers.authorization?.split(' ')[1];
-            const isKiosk = this.AlgoAnalysis.checkIfKiosk(token, 'Infos_Duple');
+            const isKiosk = this.AlgoAnalysis.checkIfKiosk(token, obj);
 
             skinCondition = this.webResult.getSkinCondition(moistureT, sebumT, moistureU, sebumU, questFr);
             if (isKiosk) {
