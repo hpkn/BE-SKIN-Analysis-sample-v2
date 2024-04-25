@@ -633,6 +633,7 @@ export class AlgoAnalysisController {
         @Body() data: any,
         @UploadedFiles()
         file: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
+        @Req() req: Request,
     ) {
         try {
             if (!file['analyzedImage'][0] || !file['originalImage'][0])
@@ -641,6 +642,9 @@ export class AlgoAnalysisController {
                     type: 'BadRequestError',
                     message: 'There is no necassary image file!',
                 });
+
+            const token = req.headers.authorization?.split(' ')[1];
+            data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
 
             data.batchId = Number(data.batchId);
             const imageRecords = uuidv4();
@@ -824,7 +828,7 @@ export class AlgoAnalysisController {
     ) {
         try {
             const token = req.headers.authorization?.split(' ')[1];
-            data.kiosk = this.AlgoAnalysis.checkIfKiosk(token);
+            data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
 
             console.log('--->', data.kiosk);
             if (!files?.analyzedImage || !files?.originalImage) {
@@ -932,7 +936,7 @@ export class AlgoAnalysisController {
                 questFr = this.computation.questionnaireFrequency(answers, 5);
             }
             const token = req.headers.authorization?.split(' ')[1];
-            const isKiosk = this.AlgoAnalysis.checkIfKiosk(token);
+            const isKiosk = this.AlgoAnalysis.checkIfKiosk(token, 'Infos_Duple');
 
             skinCondition = this.webResult.getSkinCondition(moistureT, sebumT, moistureU, sebumU, questFr);
             if (isKiosk) {
