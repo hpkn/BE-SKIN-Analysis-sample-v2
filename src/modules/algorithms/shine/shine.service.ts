@@ -170,7 +170,7 @@ export class ShineService {
             humidity: data.humidity,
             uv_index: data.uv_index,
             appVersion: data.appVersion,
-
+            kiosk: data?.kiosk ?? false,
         };
 
         await this.batchAnalysis.updateEnvironment(data.batchId, environment);
@@ -228,4 +228,3 @@ export class ShineService {
         return 'saved';
     }
 }
-

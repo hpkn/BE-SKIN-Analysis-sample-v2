@@ -318,6 +318,9 @@ export class OfflineDatasDTO {
         example: 'V_0.0.1',
     })
     appVersion?: String | null;
+
+    @IsOptional()
+    kiosk: boolean = false;
 }
 
 export class MultiArgsDTO {
