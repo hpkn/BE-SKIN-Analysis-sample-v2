@@ -2383,7 +2383,7 @@ export class AlgoAnalysisService {
             console.log(Number(app_id), kioskAppId.includes(Number(app_id)))
 
 
-            if (kioskAppId.includes(Number(app_id))) {
+            if (kioskAppId.includes(Number(app_id)) === true) {
                 return true
             }else{
                 return false;

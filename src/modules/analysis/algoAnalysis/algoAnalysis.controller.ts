@@ -80,7 +80,7 @@ export class AlgoAnalysisController {
             });
 
         data.batch_id = Number(data.batch_id);
-        console.log(data.batch_id);
+    
         const imageRecords = uuidv4();
         const client = celery.createClient('redis://localhost', 'redis://');
         let algoList = [
@@ -1303,8 +1303,12 @@ export class AlgoAnalysisController {
         @Body() data: any,
         @UploadedFiles() files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
         @Res() res: Response,
+        @Req() req: Request
     ) {
-        data.kiosk = true;
+        const token = req.headers.authorization?.split(' ')[1];
+        data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
+
+        console.log('kiosk CBBBBBBB, --->', data.kiosk);
         try {
             if (!files?.analyzedImage || !files?.originalImage) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
