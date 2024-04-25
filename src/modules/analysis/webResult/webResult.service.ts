@@ -221,6 +221,70 @@ export class WebResultService {
         return keyword_value;
     }
 
+    // Kiosk SkinCondition
+    computationSkinConditionKiosk100(moistureScore: number, sebumQAScore: number): string {
+        // define some constants
+        const veryDry: number = 1;
+        const dry: number = 2;
+        const normal: number = 3;
+        const oily: number = 4;
+        const veryOily: number = 5;
+        const combination: number = 6;
+
+        // define some variables
+        let skinCondition: number = 0;
+
+        // obtain skin type
+        if (moistureScore >= 0 && moistureScore < 6) {
+            if (sebumQAScore >= 0 && sebumQAScore < 6) skinCondition = veryDry;
+            if (sebumQAScore >= 6 && sebumQAScore < 16) skinCondition = dry;
+            if (sebumQAScore >= 16 && sebumQAScore < 49) skinCondition = dry;
+            if (sebumQAScore >= 49 && sebumQAScore < 81) skinCondition = combination;
+            if (sebumQAScore >= 81 && sebumQAScore <= 99) skinCondition = combination;
+        }
+        if (moistureScore >= 6 && moistureScore < 16) {
+            if (sebumQAScore >= 0 && sebumQAScore < 6) skinCondition = dry;
+            if (sebumQAScore >= 6 && sebumQAScore < 16) skinCondition = dry;
+            if (sebumQAScore >= 16 && sebumQAScore < 49) skinCondition = dry;
+            if (sebumQAScore >= 49 && sebumQAScore < 81) skinCondition = combination;
+            if (sebumQAScore >= 81 && sebumQAScore <= 99) skinCondition = combination;
+        }
+        if (moistureScore >= 16 && moistureScore < 49) {
+            if (sebumQAScore >= 0 && sebumQAScore < 6) skinCondition = dry;
+            if (sebumQAScore >= 6 && sebumQAScore < 16) skinCondition = dry;
+            if (sebumQAScore >= 16 && sebumQAScore < 49) skinCondition = normal;
+            if (sebumQAScore >= 49 && sebumQAScore < 81) skinCondition = oily;
+            if (sebumQAScore >= 81 && sebumQAScore <= 99) skinCondition = oily;
+        }
+        if (moistureScore >= 49 && moistureScore < 81) {
+            if (sebumQAScore >= 0 && sebumQAScore < 6) skinCondition = combination;
+            if (sebumQAScore >= 6 && sebumQAScore < 16) skinCondition = combination;
+            if (sebumQAScore >= 16 && sebumQAScore < 49) skinCondition = oily;
+            if (sebumQAScore >= 49 && sebumQAScore < 81) skinCondition = oily;
+            if (sebumQAScore >= 81 && sebumQAScore <= 99) skinCondition = oily;
+        }
+        if (moistureScore >= 81 && moistureScore <= 99) {
+            if (sebumQAScore >= 0 && sebumQAScore < 6) skinCondition = combination;
+            if (sebumQAScore >= 6 && sebumQAScore < 16) skinCondition = combination;
+            if (sebumQAScore >= 16 && sebumQAScore < 49) skinCondition = oily;
+            if (sebumQAScore >= 49 && sebumQAScore < 81) skinCondition = oily;
+            if (sebumQAScore >= 81 && sebumQAScore <= 99) skinCondition = veryOily;
+        }
+
+        // define and return skin condition keys/names
+        // If either one of the sebum score is missing, we will always give "combination" as skin condition
+        // Truth is in this case we should not call this algorithm at all
+        let condition: string = 'combination';
+        if (skinCondition === veryDry) condition = 'very_dry';
+        if (skinCondition === dry) condition = 'dry';
+        if (skinCondition === combination) condition = 'combination';
+        if (skinCondition === normal) condition = 'normal';
+        if (skinCondition === oily) condition = 'oily';
+        if (skinCondition === veryOily) condition = 'very_oily';
+
+        return condition;
+    }
+
     keywordValue(keyword_value: string) {
         if (keyword_value === 'normal') {
             return {
@@ -406,8 +470,11 @@ export class WebResultService {
         Analysis Web Result
     */
     async getBatchId(batch_id: number) {
+        let getSkinCondition;
         const result = await this.webResult(batch_id);
-        const avg = await this.webResultAverage(batch_id);
+        const checkKiosk = await this.checkIfkiosk(batch_id);
+
+        const avg = await this.webResultAverage(batch_id, checkKiosk);
         const skinAge = await this.getSkinAge(batch_id);
 
         let moistureT = null;
@@ -446,13 +513,17 @@ export class WebResultService {
             questFr = this.computation.questionnaireFrequency(answers, 5);
         }
 
-        const getSkinCondition = this.getSkinCondition(
+        getSkinCondition = this.getSkinCondition(
             Number(moistureT),
             Number(sebumT),
             Number(moistureU),
             Number(sebumU),
             questFr,
         );
+
+        if (checkKiosk?.kiosk === 'true' || checkKiosk?.kiosk === true) {
+            getSkinCondition = this.computationSkinConditionKiosk100(moistureU, questFr);
+        }
 
         const conditionResult = this.keywordValue(getSkinCondition);
 
@@ -591,9 +662,8 @@ export class WebResultService {
         return result;
     }
 
-    async webResultAverage(batch_id: number) {
+    async webResultAverage(batch_id: number, checkKiosk: any) {
         let result;
-        const checkKiosk = await this.checkIfkiosk(batch_id);
 
         result = this.webResultAverageGeneral(batch_id);
 

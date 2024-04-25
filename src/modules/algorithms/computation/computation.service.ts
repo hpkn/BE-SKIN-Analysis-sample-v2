@@ -118,14 +118,9 @@ export class ComputationService {
         } else if (answers.length === 10) {
             if (algoId === 5) {
                 extractAnswer = answers.slice(0, 3);
-
-                console.log('5', extractAnswer);
                 questionnaireScore = this.quest_score(extractAnswer);
             } else if (algoId === 10) {
                 extractAnswer = answers.slice(3, 5);
-
-                console.log('10', extractAnswer);
-
                 questionnaireScore = this.quest_score(extractAnswer);
             } else if (algoId === 6) {
                 extractAnswer = answers.slice(5, 7);

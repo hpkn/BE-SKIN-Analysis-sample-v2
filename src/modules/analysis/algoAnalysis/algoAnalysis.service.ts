@@ -24,6 +24,7 @@ import { OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offl
 import { toLower } from 'lodash';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 import { v4 as uuidv4 } from 'uuid';
+import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AlgoAnalysisService {
@@ -794,11 +795,11 @@ export class AlgoAnalysisService {
 
             const update = `
                     UPDATE analysis
-                    SET args = $1
-                    WHERE batch_id = $2
+                    SET args = jsonb_concat((args)::jsonb, '${data}'::jsonb)
+                    WHERE batch_id = $1
                   `;
 
-            this.database.executeQuery(update, [data, batch_id]);
+            this.database.executeQuery(update, [batch_id]);
             return update;
         } catch (e) {
             console.log('check', e);
@@ -2368,6 +2369,20 @@ export class AlgoAnalysisService {
         } else {
             // If it's not an array, convert the input to a number directly
             return [Number(input)];
+        }
+    }
+
+    checkIfKiosk(token: any) {
+        try {
+            const decoded: any = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+
+            const kioskAppId: number[] = [110, 51, 42];
+            const app_id = Number(decoded['app_id']);
+
+            if (kioskAppId.includes(app_id)) return true;
+            return false;
+        } catch (e) {
+            console.log(e);
         }
     }
 }
