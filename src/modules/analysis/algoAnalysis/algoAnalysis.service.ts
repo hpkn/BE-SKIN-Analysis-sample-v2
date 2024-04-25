@@ -1585,7 +1585,7 @@ export class AlgoAnalysisService {
             gender: data.gender ?? '',
             skin_color_group: data.skin_color_group ?? '',
             ethnicities: data.ethnicities ?? '',
-            kiosk: data?.kiosk ?? false,
+            kiosk: data?.kiosk,
         };
 
         await this.updateEnvironment(data.batch_id, environment);
@@ -1952,7 +1952,7 @@ export class AlgoAnalysisService {
             Number(data.type),
             data?.answers === undefined ? '' : data?.answers,
             scores,
-            data?.kiosk ?? false,
+            data?.kiosk,
         );
 
         /*
@@ -2379,8 +2379,15 @@ export class AlgoAnalysisService {
             const kioskAppId: number[] = [110, 51, 42];
             const app_id = decoded['app_id'];
 
-            if (kioskAppId.includes(Number(app_id))) return true;
-            return false;
+
+            console.log(Number(app_id), kioskAppId.includes(Number(app_id)))
+
+
+            if (kioskAppId.includes(Number(app_id))) {
+                return true
+            }else{
+                return false;
+            }
         } catch (e) {
             console.log(e);
         }

@@ -320,7 +320,7 @@ export class OfflineDatasDTO {
     appVersion?: String | null;
 
     @IsOptional()
-    kiosk: boolean = false;
+    kiosk: boolean;
 }
 
 export class MultiArgsDTO {
@@ -522,5 +522,5 @@ export class OfflineDataCBBDTO {
     xy_coordinates?: string[];
 
     @IsOptional()
-    kiosk: boolean = false;
+    kiosk: boolean;
 }
