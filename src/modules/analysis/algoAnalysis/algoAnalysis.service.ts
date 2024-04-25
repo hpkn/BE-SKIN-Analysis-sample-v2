@@ -1585,7 +1585,7 @@ export class AlgoAnalysisService {
             gender: data.gender ?? '',
             skin_color_group: data.skin_color_group ?? '',
             ethnicities: data.ethnicities ?? '',
-            kiosk: data?.kiosk ?? false,
+            kiosk: data?.kiosk,
         };
 
         await this.updateEnvironment(data.batch_id, environment);
@@ -1952,7 +1952,7 @@ export class AlgoAnalysisService {
             Number(data.type),
             data?.answers === undefined ? '' : data?.answers,
             scores,
-            data?.kiosk ?? false,
+            data?.kiosk,
         );
 
         /*

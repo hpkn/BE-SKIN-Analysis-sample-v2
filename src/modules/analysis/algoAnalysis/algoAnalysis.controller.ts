@@ -830,7 +830,7 @@ export class AlgoAnalysisController {
             const token = req.headers.authorization?.split(' ')[1];
             data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
 
-            console.log('--->', data.kiosk);
+            console.log('kiosk, --->', data.kiosk);
             if (!files?.analyzedImage || !files?.originalImage) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
                     status: 40002,
