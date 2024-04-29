@@ -44,11 +44,11 @@ jobs:
             - name: Set up SSH
               uses: webfactory/ssh-agent@v0.5.3
               with:
-                  ssh-private-key: ${{ secrets.GLOBAL_KEY }}
+                  ssh-private-key: ${{ secrets.OHIO_KEY }}
 
             - name: SSH into server and run sync.sh
               run: |
-                  ssh -o StrictHostKeyChecking=no -T -i <(echo "${{ secrets.GLOBAL_KEY }}") ubuntu@13.36.54.183 << EOF
+                  ssh -o StrictHostKeyChecking=no -T -i <(echo "${{ secrets.OHIO_KEY }}") ubuntu@52.14.217.107 << EOF
                     cd /home/ubuntu/repositories/BE-CNDP-SKIN-v2/
                     # Check if the working directory is clean
                     if git status --porcelain | grep .; then
