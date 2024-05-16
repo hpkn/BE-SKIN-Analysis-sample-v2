@@ -1586,6 +1586,7 @@ export class AlgoAnalysisService {
             skin_color_group: data.skin_color_group ?? '',
             ethnicities: data.ethnicities ?? '',
             kiosk: data?.kiosk,
+            lisenceId: data?.licenseId ?? 1,
         };
 
         await this.updateEnvironment(data.batch_id, environment);
@@ -2379,14 +2380,13 @@ export class AlgoAnalysisService {
             const kioskAppId: number[] = [110, 51, 42];
             const app_id = decoded['app_id'];
 
-
-            console.log(Number(app_id), kioskAppId.includes(Number(app_id)))
-            const deviceMode = data?.deviceModel?.toLowerCase()
-            const check = 'duple'
+            console.log(Number(app_id), kioskAppId.includes(Number(app_id)));
+            const deviceMode = data?.deviceModel?.toLowerCase();
+            const check = 'duple';
 
             if (kioskAppId.includes(Number(app_id)) || deviceMode.includes(check)) {
-                return true
-            }else{
+                return true;
+            } else {
                 return false;
             }
         } catch (e) {
