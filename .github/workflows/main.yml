@@ -32,6 +32,35 @@ jobs:
                     sudo bash -s < /home/ubuntu/repositories/BE-CNDP-SKIN-v2/sync.sh
                   EOF
 
+    # Ohio
+    ohio-build:
+        runs-on: [ubuntu-latest]
+
+        if: (github.ref == 'refs/heads/main')
+        steps:
+            - name: Checkout Repository
+              uses: actions/checkout@v3
+
+            - name: Set up SSH
+              uses: webfactory/ssh-agent@v0.5.3
+              with:
+                  ssh-private-key: ${{ secrets.OHIO_KEY }}
+
+            - name: SSH into server and run sync.sh
+              run: |
+                  ssh -o StrictHostKeyChecking=no -T -i <(echo "${{ secrets.OHIO_KEY }}") ubuntu@52.14.217.107 << EOF
+                    cd /home/ubuntu/repositories/BE-CNDP-SKIN-v2/
+                    # Check if the working directory is clean
+                    if git status --porcelain | grep .; then
+                      echo "Working directory is not clean, commit changes"
+                      git add .
+                      git commit -m "Committing changes before pulling from remote"
+                    fi
+
+                    echo "pull changes from main"
+                    git pull origin main
+                    sudo bash -s < /home/ubuntu/repositories/BE-CNDP-SKIN-v2/sync.sh
+                  EOF
     # Europe server
     europe-build:
         runs-on: [ubuntu-latest]

@@ -87,6 +87,7 @@ export class SensitivtyScalingService {
             humidity: data.humidity,
             uv_index: data.uv_index,
             positionNumber: data.positionNumber,
+            lisenceId: data?.licenseId ?? 1,
         };
 
         const saveSql =

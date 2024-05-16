@@ -80,7 +80,7 @@ export class AlgoAnalysisController {
             });
 
         data.batch_id = Number(data.batch_id);
-        console.log(data.batch_id);
+    
         const imageRecords = uuidv4();
         const client = celery.createClient('redis://localhost', 'redis://');
         let algoList = [
@@ -830,7 +830,7 @@ export class AlgoAnalysisController {
             const token = req.headers.authorization?.split(' ')[1];
             data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
 
-            console.log('--->', data.kiosk);
+            console.log('kiosk, --->', data.kiosk);
             if (!files?.analyzedImage || !files?.originalImage) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
                     status: 40002,
@@ -935,8 +935,9 @@ export class AlgoAnalysisController {
             if (answers !== null) {
                 questFr = this.computation.questionnaireFrequency(answers, 5);
             }
+            const obj = {deviceModel: 'device'}
             const token = req.headers.authorization?.split(' ')[1];
-            const isKiosk = this.AlgoAnalysis.checkIfKiosk(token, 'Infos_Duple');
+            const isKiosk = this.AlgoAnalysis.checkIfKiosk(token, obj);
 
             skinCondition = this.webResult.getSkinCondition(moistureT, sebumT, moistureU, sebumU, questFr);
             if (isKiosk) {
@@ -1303,8 +1304,12 @@ export class AlgoAnalysisController {
         @Body() data: any,
         @UploadedFiles() files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
         @Res() res: Response,
+        @Req() req: Request
     ) {
-        data.kiosk = true;
+        const token = req.headers.authorization?.split(' ')[1];
+        data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
+
+        console.log('kiosk CBBBBBBB, --->', data.kiosk);
         try {
             if (!files?.analyzedImage || !files?.originalImage) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
