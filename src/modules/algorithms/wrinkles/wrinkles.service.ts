@@ -121,6 +121,7 @@ export class WrinklesService {
             humidity: data.humidity,
             uv_index: data.uv_index,
             positionNumber: data.positionNumber,
+            lisenceId: data?.licenseId ?? 1,
         };
 
         taskResponse = {

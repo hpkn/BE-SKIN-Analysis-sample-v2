@@ -75,6 +75,7 @@ export class SkinToneDiorService {
             humidity: data.humidity,
             uv_index: data.uv_index,
             positionNumber: data.positionNumber,
+            lisenceId: data?.licenseId ?? 1,
         };
 
         await this.batchAnalysis.updateEnvironment(data.batch_id, environment);
@@ -121,4 +122,3 @@ export class SkinToneDiorService {
         return 'saved';
     }
 }
-

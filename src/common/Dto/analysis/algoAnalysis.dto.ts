@@ -239,6 +239,14 @@ export class AlgoAnalysisDTO {
     @IsOptional()
     // @IsString()
     task: any;
+
+    @ApiPropertyOptional({
+        type: Number,
+        description:
+            'Type: Number - Licence Type: { Eco: 4, STANDARD: 5, PROFESSIONAL: 6, Expert: 7, PMX: 8, Pro-AI: 9}',
+        example: 9,
+    })
+    licenseId?: number;
 }
 
 export class countCustomerDto {
