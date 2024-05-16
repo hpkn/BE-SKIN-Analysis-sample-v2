@@ -82,6 +82,7 @@ export class SkintoneService {
             humidity: data.humidity,
             uv_index: data.uv_index,
             positionNumber: data.positionNumber,
+            lisenceId: data?.licenseId ?? 1,
         };
 
         const saveSql =
@@ -144,7 +145,6 @@ export class SkintoneService {
             humidity: data.humidity,
             uv_index: data.uv_index,
             appVersion: data.appVersion,
-
         };
 
         await this.batchAnalysis.updateEnvironment(data.batchId, environment);
@@ -202,4 +202,3 @@ export class SkintoneService {
         return 'saved';
     }
 }
-
