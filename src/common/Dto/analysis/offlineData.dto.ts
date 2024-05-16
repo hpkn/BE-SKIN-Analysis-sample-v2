@@ -198,6 +198,14 @@ export class EncryptedCBBDTO {
     @IsString({ each: true })
     @IsOptional()
     xy_coordinates?: string[];
+
+    @ApiPropertyOptional({
+        type: Number,
+        description:
+            'Type: Number - Licence Type: { Eco: 4, STANDARD: 5, PROFESSIONAL: 6, Expert: 7, PMX: 8, Pro-AI: 9}',
+        example: 9,
+    })
+    licenseId?: number;
 }
 /* 
     CBB and offline upload
@@ -318,6 +326,14 @@ export class OfflineDatasDTO {
         example: 'V_0.0.1',
     })
     appVersion?: String | null;
+
+    @ApiPropertyOptional({
+        type: Number,
+        description:
+            'Type: Number - Licence Type: { Eco: 4, STANDARD: 5, PROFESSIONAL: 6, Expert: 7, PMX: 8, Pro-AI: 9}',
+        example: 9,
+    })
+    licenseId?: number;
 
     @IsOptional()
     kiosk: any;
@@ -469,6 +485,14 @@ export class OfflineDataCBBDTO {
         example: 'Dark Skin',
     })
     ethnicities?: String | null;
+
+    @ApiPropertyOptional({
+        type: Number,
+        description:
+            'Type: Number - Licence Type: { Eco: 4, STANDARD: 5, PROFESSIONAL: 6, Expert: 7, PMX: 8, Pro-AI: 9}',
+        example: 9,
+    })
+    licenseId?: number;
 
     /* Optional customer data. */
 
