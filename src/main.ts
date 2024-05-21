@@ -40,7 +40,7 @@ async function bootstrap() {
         const config = new DocumentBuilder()
             .setTitle('CNDP SKIN')
             .setDescription(
-                '<b>HOST</b><br><br> <b>STAGING SERVER</b>: https://staging.chowis.cloud:3444 <b> <br><br> PRODUCTION SERVER</b>: https://v2-api.chowis.cloud:3441<br><br>CHINA SERVER</b>: https://1.116.243.170:3441<br><br>' +
+                '<b>HOST</b><br><br> <b>STAGING SERVER</b>: https://staging.chowis.cloud:3444 <b> <br><br> PRODUCTION SERVER</b>: https://v2-api.chowis.cloud:3441<br><br>CHINA SERVER</b>:<b> https://1.116.243.170:3441</b><br><br>' +
                     '<b>ALGO LIST</b><br><br>' +
                     '1. keratin<br> 2. pores<br> 3. porphyrin<br> 4. sebum<br> 5. shine<br> 6. spots<br> 7. wrinkles<br> 8. sensitivity scabs<br> 9. sensitivity scaling<br> 10. sensitivity redness<br>' +
                     '<b>Remarks: </b> type in <b>/analysis/offlineCBB</b> should be an id matching the number related to each analysis type',
