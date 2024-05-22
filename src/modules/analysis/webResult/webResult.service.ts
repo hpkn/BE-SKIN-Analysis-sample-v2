@@ -334,6 +334,7 @@ export class WebResultService {
                     to_json(original_img.scores) ->> 'computation_score' as computation_score,
                     record.created_time::date as date,
                     record.created_time::time as time,
+                    record.analysis_comment as analysis_comment,
                     original_img.url AS original_image_url,
                     analyzed_img.url AS analyzed_image_url,
                     ROW_NUMBER() OVER (PARTITION BY type_measurements."name") AS ROW_NUMBER
@@ -345,7 +346,7 @@ export class WebResultService {
                         AND (original_img.args ->> 'nth_analysis' = analyzed_img.args ->> 'nth_analysis' OR type_measurements."name" = 'moistureT' OR type_measurements."name" = 'moistureU') -- Add the join condition here                 
                 WHERE
                     record.batch_id = $1 AND (analyzed_img.type_image_id = 18)  
-                GROUP by type_measurements."name", original_img.url, analyzed_img.url, original_img.scores, record.created_time, original_img.type_measurement_id
+                GROUP by type_measurements."name", original_img.url, analyzed_img.url, original_img.scores, record.created_time, original_img.type_measurement_id, record.analysis_comment
             )
             SELECT
                 measurement,
@@ -354,7 +355,8 @@ export class WebResultService {
                 date,
                 time,
                 original_image_url,
-                analyzed_image_url
+                analyzed_image_url,
+                analysis_comment
             FROM
                 _results 
             WHERE
@@ -482,7 +484,7 @@ export class WebResultService {
 
         const avg = await this.webResultAverage(batch_id, checkKiosk);
         const skinAge = await this.getSkinAge(batch_id);
-
+        const analysis_comment = result[0]?.analysis_comment;
         let moistureT = null;
         let moistureU = null;
         let sebumT = null;
@@ -504,15 +506,16 @@ export class WebResultService {
                     result[i]['avg_value'] = parseFloat(avg[j].avg);
                     result[i]['keyword_value'] = avg[j]['keyword_value'];
                     result[i]['keyword_id'] = parseFloat(avg[j].keyword_id);
-                    result[i]['label'] = avg[j].label;
-                    result[i]['comment'] = avg[j].comment;
-                    result[i]['xy_coordinates'] = avg[j].xy_coordinates;
+                    // result[i]['label'] = avg[j].label;
+                    // result[i]['comment'] = avg[j].comment;
+                    // result[i]['xy_coordinates'] = avg[j].xy_coordinates;
                 }
 
                 if (result[i]['computation_score']) {
                     result[i]['computation_score'] = Number(result[i]['computation_score']);
                 }
             }
+            delete result[i]?.analysis_comment;
         }
 
         const answers = await this.AlgoAnalysis.fetchQuestion(Number(batch_id));
@@ -563,7 +566,11 @@ export class WebResultService {
                 keyword_id: null,
             });
         }
-        return result;
+
+        return {
+            result: result,
+            analysis_comment: analysis_comment,
+        };
     }
 
     async checkExpiration(batch_id: number, checkDuration: number) {

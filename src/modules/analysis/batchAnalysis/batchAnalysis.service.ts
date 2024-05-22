@@ -61,7 +61,7 @@ export class BatchAnalysisService {
         return result;
     }
 
-    analysisComment(batchId: number, analysis_comment: string) {
+    async analysisComment(batchId: number, analysis_comment: string) {
         try {
             const update = `
             UPDATE analysis
@@ -69,9 +69,7 @@ export class BatchAnalysisService {
             WHERE batch_id = $1
         `;
 
-            this.database.executeQuery(update, [batchId, analysis_comment]);
-
-            return 'Comment inserted';
+            return this.database.executeQuery(update, [batchId, analysis_comment]);
         } catch (e) {
             throw new Error('Could not Insert');
         }
