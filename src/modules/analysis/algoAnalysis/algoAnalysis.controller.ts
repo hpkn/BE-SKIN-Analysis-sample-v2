@@ -724,16 +724,16 @@ export class AlgoAnalysisController {
 
     @ApiBearerAuth('access-token')
     @Post('/comment')
-    analysisComment(@Body() bady: AnalysisCommentDTO, @Res() res: Response, @Req() req: Request) {
+    async analysisComment(@Body() bady: AnalysisCommentDTO, @Res() res: Response, @Req() req: Request) {
         try {
             let { batchId, comment } = bady;
 
-            const insertComment = this.batchAnalysis.analysisComment(Number(batchId), comment);
+            this.batchAnalysis.analysisComment(Number(batchId), comment);
 
             return res.status(200).json({
                 status: 200,
-                service: 'requestBatchId',
-                respone: insertComment,
+                service: 'analysis/comment',
+                respone: 'Comment inserted',
             });
         } catch (e) {
             throw new Error(e);
