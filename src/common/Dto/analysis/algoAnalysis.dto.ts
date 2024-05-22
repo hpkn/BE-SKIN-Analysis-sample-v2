@@ -109,6 +109,22 @@ export class historyDTO {
     customer_id: string | number;
 }
 
+export class AnalysisCommentDTO {
+    @IsNotEmpty()
+    @ApiProperty({
+        description: 'This is required',
+        example: '6',
+    })
+    batchId: string | number;
+
+    @IsNotEmpty()
+    @ApiProperty({
+        description: 'This is required',
+        example: 'This is the comment for this analysis',
+    })
+    comment: string;
+}
+
 export class paginationDTO {
     @IsOptional()
     @ApiPropertyOptional({

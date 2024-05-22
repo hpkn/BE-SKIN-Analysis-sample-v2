@@ -61,5 +61,21 @@ export class BatchAnalysisService {
         return result;
     }
 
+    analysisComment(batchId: number, analysis_comment: string) {
+        try {
+            const update = `
+            UPDATE analysis
+            SET analysis_comment = $2
+            WHERE batch_id = $1
+        `;
+
+            this.database.executeQuery(update, [batchId, analysis_comment]);
+
+            return 'Comment inserted';
+        } catch (e) {
+            throw new Error('Could not Insert');
+        }
+    }
+
     //
 }
