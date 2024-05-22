@@ -22,6 +22,7 @@ import { AlgoAnalysisService } from './algoAnalysis.service';
 import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
     AlgoAnalysisDTO,
+    AnalysisCommentDTO,
     BatchIdCheckerDto,
     SkinAgeConditionDto,
     allCustomerDto,
@@ -80,7 +81,7 @@ export class AlgoAnalysisController {
             });
 
         data.batch_id = Number(data.batch_id);
-    
+
         const imageRecords = uuidv4();
         const client = celery.createClient('redis://localhost', 'redis://');
         let algoList = [
@@ -722,6 +723,24 @@ export class AlgoAnalysisController {
     }
 
     @ApiBearerAuth('access-token')
+    @Post('/comment')
+    analysisComment(@Body() bady: AnalysisCommentDTO, @Res() res: Response, @Req() req: Request) {
+        try {
+            let { batchId, comment } = bady;
+
+            const insertComment = this.batchAnalysis.analysisComment(Number(batchId), comment);
+
+            return res.status(200).json({
+                status: 200,
+                service: 'requestBatchId',
+                respone: insertComment,
+            });
+        } catch (e) {
+            throw new Error(e);
+        }
+    }
+
+    @ApiBearerAuth('access-token')
     @Delete('/deleteAnalysisData/:batch_id')
     async deleteBatch(@Param('batch_id') batch_id: number, @Res() res: Response) {
         try {
@@ -935,7 +954,7 @@ export class AlgoAnalysisController {
             if (answers !== null) {
                 questFr = this.computation.questionnaireFrequency(answers, 5);
             }
-            const obj = {deviceModel: 'device'}
+            const obj = { deviceModel: 'device' };
             const token = req.headers.authorization?.split(' ')[1];
             const isKiosk = this.AlgoAnalysis.checkIfKiosk(token, obj);
 
@@ -1304,7 +1323,7 @@ export class AlgoAnalysisController {
         @Body() data: any,
         @UploadedFiles() files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
         @Res() res: Response,
-        @Req() req: Request
+        @Req() req: Request,
     ) {
         const token = req.headers.authorization?.split(' ')[1];
         data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);

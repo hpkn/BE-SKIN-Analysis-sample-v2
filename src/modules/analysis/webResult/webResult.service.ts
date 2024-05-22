@@ -10,7 +10,7 @@ export class WebResultService {
         private database: DatabaseService,
         private readonly AlgoAnalysis: AlgoAnalysisService,
         private readonly computation: ComputationService,
-    ) { }
+    ) {}
 
     getSkinCondition(mScoreT: number, sScoreT: number, mScoreU: number, sScoreU: number, sebumQAScore: number) {
         const veryDry = 1;
