@@ -10,7 +10,7 @@ export class WebResultService {
         private database: DatabaseService,
         private readonly AlgoAnalysis: AlgoAnalysisService,
         private readonly computation: ComputationService,
-    ) {}
+    ) { }
 
     getSkinCondition(mScoreT: number, sScoreT: number, mScoreU: number, sScoreU: number, sebumQAScore: number) {
         const veryDry = 1;
@@ -425,16 +425,22 @@ export class WebResultService {
                             WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 5
                             ELSE NULL 
                         END
-                END AS keyword_id
+                END AS keyword_id,
+                label,
+                comment,
+                xy_coordinates
             FROM (
                 SELECT 
                     tp.NAME as Name,
                     tp."id" as id,
-                    COALESCE(ROUND(AVG((to_json(scores)->>'computation_score')::NUMERIC), 2), ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2)) AS AVG_SCORE
+                    COALESCE(ROUND(AVG((to_json(scores)->>'computation_score')::NUMERIC), 2), ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2)) AS AVG_SCORE,
+                    to_json ( scores ) ->> 'label' as label, 
+                    to_json ( scores ) ->> 'comment' as comment, 
+                    to_json ( scores ) ->> 'xy_coordinates' as xy_coordinates
                 FROM measurements AS ms
                 JOIN type_measurements AS tp ON tp."id" = ms.type_measurement_id 
                 WHERE batch_id = $1 AND type_image_id = 21
-                GROUP BY tp.NAME, tp."id"
+                GROUP BY tp.NAME, tp."id", ms.scores
             ) AS subquery;
             `,
             [batch_id],
@@ -498,6 +504,9 @@ export class WebResultService {
                     result[i]['avg_value'] = parseFloat(avg[j].avg);
                     result[i]['keyword_value'] = avg[j]['keyword_value'];
                     result[i]['keyword_id'] = parseFloat(avg[j].keyword_id);
+                    result[i]['label'] = avg[j].label;
+                    result[i]['comment'] = avg[j].comment;
+                    result[i]['xy_coordinates'] = avg[j].xy_coordinates;
                 }
 
                 if (result[i]['computation_score']) {
