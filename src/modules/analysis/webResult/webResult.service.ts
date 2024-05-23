@@ -485,6 +485,7 @@ export class WebResultService {
         const avg = await this.webResultAverage(batch_id, checkKiosk);
         const skinAge = await this.getSkinAge(batch_id);
         const analysis_comment = result[0]?.analysis_comment;
+
         let moistureT = null;
         let moistureU = null;
         let sebumT = null;
