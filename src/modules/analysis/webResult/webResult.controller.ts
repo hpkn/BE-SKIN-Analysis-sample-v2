@@ -19,13 +19,14 @@ export class WebResultController {
                     });
                 }
             }
-
             const result = await this.webResult.getBatchId(batch_id);
 
+            console.log(result);
             return res.status(200).json({
                 status: 200,
                 service: 'getAnalysisData for WebResult',
-                body: result,
+                analysis_comment: result.analysis_comment,
+                body: result?.result,
             });
         } catch (e) {
             throw new Error(e);

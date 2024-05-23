@@ -86,6 +86,7 @@ export class KeratinService {
             humidity: data.humidity,
             uv_index: data.uv_index,
             positionNumber: data.positionNumber,
+            lisenceId: data?.licenseId ?? 1,
         };
 
         taskResponse.computation_score = coputaionResutl.computation_score;
