@@ -1,2 +1,2 @@
 ALTER TABLE analysis
-ADD request_date TIMESTAMP;
+ADD analysis_comment TEXT;
