@@ -1013,6 +1013,7 @@ export class AlgoAnalysisService {
         const result = await this.database.executeQuery(
             `SELECT
                 analysis.batch_id,
+                analysis.analysis_comment,
                 to_timestamp( CAST ( analysis.created_time AS TEXT ), 'YYYY-MM-DD HH24:MI:SS' ) AS DATE,
                 ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 1 ), 2 ) AS pores_score,
                 ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 1 ), 2 ) AS pores_computation,
@@ -1096,6 +1097,8 @@ export class AlgoAnalysisService {
             const nonEmptyResults: any[] = resultObj.filter((result) => result !== undefined);
             nonEmptyResults.map((val) => {
                 val.customer_id = customer_id;
+                // User Comment
+                val.analysis_comment = val?.analysis_comment ?? null;
                 val.sens_redness_combined_score = null;
                 // keratin
                 val.keratin_score = val.keratin_score === null ? null : Number(val.keratin_score);
