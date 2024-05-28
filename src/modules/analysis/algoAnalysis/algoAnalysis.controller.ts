@@ -60,7 +60,7 @@ export class AlgoAnalysisController {
         private readonly batchAnalysis: BatchAnalysisService,
         private readonly computation: ComputationService,
         private readonly webResult: WebResultService,
-    ) {}
+    ) { }
 
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
@@ -878,7 +878,32 @@ export class AlgoAnalysisController {
                 ? data.xy_coordinates?.map((str: string) => str.trim())
                 : data.xy_coordinates?.split(',').map((str: string) => str.trim());
 
+            if (data.fineScore) {
+                data.fineScore = Array.isArray(data.fineScore)
+                    ? data.fineScore.map((str: string) => Number(str.trim()))
+                    : data.fineScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
+            if (data.ultraFineScore) {
+                data.ultraFineScore = Array.isArray(data.ultraFineScore)
+                    ? data.ultraFineScore.map((str: string) => Number(str.trim()))
+                    : data.ultraFineScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
+            if (data.deepScore) {
+                data.deepScore = Array.isArray(data.deepScore)
+                    ? data.deepScore.map((str: string) => Number(str.trim()))
+                    : data.deepScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
+            if (data.ultraDeepScore) {
+                data.ultraDeepScore = Array.isArray(data.ultraDeepScore)
+                    ? data.ultraDeepScore.map((str: string) => Number(str.trim()))
+                    : data.ultraDeepScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
             const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
+
             new Promise(function (resolve, reject) {
                 resolve(
                     res.send({
@@ -1233,6 +1258,30 @@ export class AlgoAnalysisController {
                 ? data.xy_coordinates?.map((str: string) => str.trim())
                 : data.xy_coordinates?.split(',').map((str: string) => str.trim());
 
+            if (data.fineScore) {
+                data.fineScore = Array.isArray(data.fineScore)
+                    ? data.fineScore.map((str: string) => Number(str.trim()))
+                    : data.fineScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
+            if (data.ultraFineScore) {
+                data.ultraFineScore = Array.isArray(data.ultraFineScore)
+                    ? data.ultraFineScore.map((str: string) => Number(str.trim()))
+                    : data.ultraFineScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
+            if (data.deepScore) {
+                data.deepScore = Array.isArray(data.deepScore)
+                    ? data.deepScore.map((str: string) => Number(str.trim()))
+                    : data.deepScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
+            if (data.ultraDeepScore) {
+                data.ultraDeepScore = Array.isArray(data.ultraDeepScore)
+                    ? data.ultraDeepScore.map((str: string) => Number(str.trim()))
+                    : data.ultraDeepScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
             const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
             new Promise(function (resolve, reject) {
                 resolve(
@@ -1344,6 +1393,30 @@ export class AlgoAnalysisController {
                     type: 'BadRequestError',
                     message: 'The number of analyzed images does not match number of original images',
                 });
+            }
+
+            if (data.fineScore) {
+                data.fineScore = Array.isArray(data.fineScore)
+                    ? data.fineScore.map((str: string) => Number(str.trim()))
+                    : data.fineScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
+            if (data.ultraFineScore) {
+                data.ultraFineScore = Array.isArray(data.ultraFineScore)
+                    ? data.ultraFineScore.map((str: string) => Number(str.trim()))
+                    : data.ultraFineScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
+            if (data.deepScore) {
+                data.deepScore = Array.isArray(data.deepScore)
+                    ? data.deepScore.map((str: string) => Number(str.trim()))
+                    : data.deepScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
+            if (data.ultraDeepScore) {
+                data.ultraDeepScore = Array.isArray(data.ultraDeepScore)
+                    ? data.ultraDeepScore.map((str: string) => Number(str.trim()))
+                    : data.ultraDeepScore?.split(',').map((str: string) => Number(str.trim()));
             }
 
             const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
