@@ -46,7 +46,7 @@ export class AlgoAnalysisService {
         private fitzSG: FitzSGService,
         private S3Image: FileUploadService,
         private readonly computation: ComputationService,
-    ) {}
+    ) { }
 
     convertScoresToNumbers = (data: any) => {
         for (const key in data) {
@@ -448,16 +448,13 @@ export class AlgoAnalysisService {
         switch (Number(data.type)) {
             case 1:
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'keratin');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'keratin');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
-
                     originalImageArgs: originalImageArgs,
                 };
             case 2:
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'pores');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'pores');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
@@ -465,28 +462,22 @@ export class AlgoAnalysisService {
                 };
             case 3:
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'porphyrin');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'porphyrin');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
-
                     originalImageArgs: originalImageArgs,
                 };
             case 4:
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sebum');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'sebum');
-
                 return {
                     analyzedImageArgs: analyzedImageArgs,
-
                     originalImageArgs: originalImageArgs,
                 };
             // case 'sebumT':
             //     return this.sebumT.saveData(data, taskResponse, imageRecords, originalImage);
             case 5:
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'shine');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'shine');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
@@ -494,7 +485,6 @@ export class AlgoAnalysisService {
                 };
             case 6:
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'spots');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'spots');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
@@ -518,14 +508,11 @@ export class AlgoAnalysisService {
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'wrinkles');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
-
                     originalImageArgs: originalImageArgs,
                 };
             case 8:
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sensitivityscabs');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'sensitivityscabs');
-
                 return {
                     analyzedImageArgs: analyzedImageArgs,
                     originalImageArgs: originalImageArgs,
@@ -533,20 +520,15 @@ export class AlgoAnalysisService {
             case 9:
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sensitivityscabs');
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'sensitivityscabs');
-
                 return {
                     analyzedImageArgs: analyzedImageArgs,
-
                     originalImageArgs: originalImageArgs,
                 };
             case 10:
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sensitivityscabs');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'sensitivityscabs');
-
                 return {
                     analyzedImageArgs: analyzedImageArgs,
-
                     originalImageArgs: originalImageArgs,
                 };
 
@@ -621,22 +603,18 @@ export class AlgoAnalysisService {
     // offline image args
     handleofflineImageArg(data: any) {
         let analyzedImageArgs;
-
         let originalImageArgs;
 
         switch (data.type) {
             case 'keratin':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'keratin');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'keratin');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
-
                     originalImageArgs: originalImageArgs,
                 };
             case 'pores':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'pores');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'pores');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
@@ -644,28 +622,22 @@ export class AlgoAnalysisService {
                 };
             case 'porphyrin':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'porphyrin');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'porphyrin');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
-
                     originalImageArgs: originalImageArgs,
                 };
             case 'sebum':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sebum');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'sebum');
-
                 return {
                     analyzedImageArgs: analyzedImageArgs,
-
                     originalImageArgs: originalImageArgs,
                 };
             // case 'sebumT':
             //     return this.sebumT.saveData(data, taskResponse, imageRecords, originalImage);
             case 'shine':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'shine');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'shine');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
@@ -673,7 +645,6 @@ export class AlgoAnalysisService {
                 };
             case 'spots':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'spots');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'spots');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
@@ -681,15 +652,11 @@ export class AlgoAnalysisService {
                 };
             case 'skintone':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'skintone');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'skintone');
-
                 return { analyzedImageArgs: analyzedImageArgs, originalImageArgs: originalImageArgs };
             case 'skintone_dior':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'skintone');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'skintone');
-
                 return { analyzedImageArgs: analyzedImageArgs, originalImageArgs: originalImageArgs };
 
             case 'wrinkles':
@@ -697,14 +664,11 @@ export class AlgoAnalysisService {
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'wrinkles');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
-
                     originalImageArgs: originalImageArgs,
                 };
             case 'sensitivityscabs':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sensitivityscabs');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'sensitivityscabs');
-
                 return {
                     analyzedImageArgs: analyzedImageArgs,
                     originalImageArgs: originalImageArgs,
@@ -712,20 +676,15 @@ export class AlgoAnalysisService {
             case 'sensitivityscaling':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sensitivityscabs');
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'sensitivityscabs');
-
                 return {
                     analyzedImageArgs: analyzedImageArgs,
-
                     originalImageArgs: originalImageArgs,
                 };
             case 'sensitivityredness':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sensitivityscabs');
-
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'sensitivityscabs');
-
                 return {
                     analyzedImageArgs: analyzedImageArgs,
-
                     originalImageArgs: originalImageArgs,
                 };
             case 'fitzSG':
@@ -1213,7 +1172,11 @@ export class AlgoAnalysisService {
                 to_json ( scores ) ->> 'label' as label, 
                 to_json ( scores ) ->> 'comment' as comment, 
                 to_json ( scores ) ->> 'xy_coordinates' as xy_coordinates, 
-                to_json(args) ->> 'nth_analysis' as hash,
+                to_json ( scores ) ->> 'fine_score' AS fine_score,
+                to_json ( scores ) ->> 'ultra_fine_score' AS ultra_fine_score,
+                to_json ( scores ) ->> 'deep_score' AS deep_score,
+                to_json ( scores ) ->> 'ultra_deep_score' AS ultra_deep_score,
+                to_json ( args ) ->> 'nth_analysis' as hash,
                 created_time
             FROM measurements record
             LEFT JOIN type_images ON type_images.ID = record.type_image_id 
@@ -1266,6 +1229,14 @@ export class AlgoAnalysisService {
                 }
 
                 entry.images.forEach((val: any) => {
+
+                    if (val.analysis_type !== 'wrinkles') {
+                        delete val.fine_score;
+                        delete val.ultra_fine_score;
+                        delete val.deep_score;
+                        delete val.ultra_deep_score;
+                    }
+
                     if (val.url === null) {
                         val.url = '';
                     }
@@ -1897,6 +1868,7 @@ export class AlgoAnalysisService {
         data: OfflineDataCBBDTO,
         files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
     ) {
+        console.log('🚀 -> AlgoAnalysisService -> data:', data);
         data.batch_id = Number(data.batchId);
 
         let algo: any;
@@ -1981,6 +1953,10 @@ export class AlgoAnalysisService {
         const addLabel = data.label?.length === files.analyzedImage?.length;
         const addComment = data.comment?.length === files.analyzedImage?.length;
         const addXY = data.xy_coordinates?.length === files.analyzedImage?.length;
+        const addFineScore = data.fineScore?.length === files.analyzedImage?.length;
+        const addUltraFineScore = data.ultraFineScore?.length === files.analyzedImage?.length;
+        const addDeepScore = data.deepScore?.length === files.analyzedImage?.length;
+        const addUltraDeepScore = data.ultraDeepScore?.length === files.analyzedImage?.length;
 
         for (let i = 0; i < files.analyzedImage?.length; i++) {
             const imageRecords = uuidv4();
@@ -1995,7 +1971,12 @@ export class AlgoAnalysisService {
                 JSON.stringify({
                     nth_analysis: imageRecords,
                 }),
-                0,
+                JSON.stringify({
+                    fine_score: addFineScore ? data.fineScore[i] : null,
+                    ultra_fine_score: addUltraFineScore ? data.ultraFineScore[i] : null,
+                    deep_score: addDeepScore ? data.deepScore[i] : null,
+                    ultra_deep_score: addUltraDeepScore ? data.ultraDeepScore[i] : null,
+                }),
             ]);
 
             original.push([
