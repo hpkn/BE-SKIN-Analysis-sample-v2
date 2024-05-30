@@ -70,6 +70,8 @@ async function bootstrap() {
         optionsSuccessStatus: 204,
         credentials: true,
     };
+
+    //
     app.enableCors(corsOptions);
     app.enableShutdownHooks();
     await app.listen(port, hostname, () => {

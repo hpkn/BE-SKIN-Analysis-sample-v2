@@ -16,7 +16,7 @@ export class WrinklesService {
         private database: DatabaseService,
         private S3Image: FileUploadService,
         private batchAnalysis: BatchAnalysisService,
-    ) {}
+    ) { }
 
     analysis(data: AlgoAnalysisDTO, taskResponse: any, imageArgs: any) {
         const analyzedImageArgs = imageArgs.analyzedImageArgs;
@@ -268,6 +268,16 @@ export class WrinklesService {
             kiosk: data?.kiosk ?? false,
         };
 
+        let scores = null;
+        if (data.type === 'wrinkles' || Number(data.type) === 7) {
+            scores = JSON.stringify({
+                ultra_fine_score: data.ultraFineScore,
+                fine_score: data.fineScore,
+                deep_score: data.deepScore,
+                ultra_deep_score: data.ultraDeepScore,
+            });
+        }
+
         await this.batchAnalysis.updateEnvironment(data.batchId, environment);
         const saveSql =
             'INSERT INTO measurements (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores) values ($1, $2, $3, $4, $5, $6, $7, $8)';
@@ -284,7 +294,7 @@ export class WrinklesService {
                     JSON.stringify({
                         nth_analysis: imageRecords,
                     }),
-                    null,
+                    scores,
                 ],
             },
 
