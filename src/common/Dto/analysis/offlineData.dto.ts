@@ -7,6 +7,7 @@ import {
     IsObject,
     ValidateNested,
     ArrayNotEmpty,
+    IsNumber,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
@@ -335,6 +336,46 @@ export class OfflineDatasDTO {
     })
     licenseId?: number;
 
+    @ApiPropertyOptional({
+        type: Number,
+        description: 'Fine score',
+        example: 100,
+    })
+    @IsOptional()
+    @IsArray()
+    @IsNumber()
+    fineScore?: number[];
+
+    @ApiPropertyOptional({
+        type: Number,
+        description: 'Ultra fine score',
+        example: 100,
+    })
+    @IsOptional()
+    @IsArray()
+    @IsNumber()
+    ultraFineScore?: number[];
+
+    @ApiPropertyOptional({
+        type: Number,
+        description: 'Deep score',
+        example: 100,
+    })
+    @IsOptional()
+    @IsArray()
+    @IsNumber()
+    deepScore?: number[];
+
+    @ApiPropertyOptional({
+        type: Number,
+        description: 'Ultra deep score',
+        example: 100,
+    })
+    @IsOptional()
+    @IsArray()
+    @IsNumber()
+    ultraDeepScore?: number[];
+
     @IsOptional()
     kiosk: any;
 }
@@ -544,6 +585,50 @@ export class OfflineDataCBBDTO {
     @IsString({ each: true })
     @IsOptional()
     xy_coordinates?: string[];
+
+    @ApiPropertyOptional({
+        type: Number,
+        isArray: true,
+        description: 'Fine score',
+        example: 100,
+    })
+    @IsOptional()
+    @IsArray()
+    @IsNumber()
+    fineScore?: number[];
+
+    @ApiPropertyOptional({
+        type: Number,
+        isArray: true,
+        description: 'Ultra fine score',
+        example: 100,
+    })
+    @IsOptional()
+    @IsArray()
+    @IsNumber()
+    ultraFineScore?: number[];
+
+    @ApiPropertyOptional({
+        type: Number,
+        isArray: true,
+        description: 'Deep score',
+        example: 100,
+    })
+    @IsOptional()
+    @IsArray()
+    @IsNumber()
+    deepScore?: number[];
+
+    @ApiPropertyOptional({
+        type: Number,
+        isArray: true,
+        description: 'Ultra deep score',
+        example: 100,
+    })
+    @IsOptional()
+    @IsArray()
+    @IsNumber()
+    ultraDeepScore?: number[];
 
     @IsOptional()
     kiosk: any;
