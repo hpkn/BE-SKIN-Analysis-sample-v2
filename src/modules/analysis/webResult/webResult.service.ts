@@ -442,7 +442,7 @@ export class WebResultService {
                 FROM measurements AS ms
                 JOIN type_measurements AS tp ON tp."id" = ms.type_measurement_id 
                 WHERE batch_id = $1 AND type_image_id = 21
-                GROUP BY tp.NAME, tp."id", ms.scores
+                GROUP BY tp.NAME, tp."id"
             ) AS subquery;
             `,
             [batch_id],
