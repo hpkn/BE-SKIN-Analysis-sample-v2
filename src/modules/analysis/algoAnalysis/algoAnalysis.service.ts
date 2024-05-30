@@ -2295,7 +2295,7 @@ export class AlgoAnalysisService {
         });
 
         const savedResult = [...saveAnalyzed, ...saveOriginal, ...saveFine, ...saveUltraFine, ...saveDeep, ...saveUltraDeep];
-
+          
         this.offlineCBBSaveData(savedResult);
 
         const retObject = {
