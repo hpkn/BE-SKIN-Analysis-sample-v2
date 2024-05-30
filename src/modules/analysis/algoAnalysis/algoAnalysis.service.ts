@@ -2062,6 +2062,8 @@ export class AlgoAnalysisService {
             };
         });
 
+        console.log(saveOriginal);
+
         const savedResult = [...saveAnalyzed, ...saveOriginal];
 
         this.offlineCBBSaveData(savedResult);
