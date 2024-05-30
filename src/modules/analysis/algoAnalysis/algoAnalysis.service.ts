@@ -444,6 +444,10 @@ export class AlgoAnalysisService {
     handleCBBImageArg(data: any) {
         let analyzedImageArgs;
         let originalImageArgs;
+        let fineImageArgs;
+        let ultraFineImageArgs;
+        let deepImageArgs;
+        let ultraDeepImageArgs;
 
         switch (Number(data.type)) {
             case 1:
@@ -506,9 +510,18 @@ export class AlgoAnalysisService {
             case 7:
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'wrinkles');
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'wrinkles');
+                fineImageArgs = this.S3Image.getImageArgs('fineImage', data.type, 'wrinkles');
+                ultraFineImageArgs = this.S3Image.getImageArgs('ultraFineImage', data.type, 'wrinkles');
+                deepImageArgs = this.S3Image.getImageArgs('deepImage', data.type, 'wrinkles');
+                ultraDeepImageArgs = this.S3Image.getImageArgs('ultraDeepImage', data.type, 'wrinkles');
+
                 return {
                     analyzedImageArgs: analyzedImageArgs,
                     originalImageArgs: originalImageArgs,
+                    fineImageArgs: fineImageArgs,
+                    ultraFineImageArgs: ultraFineImageArgs,
+                    deepImageArgs: deepImageArgs,
+                    ultraDeepImageArgs: ultraDeepImageArgs,
                 };
             case 8:
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sensitivityscabs');
@@ -604,6 +617,10 @@ export class AlgoAnalysisService {
     handleofflineImageArg(data: any) {
         let analyzedImageArgs;
         let originalImageArgs;
+        let fineImageArgs;
+        let ultraFineImageArgs;
+        let deepImageArgs;
+        let ultraDeepImageArgs;
 
         switch (data.type) {
             case 'keratin':
@@ -662,9 +679,18 @@ export class AlgoAnalysisService {
             case 'wrinkles':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'wrinkles');
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'wrinkles');
+                fineImageArgs = this.S3Image.getImageArgs('fineImage', data.type, 'wrinkles');
+                ultraFineImageArgs = this.S3Image.getImageArgs('ultraFineImage', data.type, 'wrinkles');
+                deepImageArgs = this.S3Image.getImageArgs('deepImage', data.type, 'wrinkles');
+                ultraDeepImageArgs = this.S3Image.getImageArgs('ultraDeepImage', data.type, 'wrinkles');
+
                 return {
                     analyzedImageArgs: analyzedImageArgs,
                     originalImageArgs: originalImageArgs,
+                    fineImageArgs: fineImageArgs,
+                    ultraFineImageArgs: ultraFineImageArgs,
+                    deepImageArgs: deepImageArgs,
+                    ultraDeepImageArgs: ultraDeepImageArgs,
                 };
             case 'sensitivityscabs':
                 analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.type, 'sensitivityscabs');
@@ -695,12 +721,11 @@ export class AlgoAnalysisService {
     }
 
     // OfflinesaveDataImage
-    async saveOfflineImage(data: OfflineDatasDTO, originalImage: any, analyzedImage: any, imageArgs: any) {
+    async saveOfflineImage(data: OfflineDatasDTO, originalImage: any, analyzedImage: any, imageArgs: any, fineImage?: any, ultraFineImage?: any, deepImage?: any, ultraDeepImage?: any) {
         try {
             switch (data.type) {
                 case 'keratin':
                     return this.keratin.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-
                 case 'pores':
                     return this.pores.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
                 case 'porphyrin':
@@ -718,7 +743,7 @@ export class AlgoAnalysisService {
                 // case 'skintone_dior':
                 //     return this.skintone_dior.offlineSaveData(originalImage, analyzedImage, imageArgs);
                 case 'wrinkles':
-                    return this.wrinkles.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
+                    return this.wrinkles.offlinesaveDataImage(originalImage, analyzedImage, imageArgs, fineImage, ultraFineImage, deepImage, ultraDeepImage);
                 case 'sensitivityscabs':
                     return this.sensitivityScabs.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
                 case 'sensitivityscaling':
@@ -1500,10 +1525,10 @@ export class AlgoAnalysisService {
         }
 
         const query = `
-        INSERT INTO measurements
-          (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores)
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
-      `;
+            INSERT INTO measurements
+            (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+        `;
 
         for (const data of dataObject) {
             const values = [
@@ -1535,12 +1560,27 @@ export class AlgoAnalysisService {
 
     async offlineCBBSaveImage(originalImage: any, analyzedImage: any, imageArgs: any, data: any) {
         const analyzedImageArgs = imageArgs.analyzedImageArgs;
-
         const originalImageArgs = imageArgs.originalImageArgs;
 
         await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
-        // await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
         await this.S3Image.uploadImage(originalImage, originalImageArgs.sys_url);
+        // await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
+
+        return 'saved';
+    }
+
+    async offlineCBBWrinklesSaveImage(fineImage: any, ultraFineImage: any, deepImage: any, ultraDeepImage: any, imageArgs: any, data: any) {
+        const fineImageArgs = imageArgs.fineImageArgs;
+        const ultraFineImageArgs = imageArgs.ultraFineImageArgs;
+        const deepImageArgs = imageArgs.deepImageArgs;
+        const ultraDeepImageArgs = imageArgs.ultraDeepImageArgs;
+
+        await Promise.all([
+            this.S3Image.uploadImage(fineImage, fineImageArgs.sys_url),
+            this.S3Image.uploadImage(ultraFineImage, ultraFineImageArgs.sys_url),
+            this.S3Image.uploadImage(deepImage, deepImageArgs.sys_url),
+            this.S3Image.uploadImage(ultraDeepImage, ultraDeepImageArgs.sys_url),
+        ]);
 
         return 'saved';
     }
@@ -1866,9 +1906,15 @@ export class AlgoAnalysisService {
 
     async offlineCbbOperation(
         data: OfflineDataCBBDTO,
-        files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
+        files: {
+            analyzedImage: Express.Multer.File[];
+            originalImage: Express.Multer.File[];
+            fineImage?: Express.Multer.File[];
+            ultraFineImage?: Express.Multer.File[];
+            deepImage?: Express.Multer.File[];
+            ultraDeepImage?: Express.Multer.File[];
+        },
     ) {
-        console.log('🚀 -> AlgoAnalysisService -> data:', data);
         data.batch_id = Number(data.batchId);
 
         let algo: any;
@@ -1887,13 +1933,29 @@ export class AlgoAnalysisService {
 
         const analyzed: any[] = [];
         const original: any[] = [];
+        const fine: any[] = [];
+        const ultraFine: any[] = [];
+        const deep: any[] = [];
+        const ultraDeep: any[] = [];
+
         const retunAnalyzed: any[] = [];
         const returnOriginal: any[] = [];
+        const returnFine: any[] = [];
+        const returnUltraFine: any[] = [];
+        const returnDeep: any[] = [];
+        const returnUltraDeep: any[] = [];
+
+        let saveFine: any = [];
+        let saveUltraFine: any = [];
+        let saveDeep: any = [];
+        let saveUltraDeep: any = [];
+
         let scores: number[];
         let raw: number[];
         let decryptedScores = [];
         let decryptedRaw = [];
         let promitive = this.isPrimitive(data.args);
+
         if (promitive === true) {
             scores = JSON.parse(data.args).score;
             raw = JSON.parse(data.args).raw;
@@ -1931,9 +1993,7 @@ export class AlgoAnalysisService {
             data?.kiosk,
         );
 
-        /*
-            K-HEADSPA LOGIC START 
-        */
+        /* K-HEADSPA LOGIC START */
         if (data.kHeadSpa === true) {
             const kHeadSpaResult = await this.kheadSpaCheck(data.batch_id, algoName, computation['computation_score']);
 
@@ -1945,10 +2005,8 @@ export class AlgoAnalysisService {
                 computation = computation;
             }
         }
+        /* K-HEADSPA LOGIC END */
 
-        /*
-            K-HEADSPA LOGIC END 
-        */
         const avg = sum / scores.length;
         const addLabel = data.label?.length === files.analyzedImage?.length;
         const addComment = data.comment?.length === files.analyzedImage?.length;
@@ -1971,12 +2029,7 @@ export class AlgoAnalysisService {
                 JSON.stringify({
                     nth_analysis: imageRecords,
                 }),
-                JSON.stringify({
-                    fine_score: addFineScore ? data.fineScore[i] : null,
-                    ultra_fine_score: addUltraFineScore ? data.ultraFineScore[i] : null,
-                    deep_score: addDeepScore ? data.deepScore[i] : null,
-                    ultra_deep_score: addUltraDeepScore ? data.ultraDeepScore[i] : null,
-                }),
+                0,
             ]);
 
             original.push([
@@ -2001,6 +2054,10 @@ export class AlgoAnalysisService {
                     label: addLabel ? data.label[i] : null,
                     comment: addComment ? data.comment[i] : null,
                     xy_coordinates: addXY ? data.xy_coordinates[i] : null,
+                    fine_score: addFineScore ? data.fineScore[i] : null,
+                    ultra_fine_score: addUltraFineScore ? data.ultraFineScore[i] : null,
+                    deep_score: addDeepScore ? data.deepScore[i] : null,
+                    ultra_deep_score: addUltraDeepScore ? data.ultraDeepScore[i] : null,
                 }),
             ]);
 
@@ -2012,6 +2069,168 @@ export class AlgoAnalysisService {
                 data,
             );
             savingPromise.push(savingData);
+
+        }
+
+        if (data.type && data.type === '7') {
+            if (addFineScore && addUltraFineScore && addDeepScore && addUltraDeepScore) {
+                for (let i = 0; i < files.fineImage?.length; i++) {
+                    const imageRecords = uuidv4();
+                    const imageArg = this.handleCBBImageArg(data);
+
+                    fine.push([
+                        data.batch_id,
+                        imageArg.fineImageArgs.url,
+                        imageArg.fineImageArgs.sys_url,
+                        imageArg.fineImageArgs.hash,
+                        algoId,
+                        28,
+                        JSON.stringify({
+                            nth_analysis: imageRecords,
+                        }),
+                        0,
+                    ]);
+
+                    ultraFine.push([
+                        data.batch_id,
+                        imageArg.ultraFineImageArgs.url,
+                        imageArg.ultraFineImageArgs.sys_url,
+                        imageArg.ultraFineImageArgs.hash,
+                        algoId,
+                        29,
+                        JSON.stringify({
+                            nth_analysis: imageRecords,
+                        }),
+                        0,
+                    ]);
+
+                    deep.push([
+                        data.batch_id,
+                        imageArg.deepImageArgs.url,
+                        imageArg.deepImageArgs.sys_url,
+                        imageArg.deepImageArgs.hash,
+                        algoId,
+                        30,
+                        JSON.stringify({
+                            nth_analysis: imageRecords,
+                        }),
+                        0,
+                    ]);
+
+                    ultraDeep.push([
+                        data.batch_id,
+                        imageArg.ultraDeepImageArgs.url,
+                        imageArg.ultraDeepImageArgs.sys_url,
+                        imageArg.ultraDeepImageArgs.hash,
+                        algoId,
+                        31,
+                        JSON.stringify({
+                            nth_analysis: imageRecords,
+                        }),
+                        0,
+                    ]);
+
+                    const savingData = this.offlineCBBWrinklesSaveImage(
+                        files?.fineImage[i].buffer,
+                        files?.ultraFineImage[i].buffer,
+                        files?.deepImage[i].buffer,
+                        files?.ultraDeepImage[i].buffer,
+                        imageArg,
+                        data,
+                    );
+
+                    savingPromise.push(savingData);
+                }
+
+                saveFine = fine.map((item) => {
+                    returnFine.push({
+                        batchId: data.batch_id,
+                        algorithm_type: data.type,
+                        score: promitive === true ? JSON.parse(item[7]).score : item[7].score,
+                        fineImage: {
+                            id: item[3],
+                            url: item[1],
+                        },
+                    });
+                    return {
+                        batch_id: item[0],
+                        url: item[1],
+                        sys_url: item[2],
+                        hash: item[3],
+                        type_measurement_id: item[4],
+                        type_image_id: item[5],
+                        args: item[6],
+                        scores: item[7],
+                    };
+                });
+
+                saveUltraFine = ultraFine.map((item) => {
+                    returnUltraFine.push({
+                        batchId: data.batch_id,
+                        algorithm_type: data.type,
+                        score: promitive === true ? JSON.parse(item[7]).score : item[7].score,
+                        ultraFineImage: {
+                            id: item[3],
+                            url: item[1],
+                        },
+                    });
+                    return {
+                        batch_id: item[0],
+                        url: item[1],
+                        sys_url: item[2],
+                        hash: item[3],
+                        type_measurement_id: item[4],
+                        type_image_id: item[5],
+                        args: item[6],
+                        scores: item[7],
+                    };
+                });
+
+                saveDeep = deep.map((item) => {
+                    returnDeep.push({
+                        batchId: data.batch_id,
+                        algorithm_type: data.type,
+                        score: promitive === true ? JSON.parse(item[7]).score : item[7].score,
+                        deepImage: {
+                            id: item[3],
+                            url: item[1],
+                        },
+                    });
+                    return {
+                        batch_id: item[0],
+                        url: item[1],
+                        sys_url: item[2],
+                        hash: item[3],
+                        type_measurement_id: item[4],
+                        type_image_id: item[5],
+                        args: item[6],
+                        scores: item[7],
+                    };
+                });
+
+                saveUltraDeep = ultraDeep.map((item) => {
+                    returnUltraDeep.push({
+                        batchId: data.batch_id,
+                        algorithm_type: data.type,
+                        score: promitive === true ? JSON.parse(item[7]).score : item[7].score,
+                        ultraDeepImage: {
+                            id: item[3],
+                            url: item[1],
+                        },
+                    });
+                    return {
+                        batch_id: item[0],
+                        url: item[1],
+                        sys_url: item[2],
+                        hash: item[3],
+                        type_measurement_id: item[4],
+                        type_image_id: item[5],
+                        args: item[6],
+                        scores: item[7],
+                    };
+                });
+
+            }
         }
 
         const saveOriginal = original.map((item) => {
@@ -2055,14 +2274,27 @@ export class AlgoAnalysisService {
             };
         });
 
+
         const newArray = returnOriginal.map((item, index) => {
+            if (data.type === '7') {
+                if (addFineScore && addUltraFineScore && addDeepScore && addUltraDeepScore) {
+                    return {
+                        ...item,
+                        analyzedImage: retunAnalyzed[index].analyzedImage,
+                        fineImage: returnFine[index].fineImage,
+                        ultraFineImage: returnUltraFine[index].ultraFineImage,
+                        deepImage: returnDeep[index].deepImage,
+                        ultraDeepImage: returnUltraDeep[index].ultraDeepImage,
+                    };
+                }
+            }
             return {
                 ...item,
                 analyzedImage: retunAnalyzed[index].analyzedImage,
             };
         });
 
-        const savedResult = [...saveAnalyzed, ...saveOriginal];
+        const savedResult = [...saveAnalyzed, ...saveOriginal, ...saveFine, ...saveUltraFine, ...saveDeep, ...saveUltraDeep];
 
         this.offlineCBBSaveData(savedResult);
 
