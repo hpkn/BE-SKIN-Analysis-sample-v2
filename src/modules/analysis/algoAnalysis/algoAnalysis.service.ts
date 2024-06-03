@@ -1337,7 +1337,6 @@ export class AlgoAnalysisService {
                             OR type_measurement_id = 8 
                             OR type_measurement_id = 4 
                         ) 
-                        AND type_image_id = 21 
                         AND batch_id = $1
 						
                     ) AS record
@@ -2295,7 +2294,7 @@ export class AlgoAnalysisService {
         });
 
         const savedResult = [...saveAnalyzed, ...saveOriginal, ...saveFine, ...saveUltraFine, ...saveDeep, ...saveUltraDeep];
-          
+
         this.offlineCBBSaveData(savedResult);
 
         const retObject = {
