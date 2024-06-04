@@ -427,22 +427,16 @@ export class WebResultService {
                             WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 5
                             ELSE NULL 
                         END
-                END AS keyword_id,
-                label,
-                comment,
-                xy_coordinates
+                END AS keyword_id
             FROM (
                 SELECT 
                     tp.NAME as Name,
                     tp."id" as id,
-                    COALESCE(ROUND(AVG((to_json(scores)->>'computation_score')::NUMERIC), 2), ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2)) AS AVG_SCORE,
-                    to_json ( scores ) ->> 'label' as label, 
-                    to_json ( scores ) ->> 'comment' as comment, 
-                    to_json ( scores ) ->> 'xy_coordinates' as xy_coordinates
+                    COALESCE(ROUND(AVG((to_json(scores)->>'computation_score')::NUMERIC), 2), ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2)) AS AVG_SCORE
                 FROM measurements AS ms
                 JOIN type_measurements AS tp ON tp."id" = ms.type_measurement_id 
                 WHERE batch_id = $1 AND type_image_id = 21
-                GROUP BY tp.NAME, tp."id", ms.scores
+                GROUP BY tp.NAME, tp."id"
             ) AS subquery;
             `,
             [batch_id],
