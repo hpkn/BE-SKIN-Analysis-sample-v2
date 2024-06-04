@@ -60,7 +60,7 @@ export class AlgoAnalysisController {
         private readonly batchAnalysis: BatchAnalysisService,
         private readonly computation: ComputationService,
         private readonly webResult: WebResultService,
-    ) { }
+    ) {}
 
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
@@ -697,7 +697,8 @@ export class AlgoAnalysisController {
                 fineImage,
                 ultraFineImage,
                 deepImage,
-                ultraDeepImage);
+                ultraDeepImage,
+            );
 
             let promise2 = new Promise(function (resolve, resject) {
                 resolve(saving);
@@ -824,21 +825,21 @@ export class AlgoAnalysisController {
                                         url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
                                     },
                                     fineImage: {
-                                        id: "a336b1eb-8acb-4812-9a84-5164a6dc383c",
-                                        url: "localhost:3100/image/a336b1eb-8acb-4812-9a84-5164a6dc383c"
+                                        id: 'a336b1eb-8acb-4812-9a84-5164a6dc383c',
+                                        url: 'localhost:3100/image/a336b1eb-8acb-4812-9a84-5164a6dc383c',
                                     },
                                     ultraFineImage: {
-                                        id: "d0883ad5-75c3-4963-addf-2b4e7bcaa63e",
-                                        url: "localhost:3100/image/d0883ad5-75c3-4963-addf-2b4e7bcaa63e"
+                                        id: 'd0883ad5-75c3-4963-addf-2b4e7bcaa63e',
+                                        url: 'localhost:3100/image/d0883ad5-75c3-4963-addf-2b4e7bcaa63e',
                                     },
                                     deepImage: {
-                                        id: "708361a9-2f25-4f65-b2a7-55dd5de232c8",
-                                        url: "localhost:3100/image/708361a9-2f25-4f65-b2a7-55dd5de232c8"
+                                        id: '708361a9-2f25-4f65-b2a7-55dd5de232c8',
+                                        url: 'localhost:3100/image/708361a9-2f25-4f65-b2a7-55dd5de232c8',
                                     },
                                     ultraDeepImage: {
-                                        id: "ebabcbcb-d536-44be-8e3b-d5234c7ab2a8",
-                                        url: "localhost:3100/image/ebabcbcb-d536-44be-8e3b-d5234c7ab2a8"
-                                    }
+                                        id: 'ebabcbcb-d536-44be-8e3b-d5234c7ab2a8',
+                                        url: 'localhost:3100/image/ebabcbcb-d536-44be-8e3b-d5234c7ab2a8',
+                                    },
                                     // maskImage: {
                                     //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
                                     //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
@@ -884,7 +885,8 @@ export class AlgoAnalysisController {
     )
     async offlineBBC(
         @Body() data: any,
-        @UploadedFiles() files: {
+        @UploadedFiles()
+        files: {
             analyzedImage: Express.Multer.File[];
             originalImage: Express.Multer.File[];
             fineImage: Express.Multer.File[];
@@ -897,71 +899,10 @@ export class AlgoAnalysisController {
     ) {
         try {
             const token = req.headers.authorization?.split(' ')[1];
-            data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
 
-            if (!files?.analyzedImage || !files?.originalImage) {
-                return res.status(HttpStatus.BAD_REQUEST).send({
-                    status: 40002,
-                    type: 'BadRequestError',
-                    message: 'No file!',
-                });
-            }
+            const validData = this.AlgoAnalysis.preprocessing(data, files, token);
 
-            if (files?.analyzedImage.length !== files?.originalImage.length) {
-                return res.status(HttpStatus.BAD_REQUEST).send({
-                    status: 40002,
-                    type: 'BadRequestError',
-                    message: 'The number of analyzed images does not match number of original images',
-                });
-            }
-
-            if (data.type && data.type === '7') {
-                if (!files?.fineImage || !files?.ultraFineImage || !files?.deepImage || !files?.ultraDeepImage) {
-                    return res.status(HttpStatus.BAD_REQUEST).send({
-                        status: 40002,
-                        type: 'BadRequestError',
-                        message: 'Either of the fine, ultra fine, deep or ultra deep images is missing!',
-                    });
-                }
-            }
-
-            data.label = Array.isArray(data.label)
-                ? data.label?.map((str: any) => str.trim())
-                : data.label?.split(',').map((str: string) => str.trim());
-
-            data.comment = Array.isArray(data.comment)
-                ? data.comment?.map((str: string) => str.trim())
-                : data.comment?.split(',').map((str: string) => str.trim());
-
-            data.xy_coordinates = Array.isArray(data.xy_coordinates)
-                ? data.xy_coordinates?.map((str: string) => str.trim())
-                : data.xy_coordinates?.split(',').map((str: string) => str.trim());
-
-            if (data.fineScore) {
-                data.fineScore = Array.isArray(data.fineScore)
-                    ? data.fineScore.map((str: string) => Number(str.trim()))
-                    : data.fineScore?.split(',').map((str: string) => Number(str.trim()));
-            }
-
-            if (data.ultraFineScore) {
-                data.ultraFineScore = Array.isArray(data.ultraFineScore)
-                    ? data.ultraFineScore.map((str: string) => Number(str.trim()))
-                    : data.ultraFineScore?.split(',').map((str: string) => Number(str.trim()));
-            }
-
-            if (data.deepScore) {
-                data.deepScore = Array.isArray(data.deepScore)
-                    ? data.deepScore.map((str: string) => Number(str.trim()))
-                    : data.deepScore?.split(',').map((str: string) => Number(str.trim()));
-            }
-
-            if (data.ultraDeepScore) {
-                data.ultraDeepScore = Array.isArray(data.ultraDeepScore)
-                    ? data.ultraDeepScore.map((str: string) => Number(str.trim()))
-                    : data.ultraDeepScore?.split(',').map((str: string) => Number(str.trim()));
-            }
-
-            const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
+            const result = await this.AlgoAnalysis.offlineCbbOperation(validData, files);
 
             new Promise(function (resolve, reject) {
                 resolve(
