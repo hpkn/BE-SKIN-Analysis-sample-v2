@@ -1303,137 +1303,35 @@ export class AlgoAnalysisService {
         return uniqueObjects;
     };
 
-    combineImages(respObj: any) {
-        const ultraDeepImage: string[] = [];
-        const ultraFineImage: string[] = [];
-        const deepImage: string[] = [];
-        const fineImage: string[] = [];
-
-        let raw: any;
-        let score: any;
-        let answers: any;
-        let finalRecord: any = [];
-
-        let keyWord: any;
-        let deep_score: any;
-        let fine_score: any;
-        let score_average: any;
-        let ultra_deep_score: any;
-        let ultra_fine_score: any;
-        let computation_score: any;
-        let questionnaire_score: any;
-
-        let ultraDeepFinalValue: { id: string; url: string[] } = { id: '', url: [] };
-        let ultraFineFinalValue: { id: string; url: string[] } = { id: '', url: [] };
-        let fineFinalValue: { id: string; url: string[] } = { id: '', url: [] };
-        let deepFinalValue: { id: string; url: string[] } = { id: '', url: [] };
-
-        respObj?.wrinkles?.forEach((wrinkle: any) => {
-            if (wrinkle?.ultraDeepImage?.url) {
-                const id = wrinkle.originalImage?.id || null;
-                if (!id) {
-                    // Handle wrinkle missing originalImage
-                    return;
-                }
-                let original;
-                if (wrinkle.originalImage) {
-                    original = wrinkle.originalImage;
-                }
-                let analysized;
-                if (wrinkle.analyzedImage) {
-                    analysized = wrinkle.analyzedImage;
-                }
-
-                if (wrinkle?.raw && wrinkle?.raw !== null) raw = +wrinkle.raw || null;
-                if (wrinkle?.score && wrinkle?.score !== null) score = +wrinkle.score || null;
-                if (wrinkle?.answers && wrinkle?.answers !== null) answers = +wrinkle.answers || null;
-                if (wrinkle?.keyWord && wrinkle?.keyWord !== null) keyWord = +wrinkle.keyWord || null;
-
-                if (wrinkle?.score_average && wrinkle?.score_average !== null)
-                    score_average = +wrinkle.score_average || null;
-
-                if (wrinkle?.computation_score && wrinkle?.computation_score !== null)
-                    computation_score = +wrinkle.computation_score || null;
-
-                if (wrinkle?.questionnaire_score && wrinkle?.questionnaire_score !== null)
-                    questionnaire_score = +wrinkle.questionnaire_score || null;
-
-                if (wrinkle?.deep_score && wrinkle?.deep_score !== null) deep_score = +wrinkle.deep_score || null;
-
-                if (wrinkle?.fine_score && wrinkle?.fine_score !== null) fine_score = +wrinkle.fine_score || null;
-
-                if (wrinkle?.ultra_deep_score && wrinkle?.ultra_deep_score !== null)
-                    ultra_deep_score = +wrinkle.ultra_deep_score || null;
-
-                if (wrinkle?.ultra_fine_score && wrinkle?.ultra_fine_score !== null)
-                    ultra_fine_score = +wrinkle.ultra_fine_score || null;
-
-                const urls = [
-                    wrinkle?.ultraDeepImage?.url,
-                    wrinkle?.ultraFineImage?.url,
-                    wrinkle?.fineImage?.url,
-                    wrinkle?.deepImage?.url,
-                ];
-
-                if (id) {
-                    urls.forEach((url) => {
-                        if (
-                            url &&
-                            id === wrinkle.originalImage?.id &&
-                            id === wrinkle.analyzedImage?.id &&
-                            ![...ultraDeepImage, ...ultraFineImage, ...deepImage, ...fineImage].includes(url)
-                        ) {
-                            if (url === wrinkle.ultraDeepImage?.url) {
-                                ultraDeepImage.push(url);
-                                ultraDeepFinalValue = { id, url: ultraDeepImage };
-                            } else if (url === wrinkle.ultraFineImage?.url) {
-                                ultraFineImage.push(url);
-                                ultraFineFinalValue = { id, url: ultraFineImage };
-                            } else if (url === wrinkle.fineImage?.url) {
-                                fineImage.push(url);
-                                fineFinalValue = { id, url: fineImage };
-                            } else if (url === wrinkle.deepImage?.url) {
-                                deepImage.push(url);
-                                deepFinalValue = { id, url: deepImage };
-                            }
-                        }
-                    });
-                }
-
-                finalRecord.push({
-                    analysis_type: 'wrinkles',
-                    date: wrinkle.date,
-                    time: wrinkle.time,
-                    label: wrinkle?.label ?? null,
-                    comment: wrinkle?.comment ?? null,
-                    xy_coordinates: wrinkle.xy_coordinates || null,
-                    raw,
-                    score,
-                    answers,
-                    keyWord,
-                    deep_score,
-                    fine_score,
-                    score_average,
-                    ultra_deep_score,
-                    ultra_fine_score,
-                    computation_score,
-                    questionnaire_score,
-                    originalImage: original,
-                    analyzedImage: analysized,
-                    ultraFineImage: ultraFineFinalValue ?? null,
-                    fineImage: fineFinalValue ?? null,
-                    ultraDeepImage: ultraDeepFinalValue ?? null,
-                    deepImage: deepFinalValue,
-                });
+    removeDuplicate(array: any) {
+        const seen = new Set();
+        return array.filter((item: any) => {
+            const analyzedId = item.analyzedImage?.id;
+            const originalId = item.originalImage?.id;
+            const identifier = `${analyzedId}-${originalId}`;
+            if (item.score === null || item.raw === null || !item.score) {
+                return false;
             } else {
-                wrinkle.raw = +wrinkle.raw;
-                wrinkle.score = +wrinkle.score;
-
-                finalRecord.push(wrinkle);
+                seen.add(identifier);
+                return true;
             }
         });
+    }
 
-        return finalRecord;
+    // (item.score != null || item.raw != null) && !seen.has(identifier)
+    removeDuplicate_(array: any) {
+        const seen = new Set();
+        return array.filter((item: any) => {
+            const analyzedId = item.analyzedImage?.id;
+            const originalId = item.originalImage?.id;
+            const identifier = `${analyzedId}-${originalId}`;
+            if ((item.score === null || item.raw === null) && seen.has(identifier)) {
+                return false;
+            } else {
+                seen.add(identifier);
+                return true;
+            }
+        });
     }
 
     // transform wrinkles
@@ -1653,21 +1551,16 @@ export class AlgoAnalysisService {
                 value.score = +value.score;
             });
 
-            // respObj?.wrinkles?.forEach((value: any) => {
-            //     value.raw = +value.raw;
-            //     value.score = +value.score;
+            respObj?.wrinkles?.forEach((value: any) => {
+                value.raw = +value.raw;
+                value.score = +value.score;
 
-            //     // const urlCheck = value['ultraDeepImage']['url']
-            //     // const uuid = value['originalImage']['id']
-            //     // if()
-            //     // if(value['ultraDeepImage']['url'] = urlCheck) {
+                // Data combined
+            });
 
-            //     // }
-            //     console.log(value);
+            respObj.wrinkles = this.removeDuplicate_(respObj.wrinkles);
 
-            //     // Data combined
-            // });
-            respObj.wrinkles = this.combineImages(respObj);
+            respObj.wrinkles = this.removeDuplicate(respObj.wrinkles);
 
             respObj?.pores?.forEach((value: any) => {
                 value.raw = +value.raw;
@@ -2103,15 +1996,15 @@ export class AlgoAnalysisService {
             });
         }
 
-        if (data.type && data.type === '7') {
-            if (!files?.fineImage || !files?.ultraFineImage || !files?.deepImage || !files?.ultraDeepImage) {
-                throw new BadRequestException({
-                    status: 40002,
-                    type: 'BadRequestError',
-                    message: 'Either of the fine, ultra fine, deep or ultra deep images is missing!',
-                });
-            }
-        }
+        // if (data.type && data.type === '7') {
+        //     if (!files?.fineImage || !files?.ultraFineImage || !files?.deepImage || !files?.ultraDeepImage) {
+        //         throw new BadRequestException({
+        //             status: 40002,
+        //             type: 'BadRequestError',
+        //             message: 'Either of the fine, ultra fine, deep or ultra deep images is missing!',
+        //         });
+        //     }
+        // }
 
         data.label = Array.isArray(data.label)
             ? data.label?.map((str: any) => str.trim())
@@ -2324,13 +2217,12 @@ export class AlgoAnalysisService {
             savingPromise.push(savingData);
         }
 
-        // console.log('------->', addFineScore, addUltraFineScore, addDeepScore, addUltraDeepScore);
-
         if (data.type && Number(data.type) === 7 && files.fineImage?.length > 0) {
+            const ratio = Math.ceil(files.fineImage?.length / files.analyzedImage?.length);
             // if (addFineScore && addUltraFineScore && addDeepScore && addUltraDeepScore) {
-            console.log('----------->', data.type && Number(data.type), files.fineImage?.length);
+
             for (let i = 0; i < files.fineImage?.length; i++) {
-                const imageRecords = imageRecordsList[Math.floor(i / files.fineImage?.length)];
+                const imageRecords = imageRecordsList[Math.floor(i / ratio)];
                 const imageArg = this.handleCBBImageArg(data);
 
                 fine.push([
@@ -2485,7 +2377,6 @@ export class AlgoAnalysisService {
                 };
             });
         }
-        // }
 
         const saveOriginal = original.map((item) => {
             returnOriginal.push({
