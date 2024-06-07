@@ -1996,16 +1996,6 @@ export class AlgoAnalysisService {
             });
         }
 
-        // if (data.type && data.type === '7') {
-        //     if (!files?.fineImage || !files?.ultraFineImage || !files?.deepImage || !files?.ultraDeepImage) {
-        //         throw new BadRequestException({
-        //             status: 40002,
-        //             type: 'BadRequestError',
-        //             message: 'Either of the fine, ultra fine, deep or ultra deep images is missing!',
-        //         });
-        //     }
-        // }
-
         data.label = Array.isArray(data.label)
             ? data.label?.map((str: any) => str.trim())
             : data.label?.split(',').map((str: string) => str.trim());
@@ -2019,26 +2009,60 @@ export class AlgoAnalysisService {
             : data.xy_coordinates?.split(',').map((str: string) => str.trim());
 
         if (data.fineScore) {
+            data.fineScore = Array.isArray(data.fineScore) ? data.fineScore : data.fineScore.split(',').map(Number);
+            console.log(data.fineScore);
             data.fineScore = Array.isArray(data.fineScore)
-                ? data.fineScore.map((str: string) => Number(str.trim()))
+                ? data.fineScore.map((str: any) => {
+                      if (typeof str === 'string') {
+                          return Number(str.trim());
+                      }
+                      return Number(str); // or handle the case when str is not a string
+                  })
                 : data.fineScore?.split(',').map((str: string) => Number(str.trim()));
         }
 
         if (data.ultraFineScore) {
             data.ultraFineScore = Array.isArray(data.ultraFineScore)
-                ? data.ultraFineScore.map((str: string) => Number(str.trim()))
+                ? data.ultraFineScore
+                : data.ultraFineScore.split(',').map(Number);
+
+            data.ultraFineScore = Array.isArray(data.ultraFineScore)
+                ? data.ultraFineScore.map((str: any) => {
+                      if (typeof str === 'string') {
+                          return Number(str.trim());
+                      }
+                      return Number(str); // or handle the case when str is not a string
+                  })
                 : data.ultraFineScore?.split(',').map((str: string) => Number(str.trim()));
         }
 
         if (data.deepScore) {
+            data.deepScore = Array.isArray(data.deepScore) ? data.deepScore : data.deepScore.split(',').map(Number);
+
+            console.log(data.deepScore);
             data.deepScore = Array.isArray(data.deepScore)
-                ? data.deepScore.map((str: string) => Number(str.trim()))
+                ? data.deepScore.map((str: any) => {
+                      if (typeof str === 'string') {
+                          return Number(str.trim());
+                      }
+                      return Number(str); // or handle the case when str is not a string
+                  })
                 : data.deepScore?.split(',').map((str: string) => Number(str.trim()));
         }
 
         if (data.ultraDeepScore) {
             data.ultraDeepScore = Array.isArray(data.ultraDeepScore)
-                ? data.ultraDeepScore.map((str: string) => Number(str.trim()))
+                ? data.ultraDeepScore
+                : data.ultraDeepScore.split(',').map(Number);
+            console.log(data.ultraDeepScore);
+
+            data.ultraDeepScore = Array.isArray(data.ultraDeepScore)
+                ? data.ultraDeepScore.map((str: any) => {
+                      if (typeof str === 'string') {
+                          return Number(str.trim());
+                      }
+                      return Number(str); // or handle the case when str is not a string
+                  })
                 : data.ultraDeepScore?.split(',').map((str: string) => Number(str.trim()));
         }
 
@@ -2200,10 +2224,10 @@ export class AlgoAnalysisService {
                     label: addLabel ? data.label[i] : null,
                     comment: addComment ? data.comment[i] : null,
                     xy_coordinates: addXY ? data.xy_coordinates[i] : null,
-                    fine_score: files.fineImage?.length > 0 ? data.fineScore[i] : null,
-                    ultra_fine_score: files.fineImage?.length > 0 ? data.ultraFineScore[i] : null,
-                    deep_score: files.fineImage?.length > 0 ? data.deepScore[i] : null,
-                    ultra_deep_score: files.fineImage?.length > 0 ? data.ultraDeepScore[i] : null,
+                    fine_score: data.fineScore[i] ? data.fineScore[i] : null,
+                    ultra_fine_score: data.ultraFineScore[i] ? data.ultraFineScore[i] : null,
+                    deep_score: data.deepScore[i] ? data.deepScore[i] : null,
+                    ultra_deep_score: data.ultraDeepScore[i] ? data.ultraDeepScore[i] : null,
                 }),
             ]);
 
