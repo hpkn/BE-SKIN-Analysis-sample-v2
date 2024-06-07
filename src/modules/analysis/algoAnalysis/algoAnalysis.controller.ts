@@ -902,6 +902,8 @@ export class AlgoAnalysisController {
 
             const validData = this.AlgoAnalysis.preprocessing(data, files, token);
 
+            console.log(validData);
+
             const result = await this.AlgoAnalysis.offlineCbbOperation(validData, files);
 
             new Promise(function (resolve, reject) {
