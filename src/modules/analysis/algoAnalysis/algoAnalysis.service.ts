@@ -2173,9 +2173,9 @@ export class AlgoAnalysisService {
         /* K-HEADSPA LOGIC END */
 
         const avg = sum / scores.length;
-        const addLabel = data.label?.length === files.analyzedImage?.length;
-        const addComment = data.comment?.length === files.analyzedImage?.length;
-        const addXY = data.xy_coordinates?.length === files.analyzedImage?.length;
+        const addLabel = data?.label?.length === files?.analyzedImage?.length;
+        const addComment = data?.comment?.length === files?.analyzedImage?.length;
+        const addXY = data?.xy_coordinates?.length === files?.analyzedImage?.length;
         // const addFineScore = data.fineScore?.length === files.analyzedImage?.length;
         // const addUltraFineScore = data.ultraFineScore?.length === files.analyzedImage?.length;
         // const addDeepScore = data.deepScore?.length === files.analyzedImage?.length;
@@ -2221,13 +2221,13 @@ export class AlgoAnalysisService {
                     score_average: avg?.toFixed(2),
                     answers: data?.answers === undefined ? '' : data?.answers,
                     keyWord: computation['keyWord'],
-                    label: addLabel ? data.label[i] : null,
-                    comment: addComment ? data.comment[i] : null,
-                    xy_coordinates: addXY ? data.xy_coordinates[i] : null,
-                    fine_score: data.fineScore[i] ? data.fineScore[i] : null,
-                    ultra_fine_score: data.ultraFineScore[i] ? data.ultraFineScore[i] : null,
-                    deep_score: data.deepScore[i] ? data.deepScore[i] : null,
-                    ultra_deep_score: data.ultraDeepScore[i] ? data.ultraDeepScore[i] : null,
+                    label: addLabel ?? null,
+                    comment: addComment ?? null,
+                    xy_coordinates: addXY ?? null,
+                    fine_score: data?.fineScore[i] ?? null,
+                    ultra_fine_score: data?.ultraFineScore[i] ?? null,
+                    deep_score: data?.deepScore[i] ?? null,
+                    ultra_deep_score: data?.ultraDeepScore[i] ?? null,
                 }),
             ]);
 
