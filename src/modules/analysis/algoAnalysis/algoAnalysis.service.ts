@@ -2224,10 +2224,10 @@ export class AlgoAnalysisService {
                     label: addLabel ?? null,
                     comment: addComment ?? null,
                     xy_coordinates: addXY ?? null,
-                    fine_score: data?.fineScore[i] ?? null,
-                    ultra_fine_score: data?.ultraFineScore[i] ?? null,
-                    deep_score: data?.deepScore[i] ?? null,
-                    ultra_deep_score: data?.ultraDeepScore[i] ?? null,
+                    fine_score: data?.fineScore ? data?.fineScore[i] : null,
+                    ultra_fine_score: data?.ultraFineScore ? data?.ultraFineScore[i] : null,
+                    deep_score: data?.deepScore ? data?.deepScore[i] : null,
+                    ultra_deep_score: data?.ultraDeepScore ? data?.ultraDeepScore[i] : null,
                 }),
             ]);
 
