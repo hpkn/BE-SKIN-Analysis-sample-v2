@@ -1319,12 +1319,19 @@ export class AlgoAnalysisService {
     }
 
     // (item.score != null || item.raw != null) && !seen.has(identifier)
-    removeDuplicate_(array: any) {
+
+    removeDuplicate_(array) {
+        if (!Array.isArray(array)) {
+            return [];
+        }
+    
         const seen = new Set();
-        return array.filter((item: any) => {
+    
+        return array.filter((item) => {
             const analyzedId = item.analyzedImage?.id;
             const originalId = item.originalImage?.id;
             const identifier = `${analyzedId}-${originalId}`;
+    
             if ((item.score === null || item.raw === null) && seen.has(identifier)) {
                 return false;
             } else {
@@ -1334,6 +1341,7 @@ export class AlgoAnalysisService {
         });
     }
 
+ 
     // transform wrinkles
 
     async userHistoryWithBatchId(batch_id: number) {
