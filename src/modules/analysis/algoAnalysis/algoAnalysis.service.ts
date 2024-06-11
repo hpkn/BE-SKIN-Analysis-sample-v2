@@ -1568,9 +1568,9 @@ export class AlgoAnalysisService {
                 // Data combined
             });
 
-            respObj.wrinkles = this.removeDuplicate_(respObj.wrinkles);
+            // respObj.wrinkles = this.removeDuplicate_(respObj.wrinkles);
 
-            respObj.wrinkles = this.removeDuplicate(respObj.wrinkles);
+            // respObj.wrinkles = this.removeDuplicate(respObj.wrinkles);
 
             respObj?.pores?.forEach((value: any) => {
                 value.raw = +value.raw;
