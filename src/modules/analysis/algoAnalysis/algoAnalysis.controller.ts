@@ -60,7 +60,7 @@ export class AlgoAnalysisController {
         private readonly batchAnalysis: BatchAnalysisService,
         private readonly computation: ComputationService,
         private readonly webResult: WebResultService,
-    ) { }
+    ) {}
 
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
@@ -627,13 +627,24 @@ export class AlgoAnalysisController {
         FileFieldsInterceptor([
             { name: 'originalImage', maxCount: 1 },
             { name: 'analyzedImage', maxCount: 1 },
+            { name: 'fineImage', maxCount: 1 },
+            { name: 'ultraFineImage', maxCount: 1 },
+            { name: 'deepImage', maxCount: 1 },
+            { name: 'ultraDeepImage', maxCount: 1 },
         ]),
     )
     async offline(
         @Res() res: Response,
         @Body() data: any,
         @UploadedFiles()
-        file: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
+        file: {
+            analyzedImage: Express.Multer.File[];
+            originalImage: Express.Multer.File[];
+            fineImage: Express.Multer.File[];
+            ultraFineImage: Express.Multer.File[];
+            deepImage: Express.Multer.File[];
+            ultraDeepImage: Express.Multer.File[];
+        },
         @Req() req: Request,
     ) {
         try {
@@ -652,6 +663,10 @@ export class AlgoAnalysisController {
 
             const analyzedImage = file.analyzedImage[0].buffer;
             const originalImage = file.originalImage[0].buffer;
+            const fineImage = file?.fineImage[0]?.buffer;
+            const ultraFineImage = file?.ultraFineImage[0]?.buffer;
+            const deepImage = file?.deepImage[0]?.buffer;
+            const ultraDeepImage = file?.ultraDeepImage[0]?.buffer;
 
             let imageArg;
             if (/[0-9]/.test(data.type)) {
@@ -674,7 +689,16 @@ export class AlgoAnalysisController {
             });
 
             //Upload Images
-            const saving = await this.AlgoAnalysis.saveOfflineImage(data, originalImage, analyzedImage, imageArg);
+            const saving = await this.AlgoAnalysis.saveOfflineImage(
+                data,
+                originalImage,
+                analyzedImage,
+                imageArg,
+                fineImage,
+                ultraFineImage,
+                deepImage,
+                ultraDeepImage,
+            );
 
             let promise2 = new Promise(function (resolve, resject) {
                 resolve(saving);
@@ -789,7 +813,7 @@ export class AlgoAnalysisController {
                             example: [
                                 {
                                     batchId: 426416,
-                                    algorithm_type: 'spots',
+                                    algorithm_type: 'wrinkles',
                                     // ver: 'CDS_SP_2.1.2',
                                     score: 60,
                                     analyzedImage: {
@@ -799,6 +823,22 @@ export class AlgoAnalysisController {
                                     originalImage: {
                                         id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
                                         url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                    },
+                                    fineImage: {
+                                        id: 'a336b1eb-8acb-4812-9a84-5164a6dc383c',
+                                        url: 'localhost:3100/image/a336b1eb-8acb-4812-9a84-5164a6dc383c',
+                                    },
+                                    ultraFineImage: {
+                                        id: 'd0883ad5-75c3-4963-addf-2b4e7bcaa63e',
+                                        url: 'localhost:3100/image/d0883ad5-75c3-4963-addf-2b4e7bcaa63e',
+                                    },
+                                    deepImage: {
+                                        id: '708361a9-2f25-4f65-b2a7-55dd5de232c8',
+                                        url: 'localhost:3100/image/708361a9-2f25-4f65-b2a7-55dd5de232c8',
+                                    },
+                                    ultraDeepImage: {
+                                        id: 'ebabcbcb-d536-44be-8e3b-d5234c7ab2a8',
+                                        url: 'localhost:3100/image/ebabcbcb-d536-44be-8e3b-d5234c7ab2a8',
                                     },
                                     // maskImage: {
                                     //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
@@ -837,71 +877,32 @@ export class AlgoAnalysisController {
         FileFieldsInterceptor([
             { name: 'originalImage', maxCount: 5 },
             { name: 'analyzedImage', maxCount: 5 },
+            { name: 'fineImage', maxCount: 5 },
+            { name: 'ultraFineImage', maxCount: 5 },
+            { name: 'deepImage', maxCount: 5 },
+            { name: 'ultraDeepImage', maxCount: 5 },
         ]),
     )
     async offlineBBC(
         @Body() data: any,
-        @UploadedFiles() files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
+        @UploadedFiles()
+        files: {
+            analyzedImage: Express.Multer.File[];
+            originalImage: Express.Multer.File[];
+            fineImage: Express.Multer.File[];
+            ultraFineImage: Express.Multer.File[];
+            deepImage: Express.Multer.File[];
+            ultraDeepImage: Express.Multer.File[];
+        },
         @Res() res: Response,
         @Req() req: Request,
     ) {
         try {
             const token = req.headers.authorization?.split(' ')[1];
-            data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
 
-            if (!files?.analyzedImage || !files?.originalImage) {
-                return res.status(HttpStatus.BAD_REQUEST).send({
-                    status: 40002,
-                    type: 'BadRequestError',
-                    message: 'No file!',
-                });
-            }
+            const validData = this.AlgoAnalysis.preprocessing(data, files, token);
 
-            if (files?.analyzedImage.length !== files?.originalImage.length) {
-                return res.status(HttpStatus.BAD_REQUEST).send({
-                    status: 40002,
-                    type: 'BadRequestError',
-                    message: 'The number of analyzed images does not match number of original images',
-                });
-            }
-
-            data.label = Array.isArray(data.label)
-                ? data.label?.map((str: any) => str.trim())
-                : data.label?.split(',').map((str: string) => str.trim());
-
-            data.comment = Array.isArray(data.comment)
-                ? data.comment?.map((str: string) => str.trim())
-                : data.comment?.split(',').map((str: string) => str.trim());
-
-            data.xy_coordinates = Array.isArray(data.xy_coordinates)
-                ? data.xy_coordinates?.map((str: string) => str.trim())
-                : data.xy_coordinates?.split(',').map((str: string) => str.trim());
-
-            if (data.fineScore) {
-                data.fineScore = Array.isArray(data.fineScore)
-                    ? data.fineScore.map((str: string) => Number(str.trim()))
-                    : data.fineScore?.split(',').map((str: string) => Number(str.trim()));
-            }
-
-            if (data.ultraFineScore) {
-                data.ultraFineScore = Array.isArray(data.ultraFineScore)
-                    ? data.ultraFineScore.map((str: string) => Number(str.trim()))
-                    : data.ultraFineScore?.split(',').map((str: string) => Number(str.trim()));
-            }
-
-            if (data.deepScore) {
-                data.deepScore = Array.isArray(data.deepScore)
-                    ? data.deepScore.map((str: string) => Number(str.trim()))
-                    : data.deepScore?.split(',').map((str: string) => Number(str.trim()));
-            }
-
-            if (data.ultraDeepScore) {
-                data.ultraDeepScore = Array.isArray(data.ultraDeepScore)
-                    ? data.ultraDeepScore.map((str: string) => Number(str.trim()))
-                    : data.ultraDeepScore?.split(',').map((str: string) => Number(str.trim()));
-            }
-
-            const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
+            const result = await this.AlgoAnalysis.offlineCbbOperation(validData, files);
 
             new Promise(function (resolve, reject) {
                 resolve(

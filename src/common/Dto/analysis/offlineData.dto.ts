@@ -229,6 +229,38 @@ export class OfflineDatasDTO {
     // @IsArray()
     analyzedImage: string[];
 
+    @ApiPropertyOptional({
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+    })
+    @IsOptional()
+    // @IsArray()
+    fineImage: string[];
+
+    @ApiPropertyOptional({
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+    })
+    @IsOptional()
+    // @IsArray()
+    ultraFineImage: string[];
+
+    @ApiPropertyOptional({
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+    })
+    @IsOptional()
+    // @IsArray()
+    deepImage: string[];
+
+    @ApiPropertyOptional({
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+    })
+    @IsOptional()
+    // @IsArray()
+    ultraDeepImage: string[];
+
     @ApiProperty({
         type: String,
         description: 'This is required',
@@ -419,6 +451,38 @@ export class OfflineDataCBBDTO {
     // @IsArray()
     analyzedImage: string[];
 
+    @ApiPropertyOptional({
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+    })
+    @IsOptional()
+    // @IsArray()
+    fineImage: string[];
+
+    @ApiPropertyOptional({
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+    })
+    @IsOptional()
+    // @IsArray()
+    ultraFineImage: string[];
+
+    @ApiPropertyOptional({
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+    })
+    @IsOptional()
+    // @IsArray()
+    deepImage: string[];
+
+    @ApiPropertyOptional({
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+    })
+    @IsOptional()
+    // @IsArray()
+    ultraDeepImage: string[];
+
     @ApiProperty({
         type: String,
         description: 'This is required',
@@ -590,7 +654,6 @@ export class OfflineDataCBBDTO {
         type: Number,
         isArray: true,
         description: 'Fine score',
-        example: 100,
     })
     @IsOptional()
     @IsArray()
@@ -601,7 +664,6 @@ export class OfflineDataCBBDTO {
         type: Number,
         isArray: true,
         description: 'Ultra fine score',
-        example: 100,
     })
     @IsOptional()
     @IsArray()
@@ -612,7 +674,6 @@ export class OfflineDataCBBDTO {
         type: Number,
         isArray: true,
         description: 'Deep score',
-        example: 100,
     })
     @IsOptional()
     @IsArray()
@@ -623,7 +684,6 @@ export class OfflineDataCBBDTO {
         type: Number,
         isArray: true,
         description: 'Ultra deep score',
-        example: 100,
     })
     @IsOptional()
     @IsArray()

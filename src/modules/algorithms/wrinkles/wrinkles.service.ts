@@ -321,15 +321,33 @@ export class WrinklesService {
         return 'saved';
     }
 
-    async offlinesaveDataImage(originalImage: any, analyzedImage: any, imageArgs: any) {
+    async offlinesaveDataImage(originalImage: any, analyzedImage: any, imageArgs: any, fineImage?: any, ultraFineImage?: any, deepImage?: any, ultraDeepImage?: any) {
         const analyzedImageArgs = imageArgs.analyzedImageArgs;
-
         const originalImageArgs = imageArgs.originalImageArgs;
 
-        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
-        // await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
-        await this.S3Image.uploadImage(originalImage, originalImageArgs.sys_url);
+        const uploadImage: Promise<any>[] = [];
+        if (fineImage) {
+            const fineImageArgs = imageArgs.fineImageArgs;
+            uploadImage.push(this.S3Image.uploadImage(fineImage, fineImageArgs.sys_url));
+        }
+        if (ultraFineImage) {
+            const ultraFineImageArgs = imageArgs.ultraFineImageArgs;
+            uploadImage.push(this.S3Image.uploadImage(ultraFineImage, ultraFineImageArgs.sys_url));
+        }
+        if (deepImage) {
+            const deepImageArgs = imageArgs.deepImageArgs;
+            uploadImage.push(this.S3Image.uploadImage(deepImage, deepImageArgs.sys_url));
+        }
+        if (ultraDeepImage) {
+            const ultraDeepImageArgs = imageArgs.ultraDeepImageArgs;
+            uploadImage.push(this.S3Image.uploadImage(ultraDeepImage, ultraDeepImageArgs.sys_url));
+        }
 
+        uploadImage.push(this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url));
+        // await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
+        uploadImage.push(this.S3Image.uploadImage(originalImage, originalImageArgs.sys_url));
+
+        await Promise.all(uploadImage);
         return 'saved';
     }
 }
