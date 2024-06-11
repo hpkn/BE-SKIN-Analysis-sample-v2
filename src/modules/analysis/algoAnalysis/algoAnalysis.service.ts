@@ -1304,6 +1304,9 @@ export class AlgoAnalysisService {
     };
 
     removeDuplicate(array: any) {
+        if (!Array.isArray(array)) {
+            return false;
+        }
         const seen = new Set();
         return array.filter((item: any) => {
             const analyzedId = item.analyzedImage?.id;
@@ -1320,6 +1323,7 @@ export class AlgoAnalysisService {
 
     // (item.score != null || item.raw != null) && !seen.has(identifier)
 
+<<<<<<< HEAD
     removeDuplicate_(array) {
         if (!Array.isArray(array)) {
             return [];
@@ -1327,11 +1331,24 @@ export class AlgoAnalysisService {
     
         const seen = new Set();
     
+=======
+    removeDuplicate_(array: any) {
+        if (!Array.isArray(array)) {
+            return false;
+        }
+
+        const seen = new Set();
+
+>>>>>>> 5b01e740b6eea49f3cd4bd86ee3bf9442771deba
         return array.filter((item) => {
             const analyzedId = item.analyzedImage?.id;
             const originalId = item.originalImage?.id;
             const identifier = `${analyzedId}-${originalId}`;
+<<<<<<< HEAD
     
+=======
+
+>>>>>>> 5b01e740b6eea49f3cd4bd86ee3bf9442771deba
             if ((item.score === null || item.raw === null) && seen.has(identifier)) {
                 return false;
             } else {
@@ -2232,10 +2249,10 @@ export class AlgoAnalysisService {
                     label: addLabel ?? null,
                     comment: addComment ?? null,
                     xy_coordinates: addXY ?? null,
-                    fine_score: data?.fineScore ? data?.fineScore[i] : null,
-                    ultra_fine_score: data?.ultraFineScore ? data?.ultraFineScore[i] : null,
-                    deep_score: data?.deepScore ? data?.deepScore[i] : null,
-                    ultra_deep_score: data?.ultraDeepScore ? data?.ultraDeepScore[i] : null,
+                    fine_score: algoId === 4 && data?.fineScore ? data?.fineScore[i] : null,
+                    ultra_fine_score: algoId === 4 && data?.ultraFineScore ? data?.ultraFineScore[i] : null,
+                    deep_score: algoId === 4 && data?.deepScore ? data?.deepScore[i] : null,
+                    ultra_deep_score: algoId === 4 && data?.ultraDeepScore ? data?.ultraDeepScore[i] : null,
                 }),
             ]);
 
