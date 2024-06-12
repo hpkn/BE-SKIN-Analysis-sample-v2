@@ -102,7 +102,7 @@ describe('analysis', () => {
                 .set('Content-Type', 'multipart/form-data')
                 .attach('originalImage', `test/dummy_image/origin.png`)
                 .attach('analyzedImage', `test/dummy_image/analyzed.png`)
-                .attach('analyzedImage', `test/dummy_image/origin.png`)
+                // .attach('analyzedImage', `test/dummy_image/origin.png`)
                 .field('batchId', batchId)
                 .field('type', 1)
                 .field('deviceModel', 'iPad')
