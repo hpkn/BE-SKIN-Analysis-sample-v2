@@ -2252,6 +2252,7 @@ export class AlgoAnalysisService {
                     ultra_fine_score: algoId === 4 && data?.ultraFineScore ? data?.ultraFineScore[i] : null,
                     deep_score: algoId === 4 && data?.deepScore ? data?.deepScore[i] : null,
                     ultra_deep_score: algoId === 4 && data?.ultraDeepScore ? data?.ultraDeepScore[i] : null,
+                    sebumType: data?.sebumType ? data?.sebumType : null,
                 }),
             ]);
 
