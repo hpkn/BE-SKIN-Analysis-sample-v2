@@ -1304,9 +1304,9 @@ export class AlgoAnalysisService {
     };
 
     removeDuplicate(array: any) {
-        if (!Array.isArray(array)) {
-            return false;
-        }
+        // if (!Array.isArray(array)) {
+        //     return false;
+        // }
         const seen = new Set();
         return array.filter((item: any) => {
             const analyzedId = item.analyzedImage?.id;
@@ -1323,32 +1323,26 @@ export class AlgoAnalysisService {
 
     // (item.score != null || item.raw != null) && !seen.has(identifier)
 
-<<<<<<< HEAD
-    removeDuplicate_(array) {
-        if (!Array.isArray(array)) {
-            return [];
-        }
+    // removeDuplicate_(array) {
+    //     if (!Array.isArray(array)) {
+    //         return [];
+    //     }
     
-        const seen = new Set();
+    //     const seen = new Set();
     
-=======
     removeDuplicate_(array: any) {
-        if (!Array.isArray(array)) {
-            return false;
-        }
+        // if (!Array.isArray(array)) {
+        //     return false;
+        // }
 
         const seen = new Set();
+        console.log('array--->', array);
 
->>>>>>> 5b01e740b6eea49f3cd4bd86ee3bf9442771deba
-        return array.filter((item) => {
+        return array.filter((item: any) => {
             const analyzedId = item.analyzedImage?.id;
             const originalId = item.originalImage?.id;
             const identifier = `${analyzedId}-${originalId}`;
-<<<<<<< HEAD
-    
-=======
 
->>>>>>> 5b01e740b6eea49f3cd4bd86ee3bf9442771deba
             if ((item.score === null || item.raw === null) && seen.has(identifier)) {
                 return false;
             } else {
@@ -1469,27 +1463,40 @@ export class AlgoAnalysisService {
                         }
                     }
                     if (!obj[result[i].analysis_type]) {
-                        // console.log(imgObj);
-                        obj[result[i].analysis_type] = [
-                            {
-                                ...result[i].jsonb_agg[j].args,
-                                analysis_type: result[i].jsonb_agg[j].analysis_type,
-                                date: result[i].jsonb_agg[j].date,
-                                time: result[i].jsonb_agg[j].time,
-                                ...imgObj,
-                            },
-                        ];
+                        // console.log(
+                        //     '----->',
+
+                        // );
+                        if (
+                            (result[i]?.jsonb_agg[j]?.args?.score && result[i].jsonb_agg[j]?.args['score'] !== null) ===
+                            true
+                        ) {
+                            obj[result[i].analysis_type] = [
+                                {
+                                    ...result[i].jsonb_agg[j].args,
+                                    analysis_type: result[i].jsonb_agg[j].analysis_type,
+                                    date: result[i].jsonb_agg[j].date,
+                                    time: result[i].jsonb_agg[j].time,
+                                    ...imgObj,
+                                },
+                            ];
+                        }
                     } else {
-                        obj[result[i].analysis_type] = [
-                            ...obj[result[i].analysis_type],
-                            {
-                                ...result[i].jsonb_agg[j].args,
-                                analysis_type: result[i].jsonb_agg[j].analysis_type,
-                                date: result[i].jsonb_agg[j].date,
-                                time: result[i].jsonb_agg[j].time,
-                                ...imgObj,
-                            },
-                        ];
+                        if (
+                            (result[i]?.jsonb_agg[j]?.args?.score && result[i].jsonb_agg[j]?.args['score'] !== null) ===
+                            true
+                        ) {
+                            obj[result[i].analysis_type] = [
+                                ...obj[result[i].analysis_type],
+                                {
+                                    ...result[i].jsonb_agg[j].args,
+                                    analysis_type: result[i].jsonb_agg[j].analysis_type,
+                                    date: result[i].jsonb_agg[j].date,
+                                    time: result[i].jsonb_agg[j].time,
+                                    ...imgObj,
+                                },
+                            ];
+                        }
                     }
                 }
                 respObj = { ...respObj, ...obj };
