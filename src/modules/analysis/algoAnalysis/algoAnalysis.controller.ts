@@ -717,7 +717,11 @@ export class AlgoAnalysisController {
                     });
                 });
         } catch (e) {
+<<<<<<< HEAD
             console.log(e)
+=======
+            console.log(e);
+>>>>>>> 2c48968cc982b9b8a0f494b589ca4f5573e55115
             return res.send({
                 status: 500,
                 type: 'InternalServerError',

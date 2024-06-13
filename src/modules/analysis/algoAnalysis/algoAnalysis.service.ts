@@ -1331,12 +1331,7 @@ export class AlgoAnalysisService {
     //     const seen = new Set();
     
     removeDuplicate_(array: any) {
-        // if (!Array.isArray(array)) {
-        //     return false;
-        // }
-
         const seen = new Set();
-        console.log('array--->', array);
 
         return array.filter((item: any) => {
             const analyzedId = item.analyzedImage?.id;
