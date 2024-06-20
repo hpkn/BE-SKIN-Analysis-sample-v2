@@ -151,4 +151,11 @@ export class MoistureDTO {
 
     @IsOptional()
     kHeadSpa: any;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'New Field for Sebum. Value should be 0 for sebum and 1 for Shine',
+        example: 20,
+    })
+    sebumType?: number | null;
 }
