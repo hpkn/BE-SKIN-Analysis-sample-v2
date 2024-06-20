@@ -9,14 +9,15 @@ import { FileUploadService } from '../../../common/FileUpload/fileUpload.service
 import { BatchAnalysisService } from 'src/modules/analysis/batchAnalysis/batchAnalysis.service';
 import _ from 'lodash';
 import { OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
+import { AlgoAnalysisService } from 'src/modules/analysis/algoAnalysis/algoAnalysis.service';
 
 @Injectable()
 export class WrinklesService {
     constructor(
         private database: DatabaseService,
         private S3Image: FileUploadService,
-        private batchAnalysis: BatchAnalysisService,
-    ) { }
+        private batchAnalysis: BatchAnalysisService, // private primitive: AlgoAnalysisService,
+    ) {}
 
     analysis(data: AlgoAnalysisDTO, taskResponse: any, imageArgs: any) {
         const analyzedImageArgs = imageArgs.analyzedImageArgs;
@@ -236,6 +237,77 @@ export class WrinklesService {
         return 'saved';
     }
 
+    saveDeepImages(data: any, imageArg: any, algoId: any, imageRecords: any) {
+        const saveSql =
+            'INSERT INTO measurements (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores) values ($1, $2, $3, $4, $5, $6, $7, $8)';
+        // const saveArgsSql = 'INSERT INTO keratin (batch_id, args) data ($1, $2)';
+
+        const queries = [
+            {
+                variables: [
+                    data.batchId,
+                    imageArg.fineImageArgs.url,
+                    imageArg.fineImageArgs.sys_url,
+                    imageArg.fineImageArgs.hash,
+                    algoId,
+                    28,
+                    JSON.stringify({
+                        nth_analysis: imageRecords,
+                    }),
+                    0,
+                ],
+            },
+            {
+                variables: [
+                    data.batchId,
+                    imageArg.ultraFineImageArgs.url,
+                    imageArg.ultraFineImageArgs.sys_url,
+                    imageArg.ultraFineImageArgs.hash,
+                    algoId,
+                    29,
+                    JSON.stringify({
+                        nth_analysis: imageRecords,
+                    }),
+                    0,
+                ],
+            },
+            {
+                variables: [
+                    data.batchId,
+                    imageArg.deepImageArgs.url,
+                    imageArg.deepImageArgs.sys_url,
+                    imageArg.deepImageArgs.hash,
+                    algoId,
+                    30,
+                    JSON.stringify({
+                        nth_analysis: imageRecords,
+                    }),
+                    0,
+                ],
+            },
+            {
+                variables: [
+                    data.batchId,
+                    imageArg.ultraDeepImageArgs.url,
+                    imageArg.ultraDeepImageArgs.sys_url,
+                    imageArg.ultraDeepImageArgs.hash,
+                    algoId,
+                    31,
+                    JSON.stringify({
+                        nth_analysis: imageRecords,
+                    }),
+                    0,
+                ],
+            },
+        ];
+
+        for (let i = 0; i < queries.length; i++) {
+            this.database.executeQuery(saveSql, queries[i].variables);
+        }
+
+        return;
+    }
+
     imageArgs(data: AlgoAnalysisDTO) {
         const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'keratin');
         const maskImageArgs = this.S3Image.getImageArgs('maskImage', data.task.algoName, 'keratin');
@@ -268,15 +340,7 @@ export class WrinklesService {
             kiosk: data?.kiosk ?? false,
         };
 
-        let scores = null;
-        if (data.type === 'wrinkles' || Number(data.type) === 7) {
-            scores = JSON.stringify({
-                ultra_fine_score: data.ultraFineScore,
-                fine_score: data.fineScore,
-                deep_score: data.deepScore,
-                ultra_deep_score: data.ultraDeepScore,
-            });
-        }
+        console.log('imageArgs ----------->', data?.fineScore && data?.fineScore?.length > 0);
 
         await this.batchAnalysis.updateEnvironment(data.batchId, environment);
         const saveSql =
@@ -294,7 +358,7 @@ export class WrinklesService {
                     JSON.stringify({
                         nth_analysis: imageRecords,
                     }),
-                    scores,
+                    null,
                 ],
             },
 
@@ -309,7 +373,13 @@ export class WrinklesService {
                     JSON.stringify({
                         nth_analysis: imageRecords,
                     }),
-                    JSON.stringify(data.args),
+                    JSON.stringify({
+                        ...data.args,
+                        ultra_fine_score: data?.ultraFineScore ?? null,
+                        fine_score: data?.fineScore ?? null,
+                        deep_score: data?.deepScore ?? null,
+                        ultra_deep_score: data?.ultraDeepScore ?? null,
+                    }),
                 ],
             },
         ];
@@ -318,10 +388,22 @@ export class WrinklesService {
             this.database.executeQuery(saveSql, queries[i].variables);
         }
 
+        if (data?.fineScore && data?.fineScore?.length > 0) {
+            this.saveDeepImages(data, imageArgs, 4, imageRecords);
+        }
+
         return 'saved';
     }
 
-    async offlinesaveDataImage(originalImage: any, analyzedImage: any, imageArgs: any, fineImage?: any, ultraFineImage?: any, deepImage?: any, ultraDeepImage?: any) {
+    async offlinesaveDataImage(
+        originalImage: any,
+        analyzedImage: any,
+        imageArgs: any,
+        fineImage?: any,
+        ultraFineImage?: any,
+        deepImage?: any,
+        ultraDeepImage?: any,
+    ) {
         const analyzedImageArgs = imageArgs.analyzedImageArgs;
         const originalImageArgs = imageArgs.originalImageArgs;
 
