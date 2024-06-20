@@ -35,6 +35,7 @@ export class SebumTService {
                     JSON.stringify({
                         raw: data.raw,
                         score: data.score,
+                        sebumType: data?.sebumType ? data?.sebumType : null,
                     }),
                 ],
             },

@@ -4,10 +4,7 @@ import { MoistureDTO } from 'src/common/Dto/analysis/moisture.dto';
 
 @Injectable()
 export class SebumUService {
-    constructor(
-        private database: DatabaseService,
-
-    ) {}
+    constructor(private database: DatabaseService) {}
 
     async saveData(data: MoistureDTO, analyzedImageArgs: any, originalImageArgs: any, imageRecords: any) {
         // const analyzedImageArgs = this.S3Image.getImageArgs('analyzedImage', data.task.algoName, 'sebumU');
@@ -44,6 +41,7 @@ export class SebumUService {
                         score: data.score,
                         skinAge: data.skinAge,
                         skinCondition: data.skinCondition,
+                        sebumType: data?.sebumType ? data?.sebumType : null,
                     }),
                 ],
             },
@@ -56,4 +54,3 @@ export class SebumUService {
         return 'saved';
     }
 }
-
