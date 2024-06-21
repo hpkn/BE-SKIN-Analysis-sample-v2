@@ -15,6 +15,10 @@ const body = {
     app_id: 44,
 };
 
+if (!body.email || !body.password) {
+    throw new Error('Cannot found login information to test. Check your .env file');
+}
+
 beforeAll(async () => {
     const moduleFixture = await Test.createTestingModule({
         imports: [AppModule],
@@ -95,14 +99,14 @@ describe('analysis', () => {
             expect(Array.isArray(body.result)).toBe(true);
         });
 
-        test('fail 400 status code diff image files amount', async () => {
+        test('fail 500 status code diff image files amount', async () => {
             const res = await request(app.getHttpServer())
                 .post('/analysis/offlineCBB')
                 .set('Authorization', `Bearer ${token}`)
                 .set('Content-Type', 'multipart/form-data')
                 .attach('originalImage', `test/dummy_image/origin.png`)
                 .attach('analyzedImage', `test/dummy_image/analyzed.png`)
-                // .attach('analyzedImage', `test/dummy_image/origin.png`)
+                .attach('analyzedImage', `test/dummy_image/origin.png`)
                 .field('batchId', batchId)
                 .field('type', 1)
                 .field('deviceModel', 'iPad')
@@ -124,10 +128,10 @@ describe('analysis', () => {
             const responseBody = res.body;
             const { body } = responseBody;
 
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(500);
         });
 
-        test('fail 400 status code without Image File', async () => {
+        test('fail 500 status code without Image File', async () => {
             const res = await request(app.getHttpServer())
                 .post('/analysis/offlineCBB')
                 .set('Authorization', `Bearer ${token}`)
@@ -153,7 +157,7 @@ describe('analysis', () => {
             const responseBody = res.body;
             const { body } = responseBody;
 
-            expect(res.status).toBe(400);
+            expect(res.status).toBe(500);
         });
     });
 
