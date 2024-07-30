@@ -663,10 +663,10 @@ export class AlgoAnalysisController {
 
             const analyzedImage = file.analyzedImage[0].buffer;
             const originalImage = file.originalImage[0].buffer;
-            const fineImage = file?.fineImage[0]?.buffer;
-            const ultraFineImage = file?.ultraFineImage[0]?.buffer;
-            const deepImage = file?.deepImage[0]?.buffer;
-            const ultraDeepImage = file?.ultraDeepImage[0]?.buffer;
+            const fineImage = file?.fineImage ? file?.fineImage[0]?.buffer : null;
+            const ultraFineImage = file?.ultraFineImage ? file?.ultraFineImage[0]?.buffer : null;
+            const deepImage = file?.deepImage ? file?.deepImage[0]?.buffer : null;
+            const ultraDeepImage = file?.ultraDeepImage ? file?.ultraDeepImage[0]?.buffer : null;
 
             let imageArg;
             if (/[0-9]/.test(data.type)) {
@@ -717,6 +717,7 @@ export class AlgoAnalysisController {
                     });
                 });
         } catch (e) {
+            console.log(e);
             return res.send({
                 status: 500,
                 type: 'InternalServerError',
