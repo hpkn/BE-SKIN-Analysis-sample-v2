@@ -118,6 +118,7 @@ export class AnanalysisHistoryService {
             `
                 SELECT
                     type_measurements."name" AS measurement,
+                    analysis_comment as analysis_comment,
                     batch_id,
                     url as original_image,
                     hash,
@@ -135,7 +136,4 @@ export class AnanalysisHistoryService {
         );
         return result;
     }
-
-
 }
-
