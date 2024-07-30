@@ -1,4 +1,15 @@
-import { Controller, Body, Get, Post, UseInterceptors, UploadedFiles, Res, Param, Query, UseGuards } from '@nestjs/common';
+import {
+    Controller,
+    Body,
+    Get,
+    Post,
+    UseInterceptors,
+    UploadedFiles,
+    Res,
+    Param,
+    Query,
+    UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { query, Request, response, Response } from 'express';
 import { GetcustomerHistoryDTO } from 'src/common/Dto/customer/analysisHistory/analysisHistory.dto';
@@ -34,7 +45,6 @@ export class AnanalysisHistoryController {
     @Get('/:customer_id/analysis-history/analysis-infor')
     async getcustomerAnalysisInfor(@Query() query: any, @Res() res: Response) {
         try {
-            console.log(query);
             const { batch_id } = query;
             const result = await this.getAnalysisHistory.analysisInfor(Number(batch_id));
             return res.status(200).send({
@@ -43,6 +53,7 @@ export class AnanalysisHistoryController {
                 data: result,
             });
         } catch (error) {
+            console.log('error---->', error);
             return res.send({
                 status: 500,
                 type: 'InternalServerError',
@@ -51,7 +62,4 @@ export class AnanalysisHistoryController {
             });
         }
     }
-
-
 }
-
