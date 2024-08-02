@@ -1010,6 +1010,71 @@ export class AlgoAnalysisService {
         }
     }
 
+    // private async getAnalysisByBatchId(batch_id: number) {
+    //     const query = `
+    //     WITH pre_aggregated AS (
+    //         SELECT
+    //             analysis.batch_id,
+    //             analysis.analysis_comment,
+    //             to_timestamp(CAST(analysis.created_time AS TEXT), 'YYYY-MM-DD HH24:MI:SS') AS DATE,
+    //             type_measurement_id,
+    //             ROUND(AVG((scores ->> 'score')::NUMERIC), 2) AS avg_score,
+    //             ROUND(MAX((scores ->> 'computation_score')::NUMERIC), 2) AS max_computation_score
+    //         FROM
+    //             analysis
+    //             LEFT JOIN answers_to_questions ON analysis.batch_id = answers_to_questions.batch_id
+    //             LEFT JOIN measurements ON analysis.batch_id = measurements.batch_id
+    //             LEFT JOIN type_measurements ON type_measurement_id = type_measurements."id"
+    //         WHERE
+    //             analysis.batch_id = $1
+    //             AND type_image_id = 21
+    //         GROUP BY
+    //             analysis.batch_id, analysis.analysis_comment, analysis.created_time, type_measurement_id
+    //     )
+    //     SELECT
+    //         batch_id,
+    //         analysis_comment,
+    //         DATE,
+    //         MAX(CASE WHEN type_measurement_id = 1 THEN avg_score END) AS pores_score,
+    //         MAX(CASE WHEN type_measurement_id = 1 THEN max_computation_score END) AS pores_computation,
+    //         MAX(CASE WHEN type_measurement_id = 2 THEN avg_score END) AS sensitivity_scaling_score,
+    //         MAX(CASE WHEN type_measurement_id = 2 THEN max_computation_score END) AS sensitivity_scaling_computation,
+    //         MAX(CASE WHEN type_measurement_id = 3 THEN avg_score END) AS porphiryn_score,
+    //         MAX(CASE WHEN type_measurement_id = 3 THEN max_computation_score END) AS porphiryn_computation,
+    //         MAX(CASE WHEN type_measurement_id = 4 THEN avg_score END) AS wrinkles_score,
+    //         MAX(CASE WHEN type_measurement_id = 4 THEN max_computation_score END) AS wrinkles_computation,
+    //         MAX(CASE WHEN type_measurement_id = 5 THEN avg_score END) AS sebum_u_score,
+    //         MAX(CASE WHEN type_measurement_id = 5 THEN max_computation_score END) AS sebum_u_computation,
+    //         MAX(CASE WHEN type_measurement_id = 6 THEN avg_score END) AS skintone_score,
+    //         MAX(CASE WHEN type_measurement_id = 6 THEN max_computation_score END) AS skintone_computation,
+    //         MAX(CASE WHEN type_measurement_id = 8 THEN avg_score END) AS spots_score,
+    //         MAX(CASE WHEN type_measurement_id = 8 THEN max_computation_score END) AS spots_computation,
+    //         MAX(CASE WHEN type_measurement_id = 9 THEN avg_score END) AS sebum_t_score,
+    //         MAX(CASE WHEN type_measurement_id = 9 THEN max_computation_score END) AS sebum_t_computation,
+    //         MAX(CASE WHEN type_measurement_id = 10 THEN avg_score END) AS shine_score,
+    //         MAX(CASE WHEN type_measurement_id = 10 THEN max_computation_score END) AS shine_computation,
+    //         MAX(CASE WHEN type_measurement_id = 11 THEN avg_score END) AS keratin_score,
+    //         MAX(CASE WHEN type_measurement_id = 11 THEN max_computation_score END) AS keratin_computation,
+    //         MAX(CASE WHEN type_measurement_id = 12 THEN avg_score END) AS sensitivity_redness_score,
+    //         MAX(CASE WHEN type_measurement_id = 12 THEN max_computation_score END) AS sensitivity_redness_computation,
+    //         MAX(CASE WHEN type_measurement_id = 14 THEN avg_score END) AS sensitivity_scabs_score,
+    //         MAX(CASE WHEN type_measurement_id = 14 THEN max_computation_score END) AS sensitivity_scabs_computation,
+    //         MAX(CASE WHEN type_measurement_id = 15 THEN avg_score END) AS sebum_score,
+    //         MAX(CASE WHEN type_measurement_id = 15 THEN max_computation_score END) AS sebum_computation,
+    //         MAX(CASE WHEN type_measurement_id = 16 THEN avg_score END) AS moisture_t_score,
+    //         MAX(CASE WHEN type_measurement_id = 16 THEN max_computation_score END) AS moisture_t_computation,
+    //         MAX(CASE WHEN type_measurement_id = 17 THEN avg_score END) AS moisture_u_score,
+    //         MAX(CASE WHEN type_measurement_id = 17 THEN max_computation_score END) AS moisture_u_computation,
+    //         MAX(CASE WHEN type_measurement_id = 18 THEN avg_score END) AS moisture_score,
+    //         MAX(CASE WHEN type_measurement_id = 18 THEN max_computation_score END) AS moisture_computation
+    //     FROM
+    //         pre_aggregated
+    //     GROUP BY
+    //         batch_id, analysis_comment, DATE;
+    //   `;
+    //     return await this.database.executeQuery(query, [batch_id]);
+    // }
+
     async getAnalysisByBatchId(batch_id: number) {
         const result = await this.database.executeQuery(
             `SELECT
@@ -1052,18 +1117,16 @@ export class AlgoAnalysisService {
                 analysis
                 LEFT JOIN answers_to_questions ON analysis.batch_id = answers_to_questions.batch_id
                 LEFT JOIN measurements ON analysis.batch_id = measurements.batch_id
-                LEFT JOIN type_measurements ON type_measurement_id = type_measurements."id" 
+                LEFT JOIN type_measurements ON type_measurement_id = type_measurements."id"
             WHERE
-                analysis.batch_id = $1 
-                AND type_image_id = 21 
+                analysis.batch_id = $1
+                AND type_image_id = 21
             GROUP BY
                 analysis.batch_id`,
             [batch_id],
         );
         return result[0];
     }
-
-    //get all batch_id of customer
 
     async getCustomerBatchID(customer_id: number, per: number, page: number): Promise<any[]> {
         let offset = (page - 1) * per;
@@ -1082,109 +1145,107 @@ export class AlgoAnalysisService {
         return batchIds;
     }
 
+    private transformResult(val: any, customerId: number): any {
+        val.customer_id = customerId;
+        // User Comment
+        val.analysis_comment = val?.analysis_comment ?? null;
+        val.sens_redness_combined_score = null;
+
+        // keratin
+        val.keratin_score = val.keratin_score === null ? null : Number(val.keratin_score);
+        val.keratin_computation = val.keratin_computation === null ? val.keratin_score : val.keratin_computation;
+
+        // pores
+        val.pores_score =
+            val.pores_score !== null ? (isNaN(parseFloat(val.pores_score)) ? null : parseFloat(val.pores_score)) : null;
+        val.pores_computation = val.pores_computation === null ? val.pores_score : val.pores_computation;
+
+        // sensitivity_redness
+        val.sensitivity_redness_score =
+            val.sensitivity_redness_score === null ? null : Number(val.sensitivity_redness_score);
+        val.sensitivity_redness_computation =
+            val.sensitivity_redness_computation === null
+                ? val.sensitivity_redness_score
+                : val.sensitivity_redness_computation;
+
+        // spots
+        val.spots_score = val.spots_score === null ? null : Number(val.spots_score);
+        val.spots_computation = val.spots_computation === null ? val.spots_score : val.spots_computation;
+
+        // wrinkles
+        val.wrinkles_score = val.wrinkles_score === null ? null : Number(val.wrinkles_score);
+        val.wrinkles_computation = val.wrinkles_computation === null ? val.wrinkles_score : val.wrinkles_computation;
+
+        // porphiryn
+        val.porphiryn_score = val.porphiryn_score === null ? null : Number(val.porphiryn_score);
+        val.porphiryn_computation =
+            val.porphiryn_computation === null ? val.porphiryn_score : val.porphiryn_computation;
+
+        // moisture
+        val.moisture_score = val.moisture_score === null ? null : Number(val.moisture_score);
+        val.moisture_computation = val.moisture_computation === null ? val.moisture_score : val.moisture_computation;
+
+        // sebum
+        val.sebum_score = val.sebum_score === null ? null : Number(val.sebum_score);
+        val.sebum_computation = val.sebum_computation === null ? val.sebum_score : val.sebum_computation;
+
+        // shine
+        val.shine_score = val.shine_score === null ? null : Number(val.shine_score);
+        val.shine_computation = val.shine_computation === null ? val.shine_score : val.shine_computation;
+
+        // skintone
+        val.skintone_score = val.skintone_score === null ? null : Number(val.skintone_score);
+        val.skintone_computation = val.skintone_computation === null ? val.skintone_score : val.skintone_computation;
+
+        // sensitivity_scabs
+        val.sensitivity_scabs_score = val.sensitivity_scabs_score === null ? null : Number(val.sensitivity_scabs_score);
+        val.sensitivity_scabs_computation =
+            val.sensitivity_scabs_computation === null
+                ? val.sensitivity_scabs_score
+                : val.sensitivity_scabs_computation;
+
+        // sensitivity_scaling
+        val.sensitivity_scaling_score =
+            val.sensitivity_scaling_score === null ? null : Number(val.sensitivity_scaling_score);
+        val.sensitivity_scaling_computation =
+            val.sensitivity_scaling_computation === null
+                ? val.sensitivity_scaling_score
+                : val.sensitivity_scaling_computation;
+
+        // moisture_u
+        val.moisture_u_score = val.moisture_u_score === null ? null : Number(val.moisture_u_score);
+        val.moisture_u_computation =
+            val.moisture_u_computation === null ? val.moisture_u_score : val.moisture_u_computation;
+
+        // moisture_t_score
+        val.moisture_t_score = val.moisture_t_score === null ? null : Number(val.moisture_t_score);
+        val.moisture_t_computation =
+            val.moisture_t_computation === null ? val.moisture_t_score : val.moisture_t_computation;
+
+        // sebum_u
+        val.sebum_u_score = val.sebum_u_score === null ? null : Number(val.sebum_u_score);
+        val.sebum_u_computation = val.sebum_u_computation === null ? val.sebum_u_score : val.sebum_u_computation;
+
+        // sebum_t
+        val.sebum_t_score = val.sebum_t_score === null ? null : Number(val.sebum_t_score);
+        val.sebum_t_computation = val.sebum_t_computation === null ? val.sebum_t_score : val.sebum_t_computation;
+
+        return val;
+    }
+
     async userAnalysisHistory(customer_id: number, per: number, page: number): Promise<any[]> {
         let batchIds = await this.getCustomerBatchID(customer_id, per, page);
 
-        const promises: Promise<any>[] = [];
-        // geting result
-        for (const batchId of batchIds) {
-            promises.push(this.getAnalysisByBatchId(batchId['batch_id']));
-        }
-
-        // computation
         try {
-            const resultObj = await Promise.all(promises);
-            // remooving empty object
-            const nonEmptyResults: any[] = resultObj.filter((result) => result !== undefined);
-            nonEmptyResults.map((val) => {
-                val.customer_id = customer_id;
-                // User Comment
-                val.analysis_comment = val?.analysis_comment ?? null;
-                val.sens_redness_combined_score = null;
-                // keratin
-                val.keratin_score = val.keratin_score === null ? null : Number(val.keratin_score);
-                val.keratin_computation =
-                    val.keratin_computation === null ? val.keratin_score : val.keratin_computation;
-                // pores
-                val.pores_score =
-                    val.pores_score !== null
-                        ? isNaN(parseFloat(val.pores_score))
-                            ? null
-                            : parseFloat(val.pores_score)
-                        : null;
-                val.pores_computation = val.pores_computation === null ? val.pores_score : val.pores_computation;
-                // sensitivity_redness
-                val.sensitivity_redness_score =
-                    val.sensitivity_redness_score === null ? null : Number(val.sensitivity_redness_score);
-                val.sensitivity_redness_computation =
-                    val.sensitivity_redness_computation === null
-                        ? val.sensitivity_redness_score
-                        : val.sensitivity_redness_computation;
-                // spots
-                val.spots_score = val.spots_score === null ? null : Number(val.spots_score);
-                val.spots_computation = val.spots_computation === null ? val.spots_score : val.spots_computation;
-                //wrinkles
-                val.wrinkles_score = val.wrinkles_score === null ? null : Number(val.wrinkles_score);
-                val.wrinkles_computation =
-                    val.wrinkles_computation === null ? val.wrinkles_score : val.wrinkles_computation;
-                // porphyrim
-                val.porphiryn_score = val.porphiryn_score === null ? null : Number(val.porphiryn_score);
-                val.porphiryn_computation =
-                    val.porphiryn_computation === null ? val.porphiryn_score : val.porphiryn_computation;
-                //moisture
-                val.moisture_score = val.moisture_score === null ? null : Number(val.moisture_score);
-                val.moisture_computation =
-                    val.moisture_computation === null ? val.moisture_score : val.moisture_computation;
-                //sebum
-                val.sebum_score = val.sebum_score === null ? null : Number(val.sebum_score);
-                val.sebum_computation = val.sebum_computation === null ? val.sebum_score : val.sebumn_computation;
-                //shine
-                val.shine_score = val.shine_score === null ? null : Number(val.shine_score);
-                val.shine_computation = val.shine_computation === null ? val.shine_score : val.shine_computation;
-                //skintone
-                val.skintone_score = val.skintone_score === null ? null : Number(val.skintone_score);
-                val.skintone_computation =
-                    val.skintone_computation === null ? val.skintone_score : val.skintone_computation;
-                // sensitivity_scabs
-                val.sensitivity_scabs_score =
-                    val.sensitivity_scabs_score === null ? null : Number(val.sensitivity_scabs_score);
-                val.sensitivity_scabs_computation =
-                    val.sensitivity_scabs_computation === null
-                        ? val.sensitivity_scabs_score
-                        : val.sensitivity_scabs_computation;
-                // sensitivity_scaling
-                val.sensitivity_scaling_score =
-                    val.sensitivity_scaling_score === null ? null : Number(val.sensitivity_scaling_score);
-                val.sensitivity_scaling_computation =
-                    val.sensitivity_scaling_computation === null
-                        ? val.sensitivity_scaling_score
-                        : val.sensitivity_scaling_computation;
-                //moisture_u
-                val.moisture_u_score = val.moisture_u_score === null ? null : Number(val.moisture_u_score);
-                val.moisture_u_computation =
-                    val.moisture_u_computation === null ? val.moisture_u_score : val.moisture_u_computation;
-                // moisture_t_score
-                val.moisture_t_score = val.moisture_t_score === null ? null : Number(val.moisture_t_score);
-                val.moisture_t_computation =
-                    val.moisture_t_computation === null ? val.moisture_t_score : val.moisture_t_computation;
-                //sebum_u
-                val.sebum_u_score = val.sebum_u_score === null ? null : Number(val.sebum_u_score);
-                val.sebum_u_computation =
-                    val.sebum_u_computation === null ? val.sebum_u_score : val.sebum_u_computation;
+            const queries = batchIds.map((batchId) => this.getAnalysisByBatchId(batchId['batch_id']));
+            const results = await Promise.all(queries);
+            const nonEmptyResults = results.flat().filter((result) => result);
 
-                // sebum_t
-                val.sebum_t_score = val.sebum_t_score === null ? null : Number(val.sebum_t_score);
-                val.sebum_t_computation =
-                    val.sebum_t_computation === null ? val.sebum_t_score : val.sebum_t_computation;
-            });
-
-            return nonEmptyResults;
+            return nonEmptyResults.map((val) => this.transformResult(val, customer_id));
         } catch (error) {
             console.log(error);
             throw error;
         }
-
-        // await this.getAnalysisByBatchId
     }
 
     async getImageData(batch_id: number) {
