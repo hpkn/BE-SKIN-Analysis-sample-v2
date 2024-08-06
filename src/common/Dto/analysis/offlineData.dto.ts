@@ -700,3 +700,87 @@ export class OfflineDataCBBDTO {
     @IsOptional()
     kiosk: any;
 }
+
+export class analysisCBBDTO {
+    @ApiProperty()
+    @IsNumber()
+    batch_id: number;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is required',
+    })
+    answers?: string | null;
+
+    @ApiPropertyOptional({
+        description: 'keratin Scores',
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    keratin?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'pores Scores',
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    pores?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'impurities Scores',
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    impurities?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'sebum_t Scores',
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    sebum_t?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'sebum_u Scores',
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    sebum_u?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'oiliness Scores',
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    oiliness?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'spots Scores',
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    spots?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'wrinkles Scores',
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    wrinkles?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'redness Scores',
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    redness?: number[] | any[];
+}
