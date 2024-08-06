@@ -38,7 +38,12 @@ import { FileUploadService } from 'src/common/FileUpload/fileUpload.service';
 import { SebumUService } from 'src/modules/algorithms/sebumU/sebumU.service';
 import { SebumTService } from 'src/modules/algorithms/sebumT/sebumT.service';
 import { SkinToneDiorService } from 'src/modules/algorithms/skinToneDior/skinToneDior.service';
-import { EncryptedCBBDTO, OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
+import {
+    analysisCBBDTO,
+    EncryptedCBBDTO,
+    OfflineDataCBBDTO,
+    OfflineDatasDTO,
+} from 'src/common/Dto/analysis/offlineData.dto';
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -1373,7 +1378,7 @@ export class AlgoAnalysisController {
         @Req() req: Request,
     ) {
         const token = req.headers.authorization?.split(' ')[1];
-        data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
+        data.kiosk = true; // this.AlgoAnalysis.checkIfKiosk(token, data);
 
         console.log('kiosk CBBBBBBB, --->', data.kiosk);
         try {
@@ -1429,6 +1434,115 @@ export class AlgoAnalysisController {
             });
 
             await this.AlgoAnalysis.updateData(data, '');
+        } catch (error) {
+            console.error(error);
+            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // CBB Without image
+
+    @ApiOperation({
+        summary:
+            'CBB offline analysis, Expecting multiple originalImage and analyzedImage. The response will include score average, computation and questionnaire',
+        security: [{ bearerToken: [] }],
+    })
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({ type: analysisCBBDTO })
+    @ApiResponse({
+        status: 200,
+        description: 'Success',
+        schema: {
+            type: 'object',
+            properties: {
+                status: { type: 'number', example: 200 },
+                service: { type: 'string', example: 'Success' },
+                body: {
+                    type: 'object',
+                    properties: {
+                        computation_score: { type: 'number', example: 56.4 },
+                        questionnaire_score: { type: 'number', example: 70.0 },
+                        score_average: { type: 'number', example: 53.33 },
+                        keyWord: { type: 'string', example: 'Mild' },
+                        result: {
+                            type: 'array',
+                            example: [
+                                {
+                                    batchId: 426416,
+                                    algorithm_type: 'wrinkles',
+                                    // ver: 'CDS_SP_2.1.2',
+                                    score: 60,
+                                    analyzedImage: {
+                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                    },
+                                    originalImage: {
+                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                    },
+                                    fineImage: {
+                                        id: 'a336b1eb-8acb-4812-9a84-5164a6dc383c',
+                                        url: 'localhost:3100/image/a336b1eb-8acb-4812-9a84-5164a6dc383c',
+                                    },
+                                    ultraFineImage: {
+                                        id: 'd0883ad5-75c3-4963-addf-2b4e7bcaa63e',
+                                        url: 'localhost:3100/image/d0883ad5-75c3-4963-addf-2b4e7bcaa63e',
+                                    },
+                                    deepImage: {
+                                        id: '708361a9-2f25-4f65-b2a7-55dd5de232c8',
+                                        url: 'localhost:3100/image/708361a9-2f25-4f65-b2a7-55dd5de232c8',
+                                    },
+                                    ultraDeepImage: {
+                                        id: 'ebabcbcb-d536-44be-8e3b-d5234c7ab2a8',
+                                        url: 'localhost:3100/image/ebabcbcb-d536-44be-8e3b-d5234c7ab2a8',
+                                    },
+                                    // maskImage: {
+                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    // },
+                                },
+                                {
+                                    batchId: 426416,
+                                    algorithm_type: 'spots',
+                                    // ver: 'CDS_SP_2.1.2',
+                                    score: 56,
+                                    analyzedImage: {
+                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
+                                    },
+                                    originalImage: {
+                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
+                                    },
+                                    // maskImage: {
+                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
+                                    // },
+                                },
+                            ],
+                        },
+                    },
+                },
+            },
+        },
+    })
+    @ApiBearerAuth('access-token')
+    @Post('analysisCBB')
+    @HttpCode(200)
+    async cbbWithoutImage(@Body() data: any, @Res() res: Response, @Req() req: Request) {
+        try {
+            const result = this.AlgoAnalysis.analysisCbb(data);
+            new Promise(function (resolve, reject) {
+                resolve(
+                    res.send({
+                        status: 200,
+                        message: 'Success',
+                        body: result,
+                    }),
+                );
+            });
+
+            return;
         } catch (error) {
             console.error(error);
             throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);

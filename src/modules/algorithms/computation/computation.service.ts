@@ -270,6 +270,7 @@ export class ComputationService {
                 keyWordScalling = this.keywordScaling(computed_score);
             }
 
+            final_response.average = score;
             final_response.computation_score = computed_score;
             final_response.questionnaire_score = questionnaire_score;
             final_response.keyWord = keyWordScalling.keyWord;
