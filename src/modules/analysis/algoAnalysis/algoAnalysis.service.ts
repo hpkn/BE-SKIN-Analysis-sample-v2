@@ -20,11 +20,12 @@ import { SensitivityRednessService } from 'src/modules/algorithms/sensitivityRed
 import { SensitivtyScalingService } from 'src/modules/algorithms/sensitivtyScaling/sensitivtyScaling.service';
 import { FitzSGService } from 'src/modules/algorithms/fitzSG/fitzSG.service';
 import * as moment from 'moment';
-import { OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
+import { analysisCBBDTO, OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
 import { toLower } from 'lodash';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 import { v4 as uuidv4 } from 'uuid';
 import * as jwt from 'jsonwebtoken';
+import { throwError } from 'rxjs';
 
 @Injectable()
 export class AlgoAnalysisService {
@@ -2856,13 +2857,55 @@ export class AlgoAnalysisService {
             const deviceMode = data?.deviceModel?.toLowerCase();
             const check = 'duple';
 
-            if (kioskAppId.includes(Number(app_id)) || deviceMode.includes(check)) {
-                return true;
+            if (app_id) {
+                if (kioskAppId.includes(Number(app_id)) || deviceMode.includes(check)) {
+                    return true;
+                } else {
+                    return false;
+                }
             } else {
-                return false;
+                return true;
             }
         } catch (e) {
-            console.log(e);
+            throw new Error();
         }
+    }
+
+    average(array: number[]) {
+        if (array.length === 0) return 0; // Handle empty array
+
+        let sum = 0;
+        for (let i = 0; i < array.length; i++) {
+            sum += array[i];
+        }
+
+        return sum / array.length;
+    }
+    analysisCbb(data: analysisCBBDTO) {
+        const keratin = this.computation.computationResult(1, data.answers, this.average(data.keratin ?? []), false);
+        const pores = this.computation.computationResult(2, data.answers, this.average(data.pores ?? []), false);
+        const impurities = this.computation.computationResult(
+            3,
+            data.answers,
+            this.average(data.impurities ?? []),
+            false,
+        );
+        const sebum = this.computation.computationResult(4, data.answers, this.average(data.keratin ?? []), false);
+        const oiliness = this.computation.computationResult(5, data.answers, this.average(data.keratin ?? []), false);
+        const spots = this.computation.computationResult(6, data.answers, this.average(data.keratin ?? []), false);
+        const wrinkles = this.computation.computationResult(7, data.answers, this.average(data.keratin ?? []), false);
+
+        const redness = this.computation.computationResult(10, data.answers, this.average(data.keratin ?? []), false);
+
+        return {
+            keratin: keratin,
+            pores: pores,
+            impurities: impurities,
+            sebum: sebum,
+            oiliness: oiliness,
+            spots: spots,
+            wrinkles: wrinkles,
+            redness: redness,
+        };
     }
 }
