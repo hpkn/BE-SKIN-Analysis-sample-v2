@@ -40,7 +40,6 @@ export class ErrorNotificationFilter implements ExceptionFilter {
 
         this.errorOccurrences[errorKey].count++;
 
-        console.log();
         if (
             this.errorOccurrences[errorKey].count === Number(process.env.THRESHOLD) &&
             Date.now() - this.errorOccurrences[errorKey].lastOccurred <= Number(process.env.TIMEFRAME)

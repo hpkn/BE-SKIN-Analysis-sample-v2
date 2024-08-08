@@ -27,7 +27,6 @@ export class DatabaseService {
     async migrate() {
         const migrationDir = path.join(__dirname, 'migrations');
 
-        console.log('Number ---->', migrationDir);
         const migrationFiles = fs.readdirSync(migrationDir).sort();
 
         const client = await this.pool.connect();

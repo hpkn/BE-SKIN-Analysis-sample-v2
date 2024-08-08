@@ -700,3 +700,287 @@ export class OfflineDataCBBDTO {
     @IsOptional()
     kiosk: any;
 }
+
+export class analysisCBBDTO {
+    @ApiProperty({
+        example: 123,
+    })
+    @IsNumber()
+    batch_id: number;
+
+    @ApiPropertyOptional({
+        example: 2000,
+    })
+    @IsOptional()
+    bithYear: number;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 'Samsung',
+    })
+    deviceModel?: string | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 'Android',
+    })
+    deviceOS?: String | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 'V_0.0.1',
+    })
+    appVersion?: String | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 45,
+    })
+    lat?: number | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 0,
+    })
+    long?: number | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 20,
+    })
+    temperature?: number | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 0,
+    })
+    humidity?: number | null;
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 20,
+    })
+    uv_index?: number | null;
+
+    /* Optional customer data. */
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is optional',
+        example: 'Male',
+    })
+    gender?: String | null;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is optional',
+        example: 'SG1',
+    })
+    skin_color_group?: String | null;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is optional',
+        example: 'Dark Skin',
+    })
+    ethnicities?: String | null;
+
+    @ApiPropertyOptional({
+        type: Number,
+        description:
+            'Type: Number - Licence Type: { Eco: 4, STANDARD: 5, PROFESSIONAL: 6, Expert: 7, PMX: 8, Pro-AI: 9}',
+        example: 9,
+    })
+    licenseId?: number;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'answers string',
+        example: 'ABCDCBCCBAAAAAAAAAAA',
+        required: false,
+    })
+    answers?: string | null;
+
+    @ApiPropertyOptional({
+        description: 'keratin Scores',
+        required: false,
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    keratin?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'pores Scores',
+        required: false,
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    pores?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'impurities Scores',
+        required: false,
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    impurities?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'sebum_t Scores',
+        required: false,
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    sebumT?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'sebum_u Scores',
+        required: false,
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    sebumU?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'oiliness Scores',
+        required: false,
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    oiliness?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'spots Scores',
+        required: false,
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    spots?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'wrinkles Scores',
+        required: false,
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    wrinkles?: number[] | any[];
+
+    @ApiPropertyOptional({
+        description: 'redness Scores',
+        required: false,
+        type: [Number],
+        example: [1, 23],
+    })
+    @IsOptional()
+    redness?: number[] | any[];
+
+    @ApiPropertyOptional({
+        example: 12,
+    })
+    @IsOptional()
+    moistureT: number;
+
+    @ApiPropertyOptional({
+        example: 13,
+    })
+    @IsOptional()
+    moistureU: number;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'Label about the image result',
+        example: ['Deep Wrinkles found', 'Check Spots again'],
+        isArray: true,
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    label?: string[];
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'Comment on the image result',
+        example: ['Evaluate in 2 weeks', 'Spots need more analysis'],
+        isArray: true,
+    })
+    comment?: string[];
+
+    @ApiPropertyOptional({
+        type: String,
+        isArray: true,
+        description: 'Coodinate of the commented image erea',
+        example: ['coordinate1', 'coodinate2'],
+    })
+    @IsArray()
+    @IsString({ each: true })
+    @IsOptional()
+    xy_coordinates?: string[];
+
+    @ApiPropertyOptional({
+        type: Number,
+        isArray: true,
+        description: 'Fine score',
+    })
+    @IsOptional()
+    @IsArray()
+    @IsNumber()
+    fineScore?: number[];
+
+    @ApiPropertyOptional({
+        type: Number,
+        isArray: true,
+        description: 'Ultra fine score',
+    })
+    @IsOptional()
+    @IsArray()
+    @IsNumber()
+    ultraFineScore?: number[];
+
+    @ApiPropertyOptional({
+        type: Number,
+        isArray: true,
+        description: 'Deep score',
+    })
+    @IsOptional()
+    @IsArray()
+    @IsNumber()
+    deepScore?: number[];
+
+    @ApiPropertyOptional({
+        type: Number,
+        isArray: true,
+        description: 'Ultra deep score',
+    })
+    @IsOptional()
+    @IsArray()
+    @IsNumber()
+    ultraDeepScore?: number[];
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'New Field for Sebum. Value should be 0 for sebum and 1 for Shine',
+        example: 0,
+    })
+    sebumType?: number | null;
+
+    @IsOptional()
+    kiosk: any;
+
+    @IsOptional()
+    imageUpload: any;
+}

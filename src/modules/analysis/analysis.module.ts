@@ -1,4 +1,4 @@
-import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
+import { MiddlewareConsumer, Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { FileUploadService } from 'src/common/FileUpload/fileUpload.service';
 import { DatabaseModule } from 'src/database/database.module';
@@ -60,15 +60,15 @@ import { ComputationService } from '../algorithms/computation/computation.servic
         SebumUService,
         WebResultService,
         ComputationService,
-        // UploadProcessor,
     ],
+    // exports: [WebResultService],
 })
 export class AnalysisModule {
     // Auth Middleware
-    configure(consumer: MiddlewareConsumer) {
-        consumer
-            .apply(AuthMiddleware)
-            // .exclude({ path: 'analysis', method: RequestMethod.POST })
-            .forRoutes('analysis');
-    }
+    // configure(consumer: MiddlewareConsumer) {
+    //     consumer
+    //         .apply(AuthMiddleware)
+    //         // .exclude({ path: 'analysis', method: RequestMethod.POST })
+    //         .forRoutes('analysis');
+    // }
 }

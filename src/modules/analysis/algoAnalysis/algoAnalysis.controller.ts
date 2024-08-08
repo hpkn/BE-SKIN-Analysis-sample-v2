@@ -38,7 +38,12 @@ import { FileUploadService } from 'src/common/FileUpload/fileUpload.service';
 import { SebumUService } from 'src/modules/algorithms/sebumU/sebumU.service';
 import { SebumTService } from 'src/modules/algorithms/sebumT/sebumT.service';
 import { SkinToneDiorService } from 'src/modules/algorithms/skinToneDior/skinToneDior.service';
-import { EncryptedCBBDTO, OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
+import {
+    analysisCBBDTO,
+    EncryptedCBBDTO,
+    OfflineDataCBBDTO,
+    OfflineDatasDTO,
+} from 'src/common/Dto/analysis/offlineData.dto';
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -576,7 +581,6 @@ export class AlgoAnalysisController {
             const taskResponse = await result.get();
 
             if (taskResponse.err) {
-                // console.log(taskResponse.err, 'cndp-skin');
                 return res.send({
                     status: 40004,
                     service: `analysis - ${body.task.taskName}`,
@@ -770,7 +774,7 @@ export class AlgoAnalysisController {
     async deleteBatch(@Param('batch_id') batch_id: number, @Res() res: Response) {
         try {
             const result = await this.batchAnalysis.deleleBatch(batch_id);
-            console.log(result);
+
             return res.status(200).json({
                 status: 200,
                 type: 'DeleteAnalysisData',
@@ -1373,9 +1377,8 @@ export class AlgoAnalysisController {
         @Req() req: Request,
     ) {
         const token = req.headers.authorization?.split(' ')[1];
-        data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
+        data.kiosk = true; // this.AlgoAnalysis.checkIfKiosk(token, data);
 
-        console.log('kiosk CBBBBBBB, --->', data.kiosk);
         try {
             if (!files?.analyzedImage || !files?.originalImage) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
@@ -1427,6 +1430,85 @@ export class AlgoAnalysisController {
                     }),
                 );
             });
+
+            await this.AlgoAnalysis.updateData(data, '');
+        } catch (error) {
+            console.error(error);
+            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    // CBB Without image
+
+    // @ApiOperation({
+    //     summary:
+    //         'CBB offline analysis, Expecting multiple originalImage and analyzedImage. The response will include score average, computation and questionnaire',
+    //     security: [{ bearerToken: [] }],
+    // })
+    @Post('/analysisCBB')
+    @ApiBody({ type: analysisCBBDTO })
+    @ApiResponse({
+        status: 200,
+        description: 'Success',
+        schema: {
+            type: 'object',
+            properties: {
+                status: { type: 'number', example: 200 },
+                message: { type: 'string', example: 'Success' },
+                service: { type: 'string', example: 'CBB_result' },
+                result: {
+                    type: 'object',
+                    example: {
+                        wrinkles: 44,
+                        pigmentation: 11,
+                        oiliness: 20,
+                        redness: 11,
+                        radiance: 34,
+                        dullness: 34,
+                        pores: 34,
+                        impurities: 34,
+                        darkcircle: 34,
+                        hyperpigmentation: 11,
+                        moisture: 14,
+                        elasticity: 61,
+                        skinCondition: 1,
+                        skinAge: 20,
+                    },
+                },
+            },
+        },
+    })
+    async cbbWithoutImage(@Body() data: any, @Res() res: Response) {
+        try {
+            const result: any = this.AlgoAnalysis.analysisCbb(data);
+
+            let questFr = -1;
+            if (data?.answers && data?.answers.length !== 0) {
+                questFr = this.computation.questionnaireFrequency(data.answers, 5);
+            }
+
+            const skinCondition = this.webResult.getSkinCondition(
+                result.moistureT,
+                result.sebumT?.computation_score ?? result.sebumT?.average,
+                result.moistureU,
+                result.sebumU?.computation_score ?? result.sebumU?.average,
+                questFr,
+            );
+
+            result.skinCondition = skinCondition;
+
+            new Promise(function (resolve, reject) {
+                resolve(
+                    res.send({
+                        status: 200,
+                        message: 'Success',
+                        body: result,
+                    }),
+                );
+            });
+
+            data.imageUpload = false;
+            this.AlgoAnalysis.saveSkinCondtion(Number(data.batch_id), skinCondition, result.skinAge);
 
             await this.AlgoAnalysis.updateData(data, '');
         } catch (error) {
