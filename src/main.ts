@@ -46,7 +46,7 @@ async function bootstrap() {
                     '<b>Remarks: </b> type in <b>/analysis/offlineCBB</b> should be an id matching the number related to each analysis type',
             )
             .setVersion('2.0.0')
-            .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'Token' }, 'access-token')
+            // .addBearerAuth({ type: 'http', scheme: 'bearer', bearerFormat: 'Token' }, 'access-token')
             .build();
         const document = SwaggerModule.createDocument(app, config);
         SwaggerModule.setup('docs', app, document);

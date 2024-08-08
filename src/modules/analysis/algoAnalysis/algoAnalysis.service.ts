@@ -1,4 +1,4 @@
-import { Injectable, Inject, HttpException, ConsoleLogger, BadRequestException } from '@nestjs/common';
+import { Injectable, Inject, HttpException, ConsoleLogger, BadRequestException, forwardRef } from '@nestjs/common';
 import { GetcustomerHistoryDTO } from 'src/common/Dto/customer/analysisHistory/analysisHistory.dto';
 import { DatabaseService } from 'src/database/database.service';
 import * as celery from 'celery-node';
@@ -26,6 +26,7 @@ import { ComputationService } from 'src/modules/algorithms/computation/computati
 import { v4 as uuidv4 } from 'uuid';
 import * as jwt from 'jsonwebtoken';
 import { throwError } from 'rxjs';
+import { WebResultService } from '../webResult/webResult.service';
 
 @Injectable()
 export class AlgoAnalysisService {
@@ -46,7 +47,7 @@ export class AlgoAnalysisService {
         private sensitivityScaling: SensitivtyScalingService,
         private fitzSG: FitzSGService,
         private S3Image: FileUploadService,
-        private readonly computation: ComputationService,
+        private readonly computation: ComputationService, // @Inject(forwardRef(() => WebResultService)) // private readonly webResult: WebResultService,
     ) {}
 
     convertScoresToNumbers = (data: any) => {
@@ -1500,22 +1501,17 @@ export class AlgoAnalysisService {
                 let obj: any = {};
                 for (let j = 0; j < result[i].jsonb_agg.length; j++) {
                     let imgObj: any = {};
-                    // console.log('image check ', result[i].jsonb_agg[j]);
+
                     for (let k = 0; k < result[i].jsonb_agg[j].images.length; k++) {
-                        // console.log('Checking this --->', result[i].jsonb_agg[j]);
                         if (result[i].analysis_type === 'moistureT' || result[i].analysis_type === 'moistureU') {
                             continue;
                         }
-                        // console.log(result[i].jsonb_agg[j].images[k].url);
+
                         if (result[i].jsonb_agg[j].time === result[i].jsonb_agg[j].time) {
                             imgObj[result[i].jsonb_agg[j].images[k].type] = { ...result[i].jsonb_agg[j].images[k].url };
                         }
                     }
                     if (!obj[result[i].analysis_type]) {
-                        // console.log(
-                        //     '----->',
-
-                        // );
                         if (
                             (result[i]?.jsonb_agg[j]?.args?.score && result[i].jsonb_agg[j]?.args['score'] !== null) ===
                             true
@@ -1743,6 +1739,7 @@ export class AlgoAnalysisService {
             skin_color_group: data.skin_color_group ?? '',
             ethnicities: data.ethnicities ?? '',
             kiosk: data?.kiosk,
+            imageUpload: data?.imageUpload ?? true,
             lisenceId: data?.licenseId ?? 1,
         };
 
@@ -1809,7 +1806,7 @@ export class AlgoAnalysisService {
             `,
                 [batchId],
             );
-            console.log('update', update);
+
             return update;
         } catch (e) {
             console.log('check', e);
@@ -1899,7 +1896,7 @@ export class AlgoAnalysisService {
 
     saveSkinCondtion(batch_id: number, skinCondtion: any, skinAge: any) {
         const condition = skinCondtion.length === 0 ? '-1' : skinCondtion;
-        console.log('condition', condition);
+
         try {
             const update = `
                 INSERT INTO measurements (batch_id, type_measurement_id, type_image_id, scores)
@@ -1985,10 +1982,6 @@ export class AlgoAnalysisService {
             }
         }
 
-        console.log('revisitCountInThisMonthDict', revisitCountInThisMonthDict);
-        console.log('revisitDayTermDict', revisitDayTermDict);
-        console.log('revisitCountDict', revisitCountDict);
-        console.log('revisitSum', revisitSum);
         return {
             revisitCountDict: revisitCountDict,
             revisitDayTermDict: revisitDayTermDict,
@@ -2038,7 +2031,6 @@ export class AlgoAnalysisService {
             let secondPart: any = input.slice(2);
             secondPart = secondDigitMap[secondPart];
 
-            console.log(secondPart, firstPart);
             const concatResult = Number(firstPart + secondPart);
 
             return concatResult;
@@ -2091,7 +2083,7 @@ export class AlgoAnalysisService {
 
         if (data.fineScore) {
             data.fineScore = Array.isArray(data.fineScore) ? data.fineScore : data.fineScore.split(',').map(Number);
-            console.log(data.fineScore);
+
             data.fineScore = Array.isArray(data.fineScore)
                 ? data.fineScore.map((str: any) => {
                       if (typeof str === 'string') {
@@ -2120,7 +2112,6 @@ export class AlgoAnalysisService {
         if (data.deepScore) {
             data.deepScore = Array.isArray(data.deepScore) ? data.deepScore : data.deepScore.split(',').map(Number);
 
-            console.log(data.deepScore);
             data.deepScore = Array.isArray(data.deepScore)
                 ? data.deepScore.map((str: any) => {
                       if (typeof str === 'string') {
@@ -2135,7 +2126,6 @@ export class AlgoAnalysisService {
             data.ultraDeepScore = Array.isArray(data.ultraDeepScore)
                 ? data.ultraDeepScore
                 : data.ultraDeepScore.split(',').map(Number);
-            console.log(data.ultraDeepScore);
 
             data.ultraDeepScore = Array.isArray(data.ultraDeepScore)
                 ? data.ultraDeepScore.map((str: any) => {
@@ -2853,7 +2843,6 @@ export class AlgoAnalysisService {
             const kioskAppId: number[] = [110, 51, 42];
             const app_id = decoded['app_id'];
 
-            console.log(Number(app_id), kioskAppId.includes(Number(app_id)));
             const deviceMode = data?.deviceModel?.toLowerCase();
             const check = 'duple';
 
@@ -2881,31 +2870,150 @@ export class AlgoAnalysisService {
 
         return sum / array.length;
     }
-    analysisCbb(data: analysisCBBDTO) {
-        const keratin = this.computation.computationResult(1, data.answers, this.average(data.keratin ?? []), false);
-        const pores = this.computation.computationResult(2, data.answers, this.average(data.pores ?? []), false);
-        const impurities = this.computation.computationResult(
-            3,
-            data.answers,
-            this.average(data.impurities ?? []),
-            false,
-        );
-        const sebum = this.computation.computationResult(4, data.answers, this.average(data.keratin ?? []), false);
-        const oiliness = this.computation.computationResult(5, data.answers, this.average(data.keratin ?? []), false);
-        const spots = this.computation.computationResult(6, data.answers, this.average(data.keratin ?? []), false);
-        const wrinkles = this.computation.computationResult(7, data.answers, this.average(data.keratin ?? []), false);
 
-        const redness = this.computation.computationResult(10, data.answers, this.average(data.keratin ?? []), false);
-
-        return {
-            keratin: keratin,
-            pores: pores,
-            impurities: impurities,
-            sebum: sebum,
-            oiliness: oiliness,
-            spots: spots,
-            wrinkles: wrinkles,
-            redness: redness,
+    saveDate(imageRecords: string, data: any) {
+        const algoMapping: any = {
+            keratin: 2,
+            pores: 1,
+            impurities: 3,
+            sebumT: 9,
+            sebumU: 5,
+            oiliness: 10,
+            spots: 8,
+            wrinkles: 4,
+            redness: 12,
         };
+
+        const attributeKeys = Object.keys(data).filter((key) => key in algoMapping);
+
+        attributeKeys.forEach((attribute) => {
+            const result = data['computation'][attribute];
+
+            if (result && Object.keys(result).length !== 0) {
+                const algoId = algoMapping[attribute];
+
+                result.scores.forEach((score: any, i: any) => {
+                    const formattedArgs = JSON.stringify({
+                        nth_analysis: imageRecords,
+                        kiosk: data?.kiosk,
+                    });
+
+                    let formattedScores;
+                    if (algoId === 4 || algoId === '4') {
+                        formattedScores = JSON.stringify({
+                            score: result.scores[i],
+                            // raw: result.raw[i],
+                            computation_score: result.computation_score?.toFixed(2),
+                            questionnaire_score: result.questionnaire_score?.toFixed(2),
+                            score_average: result.average?.toFixed(2),
+                            answers: data?.answers === undefined ? '' : data?.answers,
+                            keyWord: result.keyWord,
+                            label: data?.label ? data?.label[i] : null,
+                            comment: data?.comment ? data?.comment[i] : null,
+                            xy_coordinates: data?.xy_coordinates ? data?.xy_coordinates[i] : null,
+                            fine_score: algoId === 4 && data?.fineScore ? data?.fineScore[i] : null,
+                            ultra_fine_score: algoId === 4 && data?.fineScore ? data?.ultraFineScore[i] : null,
+                            deep_score: algoId === 4 && data?.fineScore ? data?.deepScore[i] : null,
+                            ultra_deep_score: algoId === 4 && data?.fineScore ? data?.ultraDeepScore[i] : null,
+                            sebumType: data?.sebumType ? data?.sebumType : null,
+                        });
+                    } else {
+                        formattedScores = JSON.stringify({
+                            score: result.scores[i],
+                            // raw: result.raw[i],
+                            computation_score: result.computation_score?.toFixed(2),
+                            questionnaire_score: result.questionnaire_score?.toFixed(2),
+                            score_average: result.average?.toFixed(2),
+                            answers: data?.answers === undefined ? '' : data?.answers,
+                            keyWord: result.keyWord,
+                            label: data?.label ? data?.label[i] : null,
+                            comment: data?.comment ? data?.comment[i] : null,
+                            xy_coordinates: data?.xy_coordinates ? data?.xy_coordinates[i] : null,
+                            sebumType: data?.sebumType ? data?.sebumType : null,
+                        });
+                    }
+
+                    const query = `
+                        INSERT INTO measurements
+                        (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores)
+                        VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                    `;
+
+                    const values = [data.batch_id, null, null, null, algoId, 21, formattedArgs, formattedScores];
+
+                    this.database.executeQuery(query, values);
+                });
+            }
+        });
+    }
+
+    analysisCbb(data: analysisCBBDTO) {
+        const processAttribute = (id: number, attribute: keyof analysisCBBDTO) => {
+            if (data[attribute]) {
+                const result = this.computation.computationResult(
+                    id,
+                    data.answers ?? '',
+                    data[attribute] as number[],
+                    false,
+                );
+                const average = this.average(data[attribute] as number[]);
+                if (average !== null) {
+                    result.average = average;
+                    result.scores = data[attribute];
+                }
+
+                return result;
+            }
+            return {};
+        };
+
+        try {
+            const keratin = processAttribute(1, 'keratin');
+            const pores = processAttribute(2, 'pores');
+            const impurities = processAttribute(3, 'impurities');
+            const sebumT = processAttribute(9, 'sebumT');
+            const sebumU = processAttribute(4, 'sebumU') ?? null;
+            const oiliness = processAttribute(5, 'oiliness') ?? null;
+            const spots = processAttribute(6, 'spots');
+            const wrinkles = processAttribute(7, 'wrinkles');
+            const redness = processAttribute(10, 'redness');
+
+            // saveDate
+            const imageRecords = uuidv4();
+
+            const moistureT = data?.moistureU ?? -1;
+            const moistureU = data?.moistureU ?? -1;
+
+            const skinAge = this.computation.skinAge(
+                wrinkles?.computation_score ?? wrinkles.average,
+                spots?.computation_score ?? spots.average,
+                data.bithYear,
+            );
+            // skinAge,
+            // moistureT,
+            // moistureU,
+            const computation = {
+                keratin,
+                pores,
+                impurities,
+                sebumT,
+                sebumU,
+                oiliness,
+                spots,
+                wrinkles,
+                redness,
+            };
+
+            const dataProcess = {
+                ...data,
+                computation,
+            };
+
+            this.saveDate(imageRecords, dataProcess);
+            return { ...computation, skinAge, moistureT, moistureU };
+        } catch (err) {
+            console.log(err);
+            throw new Error();
+        }
     }
 }
