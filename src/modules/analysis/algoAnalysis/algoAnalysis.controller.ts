@@ -1438,13 +1438,10 @@ export class AlgoAnalysisController {
         }
     }
 
-    // CBB Without image
-
-    // @ApiOperation({
-    //     summary:
-    //         'CBB offline analysis, Expecting multiple originalImage and analyzedImage. The response will include score average, computation and questionnaire',
-    //     security: [{ bearerToken: [] }],
-    // })
+    @ApiOperation({
+        security: [{ bearerToken: [] }],
+    })
+    @ApiBearerAuth('access-token')
     @Post('/analysisCBB')
     @ApiBody({ type: analysisCBBDTO })
     @ApiResponse({
@@ -1455,24 +1452,76 @@ export class AlgoAnalysisController {
             properties: {
                 status: { type: 'number', example: 200 },
                 message: { type: 'string', example: 'Success' },
-                service: { type: 'string', example: 'CBB_result' },
                 result: {
                     type: 'object',
                     example: {
-                        wrinkles: 44,
-                        pigmentation: 11,
-                        oiliness: 20,
-                        redness: 11,
-                        radiance: 34,
-                        dullness: 34,
-                        pores: 34,
-                        impurities: 34,
-                        darkcircle: 34,
-                        hyperpigmentation: 11,
-                        moisture: 14,
-                        elasticity: 61,
-                        skinCondition: 1,
                         skinAge: 20,
+                        moistureT: 13,
+                        moistureU: 13,
+                        skinCondition: 'dry',
+                        keratin: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        pores: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        impurities: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        sebumT: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        sebumU: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        oiliness: {
+                            computation_score: 19.6,
+                            questionnaire_score: 50,
+                            keyWord: 'Mild',
+                            keyword_id: 3,
+                            average: 12,
+                        },
+                        spots: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        wrinkles: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        redness: {
+                            computation_score: 20.200000000000003,
+                            questionnaire_score: 53,
+                            keyWord: 'Mild',
+                            keyword_id: 3,
+                            average: 12,
+                        },
                     },
                 },
             },
