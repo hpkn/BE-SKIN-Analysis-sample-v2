@@ -11,7 +11,7 @@ export class AuthMiddleware implements NestMiddleware {
         if (!token) {
             // Token not provided, handle accordingly (e.g., return unauthorized response)
             return res.status(403).send({
-                status: 10002,
+                status: 100022,
                 type: 'AuthenticationError',
                 message: {
                     en: 'You are unauthorized, try refreshing the page.',
