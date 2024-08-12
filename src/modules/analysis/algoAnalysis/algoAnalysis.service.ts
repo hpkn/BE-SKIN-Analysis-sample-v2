@@ -2992,7 +2992,7 @@ export class AlgoAnalysisService {
             // skinAge,
             // moistureT,
             // moistureU,
-            const computation = {
+            const computation: any = {
                 keratin,
                 pores,
                 impurities,
@@ -3010,6 +3010,11 @@ export class AlgoAnalysisService {
             };
 
             this.saveDate(imageRecords, dataProcess);
+
+            Object.keys(computation).forEach((key) => {
+                delete computation[key].scores;
+            });
+
             return { ...computation, skinAge, moistureT, moistureU };
         } catch (err) {
             console.log(err);
