@@ -9,12 +9,7 @@ export class ComputationService {
         let now_year = new Date().getFullYear();
         let biologic_age = Number(now_year) - Number(birth_year);
 
-        console.log(wrinkleCal, pigmCalc, birth_year);
-
-        console.log('biologic_age', biologic_age);
         let skin_age = Math.round(100 - (Number(wrinkleCal) + Number(pigmCalc)) / 2);
-
-        console.log('biologic_age', biologic_age, 'skin_age', skin_age);
 
         if (!wrinkleCal || !pigmCalc || wrinkleCal === null || pigmCalc === null) return biologic_age;
 
@@ -45,8 +40,6 @@ export class ComputationService {
         if (skin_age >= 85 && skin_age <= 100) {
             skin_age = biologic_age - 4;
         }
-
-        console.log(skin_age);
 
         return skin_age;
     }
@@ -90,7 +83,6 @@ export class ComputationService {
         let extractAnswer = '';
         let questionnaireScore = 0;
         if (!answers || answers?.length === 0) {
-            console.log(answers);
             return questionnaireScore;
         }
         if (answers.length === 4) {
@@ -124,15 +116,12 @@ export class ComputationService {
                 questionnaireScore = this.quest_score(extractAnswer);
             } else if (algoId === 6) {
                 extractAnswer = answers.slice(5, 7);
-                console.log('6', extractAnswer);
 
                 questionnaireScore = this.quest_score(extractAnswer);
             } else if (algoId === 7) {
                 extractAnswer = answers.slice(7, 10);
-                console.log('7', extractAnswer);
 
                 questionnaireScore = this.quest_score(extractAnswer);
-                console.log('questionnaireScore', questionnaireScore);
             } else {
                 questionnaireScore = 0;
             }
@@ -171,8 +160,6 @@ export class ComputationService {
         if (analysis_type === 7) {
             questionnaire_score = this.questionnaireFrequency(answers, 7);
             combined_scores = scores.reduce((accumulator, currentValue) => accumulator + currentValue);
-
-            console.log('wrinkles', scores, combined_scores);
 
             const avg = Math.round(combined_scores / scores.length);
             // quest_score
@@ -265,12 +252,11 @@ export class ComputationService {
             let keyWordScalling;
 
             if (kiosk === true) {
-                keyWordScalling = this.keywordKosk(computed_score);
+                keyWordScalling = this.keywordKiosk(computed_score);
             } else {
                 keyWordScalling = this.keywordScaling(computed_score);
             }
 
-            final_response.average = score;
             final_response.computation_score = computed_score;
             final_response.questionnaire_score = questionnaire_score;
             final_response.keyWord = keyWordScalling.keyWord;
@@ -278,6 +264,7 @@ export class ComputationService {
 
             return final_response;
         } catch (e) {
+            console.log(e);
             throw new Error('error');
         }
     }
@@ -318,7 +305,7 @@ export class ComputationService {
     }
 
     // KEWORDS FOR KIOSK
-    keywordKosk(computed_score: number) {
+    keywordKiosk(computed_score: number) {
         let keyWord;
         let keyword_id;
 

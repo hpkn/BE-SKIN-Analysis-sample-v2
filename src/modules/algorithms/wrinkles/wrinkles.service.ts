@@ -340,8 +340,6 @@ export class WrinklesService {
             kiosk: data?.kiosk ?? false,
         };
 
-        console.log('imageArgs ----------->', data?.fineScore && data?.fineScore?.length > 0);
-
         await this.batchAnalysis.updateEnvironment(data.batchId, environment);
         const saveSql =
             'INSERT INTO measurements (batch_id, url, sys_url, hash, type_measurement_id, type_image_id, args, scores) values ($1, $2, $3, $4, $5, $6, $7, $8)';

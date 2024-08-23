@@ -25,9 +25,7 @@ export class WebResultService {
         let skinCondition = 0;
 
         if (sebumQAScore >= 0 && sScoreT > 0) {
-            console.log('1 sScoreT, sScoreU', sScoreT, sScoreU);
             sScoreT = Math.round(0.8 * sScoreT + 0.2 * sebumQAScore);
-            console.log('final 1 --->', sScoreT, 'null sebum');
         }
 
         // Logic for determining skin condition
@@ -35,7 +33,6 @@ export class WebResultService {
         // Combine t-zone sebum score with sebum Q&A score.
         if (sebumQAScore >= 0 && sScoreT === null) {
             sScoreT = Math.round(sebumQAScore);
-            console.log('final --->', sScoreT, 'null sebum');
         }
 
         // ---------- (1) ----------
@@ -335,6 +332,7 @@ export class WebResultService {
                     record.created_time::date as date,
                     record.created_time::time as time,
                     record.analysis_comment as analysis_comment,
+                    COALESCE(record.args ->> 'imageUpload', 'true') as imageUpload,
                     original_img.url AS original_image_url,
                     analyzed_img.url AS analyzed_image_url,
                     ROW_NUMBER() OVER (PARTITION BY type_measurements."name") AS ROW_NUMBER
@@ -346,7 +344,7 @@ export class WebResultService {
                         AND (original_img.args ->> 'nth_analysis' = analyzed_img.args ->> 'nth_analysis' OR type_measurements."name" = 'moistureT' OR type_measurements."name" = 'moistureU') -- Add the join condition here                 
                 WHERE
                     record.batch_id = $1 AND (analyzed_img.type_image_id = 18)  
-                GROUP by type_measurements."name", original_img.url, analyzed_img.url, original_img.scores, record.created_time, original_img.type_measurement_id, record.analysis_comment
+                GROUP by type_measurements."name", original_img.url, analyzed_img.url, original_img.scores, record.created_time, original_img.type_measurement_id, record.analysis_comment, COALESCE(record.args ->> 'imageUpload', 'true')
             )
             SELECT
                 measurement,
@@ -356,7 +354,48 @@ export class WebResultService {
                 time,
                 original_image_url,
                 analyzed_image_url,
-                analysis_comment
+                analysis_comment,
+                imageUpload
+            FROM
+                _results 
+            WHERE
+                ROW_NUMBER = 1;
+                
+            `,
+            [batch_id],
+        );
+        return result;
+    }
+
+    async webResultNoImage(batch_id: number) {
+        const result = await this.database.executeQuery(
+            `
+            WITH _results AS (
+                SELECT DISTINCT
+                    type_measurements."name" AS measurement,
+                    to_json(original_img.scores) ->> 'score' as value,
+                    to_json(original_img.scores) ->> 'computation_score' as computation_score,
+                    record.created_time::date as date,
+                    record.created_time::time as time,
+                    record.analysis_comment as analysis_comment,
+                    COALESCE(record.args ->> 'imageUpload', 'true') as imageUpload,
+                    ROW_NUMBER() OVER (PARTITION BY type_measurements."name") AS ROW_NUMBER
+                FROM
+                    analysis record
+                    LEFT JOIN measurements as original_img ON record.batch_id = original_img.batch_id  AND original_img.type_image_id = 21 
+                    LEFT JOIN type_measurements ON type_measurements.ID = original_img.type_measurement_id 
+                WHERE
+                    record.batch_id = $1
+                GROUP by type_measurements."name", original_img.scores, record.created_time, original_img.type_measurement_id, record.analysis_comment, COALESCE(record.args ->> 'imageUpload', 'true')
+            )
+            SELECT
+                measurement,
+                value,
+                computation_score,
+                date,
+                time,
+                analysis_comment,
+                imageUpload
             FROM
                 _results 
             WHERE
@@ -473,19 +512,30 @@ export class WebResultService {
     */
     async getBatchId(batch_id: number) {
         let getSkinCondition;
-        const result = await this.webResult(batch_id);
+        let result = await this.webResult(batch_id);
         const checkKiosk = await this.checkIfkiosk(batch_id);
 
         const avg = await this.webResultAverage(batch_id, checkKiosk);
         const skinAge = await this.getSkinAge(batch_id);
         const analysis_comment = result[0]?.analysis_comment;
+        const imageUpload = result.length > 0 ? result[0]?.imageUpload : false;
 
         let moistureT = null;
         let moistureU = null;
         let sebumT = null;
         let sebumU = null;
 
+        let finalResult: any = [];
+
+        if (imageUpload === false) {
+            result = await this.webResultNoImage(batch_id);
+        }
+
         for (let i = 0; i < result.length; i++) {
+            if (!result[i]['original_image_url']) result[i]['original_image_url'] = null;
+
+            if (!result[i]['analyzed_image_url']) result[i]['analyzed_image_url'] = null;
+
             if (result[i]['measurement'] === 'moistureT' || result[i]['measurement'] === 'moistureU') {
                 result[i]['analyzed_image_url'] = null;
                 result[i]['original_image_url'] = null;
@@ -510,7 +560,10 @@ export class WebResultService {
                     result[i]['computation_score'] = Number(result[i]['computation_score']);
                 }
             }
-            delete result[i]?.analysis_comment;
+            if (result[i]['measurement'] === 'skinCondition') delete result[i];
+            if (result[i]?.imageupload) delete result[i]?.imageupload;
+            delete finalResult[i]?.analysis_comment;
+            finalResult = result;
         }
 
         const answers = await this.AlgoAnalysis.fetchQuestion(Number(batch_id));
@@ -535,7 +588,7 @@ export class WebResultService {
         const conditionResult = this.keywordValue(getSkinCondition);
 
         if (moistureT !== null || moistureU !== null || sebumT !== null || sebumU !== null) {
-            result.push({
+            finalResult.push({
                 measurement: 'Skin Condition',
                 value: null,
                 date: null,
@@ -549,7 +602,7 @@ export class WebResultService {
         }
 
         if (skinAge?.length > 0) {
-            result.push({
+            finalResult.push({
                 measurement: 'SkinAge',
                 value: skinAge[0].skin_age,
                 date: skinAge[0]?.date,
@@ -563,7 +616,7 @@ export class WebResultService {
         }
 
         return {
-            result: result,
+            result: finalResult,
             analysis_comment: analysis_comment,
         };
     }
