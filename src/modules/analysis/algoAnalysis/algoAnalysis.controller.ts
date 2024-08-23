@@ -581,7 +581,6 @@ export class AlgoAnalysisController {
             const taskResponse = await result.get();
 
             if (taskResponse.err) {
-                // console.log(taskResponse.err, 'cndp-skin');
                 return res.send({
                     status: 40004,
                     service: `analysis - ${body.task.taskName}`,
@@ -775,7 +774,7 @@ export class AlgoAnalysisController {
     async deleteBatch(@Param('batch_id') batch_id: number, @Res() res: Response) {
         try {
             const result = await this.batchAnalysis.deleleBatch(batch_id);
-            console.log(result);
+
             return res.status(200).json({
                 status: 200,
                 type: 'DeleteAnalysisData',
@@ -1380,7 +1379,6 @@ export class AlgoAnalysisController {
         const token = req.headers.authorization?.split(' ')[1];
         data.kiosk = true; // this.AlgoAnalysis.checkIfKiosk(token, data);
 
-        console.log('kiosk CBBBBBBB, --->', data.kiosk);
         try {
             if (!files?.analyzedImage || !files?.originalImage) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
@@ -1440,14 +1438,11 @@ export class AlgoAnalysisController {
         }
     }
 
-    // CBB Without image
-
     @ApiOperation({
-        summary:
-            'CBB offline analysis, Expecting multiple originalImage and analyzedImage. The response will include score average, computation and questionnaire',
         security: [{ bearerToken: [] }],
     })
-    @ApiConsumes('multipart/form-data')
+    @ApiBearerAuth('access-token')
+    @Post('/analysisCBB')
     @ApiBody({ type: analysisCBBDTO })
     @ApiResponse({
         status: 200,
@@ -1456,82 +1451,101 @@ export class AlgoAnalysisController {
             type: 'object',
             properties: {
                 status: { type: 'number', example: 200 },
-                service: { type: 'string', example: 'Success' },
-                body: {
+                message: { type: 'string', example: 'Success' },
+                result: {
                     type: 'object',
-                    properties: {
-                        computation_score: { type: 'number', example: 56.4 },
-                        questionnaire_score: { type: 'number', example: 70.0 },
-                        score_average: { type: 'number', example: 53.33 },
-                        keyWord: { type: 'string', example: 'Mild' },
-                        result: {
-                            type: 'array',
-                            example: [
-                                {
-                                    batchId: 426416,
-                                    algorithm_type: 'wrinkles',
-                                    // ver: 'CDS_SP_2.1.2',
-                                    score: 60,
-                                    analyzedImage: {
-                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                    },
-                                    originalImage: {
-                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                    },
-                                    fineImage: {
-                                        id: 'a336b1eb-8acb-4812-9a84-5164a6dc383c',
-                                        url: 'localhost:3100/image/a336b1eb-8acb-4812-9a84-5164a6dc383c',
-                                    },
-                                    ultraFineImage: {
-                                        id: 'd0883ad5-75c3-4963-addf-2b4e7bcaa63e',
-                                        url: 'localhost:3100/image/d0883ad5-75c3-4963-addf-2b4e7bcaa63e',
-                                    },
-                                    deepImage: {
-                                        id: '708361a9-2f25-4f65-b2a7-55dd5de232c8',
-                                        url: 'localhost:3100/image/708361a9-2f25-4f65-b2a7-55dd5de232c8',
-                                    },
-                                    ultraDeepImage: {
-                                        id: 'ebabcbcb-d536-44be-8e3b-d5234c7ab2a8',
-                                        url: 'localhost:3100/image/ebabcbcb-d536-44be-8e3b-d5234c7ab2a8',
-                                    },
-                                    // maskImage: {
-                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    // },
-                                },
-                                {
-                                    batchId: 426416,
-                                    algorithm_type: 'spots',
-                                    // ver: 'CDS_SP_2.1.2',
-                                    score: 56,
-                                    analyzedImage: {
-                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                    },
-                                    originalImage: {
-                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                    },
-                                    // maskImage: {
-                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    // },
-                                },
-                            ],
+                    example: {
+                        skinAge: 20,
+                        moistureT: 13,
+                        moistureU: 13,
+                        skinCondition: 'dry',
+                        keratin: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        pores: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        impurities: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        sebumT: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        sebumU: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        oiliness: {
+                            computation_score: 19.6,
+                            questionnaire_score: 50,
+                            keyWord: 'Mild',
+                            keyword_id: 3,
+                            average: 12,
+                        },
+                        spots: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        wrinkles: {
+                            computation_score: 12,
+                            questionnaire_score: 0,
+                            keyWord: 'Almost Clear',
+                            keyword_id: 2,
+                            average: 12,
+                        },
+                        redness: {
+                            computation_score: 20.200000000000003,
+                            questionnaire_score: 53,
+                            keyWord: 'Mild',
+                            keyword_id: 3,
+                            average: 12,
                         },
                     },
                 },
             },
         },
     })
-    @ApiBearerAuth('access-token')
-    @Post('analysisCBB')
-    @HttpCode(200)
-    async cbbWithoutImage(@Body() data: any, @Res() res: Response, @Req() req: Request) {
+    async cbbWithoutImage(@Body() data: any, @Res() res: Response) {
         try {
-            const result = this.AlgoAnalysis.analysisCbb(data);
+            const result: any = this.AlgoAnalysis.analysisCbb(data);
+
+            let questFr = -1;
+            if (data?.answers && data?.answers.length !== 0) {
+                questFr = this.computation.questionnaireFrequency(data.answers, 5);
+            }
+
+            const skinCondition = this.webResult.getSkinCondition(
+                result.moistureT,
+                result.sebumT?.computation_score ?? result.sebumT?.average,
+                result.moistureU,
+                result.sebumU?.computation_score ?? result.sebumU?.average,
+                questFr,
+            );
+
+            result.skinCondition = skinCondition;
+
             new Promise(function (resolve, reject) {
                 resolve(
                     res.send({
@@ -1542,7 +1556,10 @@ export class AlgoAnalysisController {
                 );
             });
 
-            return;
+            data.imageUpload = false;
+            this.AlgoAnalysis.saveSkinCondtion(Number(data.batch_id), skinCondition, result.skinAge);
+
+            await this.AlgoAnalysis.updateData(data, '');
         } catch (error) {
             console.error(error);
             throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);

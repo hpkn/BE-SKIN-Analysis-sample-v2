@@ -29,7 +29,6 @@ export class AnanalysisHistoryController {
         @Query() query: GetcustomerHistoryDTO,
         @Res() res: Response,
     ) {
-        console.log('param', query);
         const result = await this.getAnalysisHistory.GetcustomerHistory(customer_id, query);
 
         return res.status(200).send(result);
@@ -53,7 +52,6 @@ export class AnanalysisHistoryController {
                 data: result,
             });
         } catch (error) {
-            console.log('error---->', error);
             return res.send({
                 status: 500,
                 type: 'InternalServerError',
