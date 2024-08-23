@@ -265,8 +265,6 @@ export class PorphyrinService {
 
         const originalImageArgs = imageArgs.originalImageArgs;
 
-        console.log('argument of image', imageArgs);
-
         const environment = {
             deviceModel: data.deviceModel,
             deviceOS: data.deviceOS,
