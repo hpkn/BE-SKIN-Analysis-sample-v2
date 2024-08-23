@@ -117,7 +117,6 @@ export class AnalysisCommentDTO {
     })
     batchId: string | number;
 
-    @IsNotEmpty()
     @ApiProperty({
         description: 'This is required',
         example: 'This is the comment for this analysis',
