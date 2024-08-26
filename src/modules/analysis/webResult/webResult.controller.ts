@@ -11,18 +11,18 @@ export class WebResultController {
     async getBatchId(
         @Param('batch_id') batch_id: number,
         @Res() res: Response,
-        // @Query('check') checkDuration?: number,
+        @Query('check') checkDuration?: number,
     ) {
         try {
-            // if (checkDuration) {
-            //     const isExpired = await this.webResult.checkExpiration(batch_id, checkDuration);
-            //     if (isExpired) {
-            //         return res.status(410).json({
-            //             status: 410,
-            //             message: 'Web result is expired',
-            //         });
-            //     }
-            // }
+            if (checkDuration) {
+                const isExpired = await this.webResult.checkExpiration(batch_id, checkDuration);
+                if (isExpired) {
+                    return res.status(410).json({
+                        status: 410,
+                        message: 'Web result is expired',
+                    });
+                }
+            }
             const result = await this.webResult.getBatchId(batch_id);
 
             return res.status(200).json({
