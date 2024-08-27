@@ -15,6 +15,7 @@ import {
     Delete,
     Req,
     HttpStatus,
+    BadRequestException,
 } from '@nestjs/common';
 import * as celery from 'celery-node';
 import e, { Request, Response } from 'express';
@@ -1529,6 +1530,12 @@ export class AlgoAnalysisController {
     })
     async cbbWithoutImage(@Body() data: any, @Res() res: Response) {
         try {
+            if (!data?.batch_id || data?.batch_id === null || data?.batch_id === '') {
+                throw new BadRequestException({
+                    status: 400,
+                    message: 'batch_id is required',
+                });
+            }
             const result: any = this.AlgoAnalysis.analysisCbb(data);
 
             let questFr = -1;
