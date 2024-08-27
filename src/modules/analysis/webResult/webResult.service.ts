@@ -485,7 +485,7 @@ export class WebResultService {
 
     async getSkinAge(batch_id: number) {
         const result = await this.database.executeQuery(
-            `SELECT scores ->> 'skinAge' as skin_age, created_time::date as date, created_time::time as time
+            `SELECT scores ->> 'skinAge' as skin_age, scores ->> 'skinCondtion' as skin_condition, created_time::date as date, created_time::time as time
             FROM measurements 
             WHERE batch_id = $1 AND type_image_id = 21 AND type_measurement_id = 18`,
             [batch_id],
@@ -511,12 +511,11 @@ export class WebResultService {
         Analysis Web Result
     */
     async getBatchId(batch_id: number) {
-        let getSkinCondition;
         let result = await this.webResult(batch_id);
         const checkKiosk = await this.checkIfkiosk(batch_id);
 
         const avg = await this.webResultAverage(batch_id, checkKiosk);
-        const skinAge = await this.getSkinAge(batch_id);
+        const skinAgeCondition = await this.getSkinAge(batch_id);
         const analysis_comment = result[0]?.analysis_comment;
         const imageUpload = result.length > 0 ? result[0]?.imageUpload : false;
 
@@ -572,45 +571,45 @@ export class WebResultService {
         if (answers !== null) {
             questFr = this.computation.questionnaireFrequency(answers, 5);
         }
+        let getSkinCondition = skinAgeCondition[0]?.skin_condition;
+        if (!skinAgeCondition[0]?.skin_condition) {
+            getSkinCondition = this.getSkinCondition(
+                Number(moistureT),
+                Number(sebumT),
+                Number(moistureU),
+                Number(sebumU),
+                questFr,
+            );
 
-        getSkinCondition = this.getSkinCondition(
-            Number(moistureT),
-            Number(sebumT),
-            Number(moistureU),
-            Number(sebumU),
-            questFr,
-        );
-
-        if (checkKiosk?.kiosk === 'true' || checkKiosk?.kiosk === true) {
-            getSkinCondition = this.computationSkinConditionKiosk100(moistureU, questFr);
+            if (checkKiosk?.kiosk === 'true' || checkKiosk?.kiosk === true) {
+                getSkinCondition = this.computationSkinConditionKiosk100(moistureU, questFr);
+            }
         }
 
         const conditionResult = this.keywordValue(getSkinCondition);
 
-        if (moistureT !== null || moistureU !== null || sebumT !== null || sebumU !== null) {
-            finalResult.push({
-                measurement: 'Skin Condition',
-                value: null,
-                date: null,
-                time: null,
-                original_image_url: null,
-                analyzed_image_url: null,
-                avg_value: null,
-                keyword_value: conditionResult.keyword_value,
-                keyword_id: conditionResult.keyword_id,
-            });
-        }
+        finalResult.push({
+            measurement: 'Skin Condition',
+            value: null,
+            date: skinAgeCondition[0]?.date ?? null,
+            time: skinAgeCondition[0]?.time ?? null,
+            original_image_url: null,
+            analyzed_image_url: null,
+            avg_value: null,
+            keyword_value: conditionResult.keyword_value,
+            keyword_id: conditionResult.keyword_id,
+        });
 
-        if (skinAge?.length > 0) {
+        if (skinAgeCondition?.length > 0) {
             finalResult.push({
                 measurement: 'SkinAge',
-                value: skinAge[0].skin_age,
-                date: skinAge[0]?.date,
-                time: skinAge[0]?.time,
+                value: skinAgeCondition[0].skin_age,
+                date: skinAgeCondition[0]?.date,
+                time: skinAgeCondition[0]?.time,
                 original_image_url: null,
                 analyzed_image_url: null,
                 avg_value: null,
-                keyword_value: skinAge[0]?.skin_age,
+                keyword_value: skinAgeCondition[0]?.skin_age,
                 keyword_id: null,
             });
         }
