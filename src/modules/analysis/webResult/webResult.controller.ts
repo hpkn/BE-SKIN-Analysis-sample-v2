@@ -8,7 +8,11 @@ import { ApiTags } from '@nestjs/swagger';
 export class WebResultController {
     constructor(private readonly webResult: WebResultService) {}
     @Get('/cndpskin/:batch_id')
-    async getBatchId(@Param('batch_id') batch_id: number, @Res() res: Response, @Query('check') checkDuration: number) {
+    async getBatchId(
+        @Param('batch_id') batch_id: number,
+        @Res() res: Response,
+        @Query('check') checkDuration?: number,
+    ) {
         try {
             if (checkDuration) {
                 const isExpired = await this.webResult.checkExpiration(batch_id, checkDuration);
