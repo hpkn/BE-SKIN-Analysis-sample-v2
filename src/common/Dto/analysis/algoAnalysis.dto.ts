@@ -121,6 +121,7 @@ export class AnalysisCommentDTO {
         description: 'This is required',
         example: 'This is the comment for this analysis',
     })
+    @IsOptional()
     comment: string;
 }
 
