@@ -12,8 +12,8 @@ export class BatchAnalysisService {
             const decoded: any = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
 
             const tokenInfo = {
-                consultant_id: decoded['consultant_id'],
-                email: decoded['email'],
+                consultant_id: decoded['id'],
+                email: decoded['sub'],
                 app_id: decoded['app_id'],
             };
 
