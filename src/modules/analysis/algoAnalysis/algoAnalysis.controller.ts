@@ -792,6 +792,9 @@ export class AlgoAnalysisController {
         }
     }
 
+    /*
+        IMAGE UPLOAD CBB
+    */
     @ApiOperation({
         summary:
             'CBB offline analysis, Expecting multiple originalImage and analyzedImage. The response will include score average, computation and questionnaire',
@@ -1017,7 +1020,7 @@ export class AlgoAnalysisController {
         }
     }
 
-    // Encryption
+    // Encrypted CBB
     @ApiOperation({
         summary: 'encryptedCBB, is the version of the CBB accepting encrypted score and decripts them',
         security: [{ bearerToken: [] }],
@@ -1303,6 +1306,9 @@ export class AlgoAnalysisController {
         }
     }
 
+    /*
+        KIOSK CBB 
+    */
     @ApiOperation({
         summary: 'CBB API For Kiosk',
         security: [{ bearerToken: [] }],
