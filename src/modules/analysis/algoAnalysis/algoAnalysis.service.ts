@@ -2881,7 +2881,7 @@ export class AlgoAnalysisService {
 
     saveDate(imageRecords: string, data: any) {
         const algoMapping: any = {
-            keratin: 2,
+            keratin: 11,
             pores: 1,
             impurities: 3,
             sebumT: 9,
@@ -2905,7 +2905,7 @@ export class AlgoAnalysisService {
                         nth_analysis: imageRecords,
                         kiosk: data?.kiosk,
                     });
-
+                    //
                     let formattedScores;
                     if (algoId === 4 || algoId === '4') {
                         formattedScores = JSON.stringify({
@@ -2976,8 +2976,8 @@ export class AlgoAnalysisService {
         };
 
         try {
-            const keratin = processAttribute(1, 'keratin');
             const pores = processAttribute(2, 'pores');
+            const keratin = processAttribute(1, 'keratin');
             const impurities = processAttribute(3, 'impurities');
             const sebumT = processAttribute(9, 'sebumT');
             const sebumU = processAttribute(4, 'sebumU') ?? null;
@@ -3030,3 +3030,5 @@ export class AlgoAnalysisService {
         }
     }
 }
+
+// Where type_measurement_id = 3 and type_image_id = 3 and type_measurement_id = 3 and type_image_id = 2
