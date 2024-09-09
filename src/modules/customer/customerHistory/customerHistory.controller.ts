@@ -29,6 +29,7 @@ export class AnanalysisHistoryController {
         @Query() query: GetcustomerHistoryDTO,
         @Res() res: Response,
     ) {
+        console.log('query --->', query);
         const result = await this.getAnalysisHistory.GetcustomerHistory(customer_id, query);
 
         return res.status(200).send(result);
