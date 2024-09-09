@@ -24,27 +24,27 @@ export class AnanalysisHistoryService {
             let dateFilterSql: any;
             if (data.page && data.limit && !data.search && !data.from && !data.to) {
                 dateFilterSql = ` WHERE customer_id = ${Number(customer_id)}
-        LIMIT ${Number(data.limit)} OFFSET ${Number((data.page - 1) * data.limit)};`;
+                 LIMIT ${Number(data.limit)} OFFSET ${Number((data.page - 1) * data.limit)};`;
                 resp = await this.database.executeQuery(mainSQL + dateFilterSql);
             } else if (data.to && data.from && !data.search) {
                 dateFilterSql = ` WHERE customer_id = ${Number(customer_id)} AND
-        created_time >= timestamp '${data.from}'
-        AND created_time <= timestamp '${data.to}'
-        LIMIT ${Number(data.limit)} OFFSET ${Number((data.page - 1) * data.limit)};`;
+                                    created_time >= timestamp '${data.from}'
+                                    AND created_time <= timestamp '${data.to}'
+                                    LIMIT ${Number(data.limit)} OFFSET ${Number((data.page - 1) * data.limit)};`;
                 resp = await this.database.executeQuery(mainSQL + dateFilterSql);
             } else if (data.to && !data.from && !data.search) {
                 dateFilterSql = ` WHERE customer_id = ${Number(customer_id)} AND
-        created_time <= timestamp '${data.to}'
-        LIMIT ${Number(data.limit)} OFFSET ${Number((data.page - 1) * data.limit)};`;
+                                    created_time <= timestamp '${data.to}'
+                                    LIMIT ${Number(data.limit)} OFFSET ${Number((data.page - 1) * data.limit)};`;
                 resp = await this.database.executeQuery(mainSQL + dateFilterSql);
             } else if (!data.to && data.from && !data.search) {
                 dateFilterSql = ` WHERE customer_id = ${Number(customer_id)} AND
-        created_time >= timestamp '${data.from}'
-        LIMIT ${Number(data.limit)} OFFSET ${Number((data.page - 1) * data.limit)};`;
+                                    created_time >= timestamp '${data.from}'
+                                    LIMIT ${Number(data.limit)} OFFSET ${Number((data.page - 1) * data.limit)};`;
                 resp = await this.database.executeQuery(mainSQL + dateFilterSql);
             } else if (data.search) {
                 dateFilterSql = ` WHERE customer_id = ${Number(customer_id)}
-        AND CAST(batch_id as TEXT) LIKE '${data.search}%'`;
+                                AND CAST(batch_id as TEXT) LIKE '${data.search}%'`;
                 resp = await this.database.executeQuery(mainSQL + dateFilterSql);
             } else {
                 resp = await this.database.executeQuery(mainSQL + ` WHERE customer_id = ${Number(customer_id)}`);
@@ -52,10 +52,10 @@ export class AnanalysisHistoryService {
 
             const result: any = await this.database.executeQuery(
                 `
-        select count(*)
-        from analysis
-        where customer_id = $1 -- customer_id
-  `,
+                select count(*)
+                from analysis
+                where customer_id = $1
+            `,
                 [Number(customer_id)],
             );
 

@@ -3022,3 +3022,5 @@ export class AlgoAnalysisService {
         }
     }
 }
+
+// Where type_measurement_id = 3 and type_image_id = 3 and type_measurement_id = 3 and type_image_id = 2

@@ -1573,6 +1573,23 @@ export class AlgoAnalysisController {
             this.AlgoAnalysis.saveSkinCondtion(Number(data.batch_id), skinCondition, result.skinAge);
 
             await this.AlgoAnalysis.updateData(data, '');
+
+            const moisture_u: any = {
+                batch_id: data.batch_id,
+                score: result.moistureU,
+                skinAge: result.skinAge,
+                skinCondition: skinCondition,
+            };
+            this.moisture_u.saveData(moisture_u);
+
+            const moisture_t: any = {
+                batch_id: data.batch_id,
+                score: result.moistureT,
+                skinAge: result.skinAge,
+                skinCondition: skinCondition,
+            };
+
+            this.moisture_t.saveData(moisture_t);
         } catch (error) {
             console.error(error);
             throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
