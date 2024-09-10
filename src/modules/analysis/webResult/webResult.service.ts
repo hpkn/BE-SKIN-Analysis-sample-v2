@@ -432,7 +432,7 @@ export class WebResultService {
                         END
                     ELSE
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 0 AND 5 THEN 'Clear'
+                            WHEN AVG_SCORE BETWEEN 0 AND 5.99 THEN 'Clear'
                             WHEN AVG_SCORE BETWEEN 6 AND 15.99 THEN 'Almost Clear'
                             WHEN AVG_SCORE BETWEEN 16 AND 48.99 THEN 'Mild'
                             WHEN AVG_SCORE BETWEEN 49 AND 80.99 THEN 'Moderate'
@@ -459,7 +459,7 @@ export class WebResultService {
                         END
                     ELSE
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 0 AND 5 THEN 1
+                            WHEN AVG_SCORE BETWEEN 0 AND 5.99 THEN 1
                             WHEN AVG_SCORE BETWEEN 6 AND 15.99 THEN 2
                             WHEN AVG_SCORE BETWEEN 16 AND 48.99 THEN 3
                             WHEN AVG_SCORE BETWEEN 49 AND 80.99 THEN 4
