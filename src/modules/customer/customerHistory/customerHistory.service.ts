@@ -164,26 +164,77 @@ export class AnanalysisHistoryService {
         //     [batch_id],
         // );
 
+        // const result = await this.database.executeQuery(
+        //     `
+        //     SELECT
+        //         type_measurements."name" AS measurement,
+        //         analysis_comment as analysis_comment,
+        //         record.batch_id,
+        //         url as original_image,
+        //         hash,
+        //         type_images.NAME AS TYPE,
+        //         hash,
+        //         to_json ( scores ) AS args
+        //     FROM
+        //         measurements record
+        //         LEFT JOIN type_images ON type_images.ID = record.type_image_id
+        //         LEFT JOIN type_measurements ON type_measurements.id = record.type_measurement_id
+        //         LEFT JOIN analysis ON analysis.batch_id = record.batch_id
+        //     WHERE
+        //         record.batch_id = $1
+        //         AND ( type_image_id = 21 );
+        // `,
+        //     [batch_id],
+        // );
+
         const result = await this.database.executeQuery(
-            `
-        SELECT
-          type_measurements."name" AS measurement,
-          analysis_comment as analysis_comment,
-          record.batch_id,
-          url as original_image,
-          hash,
-          type_images.NAME AS TYPE,
-          hash,
-          to_json ( scores ) AS args
-        FROM
-          measurements record
-          LEFT JOIN type_images ON type_images.ID = record.type_image_id
-          LEFT JOIN type_measurements ON type_measurements.id = record.type_measurement_id
-          LEFT JOIN analysis ON analysis.batch_id = record.batch_id
-        WHERE
-          record.batch_id = $1
-          AND ( type_image_id = 21 );
-      `,
+            `WITH analyzed_records AS (
+                SELECT
+                    batch_id,
+                    url AS analyzed_url,
+                    type_measurement_id,
+                    ROW_NUMBER() OVER (PARTITION BY batch_id, type_measurement_id ORDER BY url) AS rn
+                FROM measurements
+                WHERE type_image_id = 18
+            ),
+            filtered_records AS (
+                SELECT
+                    batch_id,
+                    url AS original_image,
+                    type_measurement_id,
+                    hash AS hash,
+                    scores AS args
+                FROM measurements
+                WHERE type_image_id = 21
+            )
+            SELECT
+                tm."name" AS measurement,
+                a.analysis_comment,
+                r.batch_id,
+                r.original_image,
+                ar.analyzed_url,
+                r.hash,
+                ti.name AS type,
+                to_json(r.args) as args
+            FROM
+                filtered_records r
+                LEFT JOIN type_images ti ON ti.ID = 21
+                LEFT JOIN type_measurements tm ON tm.ID = r.type_measurement_id
+                LEFT JOIN analysis a ON a.batch_id = r.batch_id
+                LEFT JOIN analyzed_records ar ON ar.batch_id = r.batch_id
+                    AND ar.type_measurement_id = r.type_measurement_id
+                    AND ar.rn = 1
+            WHERE
+                r.batch_id = $1
+            GROUP BY
+                tm."name",
+                a.analysis_comment,
+                r.batch_id,
+                r.original_image,
+                ar.analyzed_url,
+                r.hash,
+                ti.name,
+                r.args;`,
             [batch_id],
         );
 
