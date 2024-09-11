@@ -1903,8 +1903,9 @@ export class AlgoAnalysisService {
     }
 
     saveSkinCondtion(batch_id: number, skinCondtion: any, skinAge: any) {
-        const condition = skinCondtion.length === 0 ? '-1' : skinCondtion;
+        const condition = skinCondtion?.length === 0 ? '-1' : skinCondtion === null ? '-1' : skinCondtion;
 
+        console.log('skinCondtion ===>', skinCondtion);
         try {
             const update = `
                 INSERT INTO measurements (batch_id, type_measurement_id, type_image_id, scores)
@@ -3027,6 +3028,16 @@ export class AlgoAnalysisService {
         } catch (err) {
             console.log(err);
             throw new Error();
+        }
+    }
+
+    checkNullOrStringNull(value: any) {
+        if (value === null) {
+            console.log('The value is null');
+        } else if (value === 'null') {
+            console.log("The value is 'null'");
+        } else {
+            console.log("The value is neither null nor 'null'", typeof value);
         }
     }
 }
