@@ -971,7 +971,7 @@ export class AlgoAnalysisController {
     @Post('/skinAgeCondition')
     async skinAgeCondition(@Body() body: SkinAgeConditionDto, @Res() res: Response, @Req() req: Request) {
         let { batch_id, bithYear } = body;
-        let skinCondition;
+        let skinCondition = null;
 
         try {
             const { spots, wrinkles, moistureT, sebumT, moistureU, sebumU } = await this.AlgoAnalysis.skinAgeOperation(
@@ -988,14 +988,31 @@ export class AlgoAnalysisController {
             if (answers !== null) {
                 questFr = this.computation.questionnaireFrequency(answers, 5);
             }
+
+            this.AlgoAnalysis.checkNullOrStringNull(spots);
+            this.AlgoAnalysis.checkNullOrStringNull(wrinkles);
+            this.AlgoAnalysis.checkNullOrStringNull(moistureT);
+            this.AlgoAnalysis.checkNullOrStringNull(sebumT);
+            this.AlgoAnalysis.checkNullOrStringNull(moistureU);
+            this.AlgoAnalysis.checkNullOrStringNull(sebumU);
+
+            console.log(typeof questFr, answers);
+
             const obj = { deviceModel: 'device' };
             const token = req.headers.authorization?.split(' ')[1];
             const isKiosk = this.AlgoAnalysis.checkIfKiosk(token, obj);
 
-            skinCondition = this.webResult.getSkinCondition(moistureT, sebumT, moistureU, sebumU, questFr);
-            if (isKiosk) {
-                skinCondition = this.webResult.computationSkinConditionKiosk100(moistureU, questFr);
+            if (moistureT !== null || sebumT !== null || moistureU !== null || sebumU !== null || answers !== null) {
+                skinCondition = this.webResult.getSkinCondition(moistureT, sebumT, moistureU, sebumU, questFr);
             }
+
+            if (isKiosk) {
+                if (moistureU !== null || questFr !== null) {
+                    skinCondition = this.webResult.computationSkinConditionKiosk100(moistureU, questFr);
+                }
+            }
+
+            console.log('==>', skinCondition);
 
             this.AlgoAnalysis.saveSkinCondtion(Number(batch_id), skinCondition, skinAge);
 
