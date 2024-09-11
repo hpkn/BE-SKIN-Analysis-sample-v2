@@ -1012,8 +1012,6 @@ export class AlgoAnalysisController {
                 }
             }
 
-            console.log('==>', skinCondition);
-
             this.AlgoAnalysis.saveSkinCondtion(Number(batch_id), skinCondition, skinAge);
 
             return res.status(200).json({
