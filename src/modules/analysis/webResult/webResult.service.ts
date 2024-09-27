@@ -730,7 +730,7 @@ export class WebResultService {
 
         result = this.webResultAverageGeneral(batch_id);
         const appId = checkKiosk?.app_id ? Number(checkKiosk?.app_id) : 0;
-        if ((checkKiosk?.kiosk === 'true' || checkKiosk?.kiosk === true) && appId === 107) {
+        if ((checkKiosk?.kiosk === 'true' || checkKiosk?.kiosk === true) && appId === 110) {
             result = this.webResultAverageKiosk(batch_id);
         }
 
