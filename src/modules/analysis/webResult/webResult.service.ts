@@ -498,7 +498,7 @@ export class WebResultService {
     async checkIfkiosk(batch_id: number) {
         const result = await this.database.executeQuery(
             `
-                SELECT args ->> 'kiosk' as kiosk 
+                SELECT args ->> 'kiosk' as kiosk, args ->> 'app_id' as app_id
                 FROM analysis WHERE batch_id = $1
             `,
             [batch_id],
@@ -729,8 +729,8 @@ export class WebResultService {
         let result;
 
         result = this.webResultAverageGeneral(batch_id);
-
-        if (checkKiosk?.kiosk === 'true' || checkKiosk?.kiosk === true) {
+        const appId = checkKiosk?.app_id ? Number(checkKiosk?.app_id) : 0;
+        if ((checkKiosk?.kiosk === 'true' || checkKiosk?.kiosk === true) && appId === 107) {
             result = this.webResultAverageKiosk(batch_id);
         }
 
