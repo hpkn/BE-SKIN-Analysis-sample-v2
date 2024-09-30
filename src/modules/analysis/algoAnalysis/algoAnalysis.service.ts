@@ -2896,7 +2896,6 @@ export class AlgoAnalysisService {
 
         attributeKeys.forEach((attribute) => {
             const result = data['computation'][attribute];
-
             if (result && Object.keys(result).length !== 0) {
                 const algoId = algoMapping[attribute];
 
