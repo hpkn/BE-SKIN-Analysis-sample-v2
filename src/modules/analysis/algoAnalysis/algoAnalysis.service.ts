@@ -2989,7 +2989,7 @@ export class AlgoAnalysisService {
             // saveDate
             const imageRecords = uuidv4();
 
-            const moistureT = data?.moistureU ?? -1;
+            const moistureT = data?.moistureT ?? -1;
             const moistureU = data?.moistureU ?? -1;
 
             const skinAge = this.computation.skinAge(
