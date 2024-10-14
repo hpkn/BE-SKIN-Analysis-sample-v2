@@ -410,6 +410,12 @@ export class OfflineDatasDTO {
 
     @IsOptional()
     kiosk: any;
+
+    @IsOptional()
+    showing_image_flag: any;
+
+    @IsOptional()
+    batch_id: any;
 }
 
 export class MultiArgsDTO {
@@ -699,6 +705,9 @@ export class OfflineDataCBBDTO {
 
     @IsOptional()
     kiosk: any;
+
+    @IsOptional()
+    showing_image_flag: any;
 }
 
 export class analysisCBBDTO {

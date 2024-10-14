@@ -575,43 +575,40 @@ export class AlgoAnalysisService {
 
     saveOfflineData(data: OfflineDatasDTO, imageRecords: any, imageArgs: any) {
         try {
-            switch (data.type) {
-                case 'keratin' || 1:
-                    return this.keratin.offlineSaveData(data, imageRecords, imageArgs);
-                case 'pores' || 2:
-                    return this.pores.offlineSaveData(data, imageRecords, imageArgs);
-                case 'porphyrin' || 3:
-                    return this.porphyrin.offlineSaveData(data, imageRecords, imageArgs);
-                case 'sebum' || 4:
-                    return this.sebum.offlineSaveData(data, imageRecords, imageArgs);
-                // case 'sebumT':
-                //     return this.sebumT.analysis(data, taskResponse);
-                case 'shine' || 5:
-                    return this.shine.offlineSaveData(data, imageRecords, imageArgs);
-                case 'spots' || 6:
-                    return this.spots.offlineSaveData(data, imageRecords, imageArgs);
-                // case 'skintone' || 7:
-                //     return this.skintone.offlineSaveData(data, imageRecords, imageArgs);
-                // case 'skintone_dior':
-                //     return this.skintone_dior.offlineSaveData(data, imageRecords, imageArgs);
-                case 'wrinkles' || 7:
-                    return this.wrinkles.offlineSaveData(data, imageRecords, imageArgs);
-                case 'sensitivityscabs' || 8:
-                    return this.sensitivityScabs.offlineSaveData(data, imageRecords, imageArgs);
-                case 'sensitivityscaling' || 9:
-                    return this.sensitivityScaling.offlineSaveData(data, imageRecords, imageArgs);
-                case 'sensitivityredness' || 10:
-                    return this.sensitivityredness.offlineSaveData(data, imageRecords, imageArgs);
-                // case 'fitzSG':
-                //     return this.fitzSG.analysis(data, imageRecords, imageArgs);
-                default:
-                    throw new BadRequestException({
-                        status: 400,
-                        message: 'Analysis Type is incorrect',
-                    });
+            const typeMapping: { [key: string]: any } = {
+                'keratin': this.keratin,
+                '1': this.keratin,
+                'pores': this.pores,
+                '2': this.pores,
+                'porphyrin': this.porphyrin,
+                '3': this.porphyrin,
+                'sebum': this.sebum,
+                '4': this.sebum,
+                'shine': this.shine,
+                '5': this.shine,
+                'spots': this.spots,
+                '6': this.spots,
+                'wrinkles': this.wrinkles,
+                '7': this.wrinkles,
+                'sensitivityscabs': this.sensitivityScabs,
+                '8': this.sensitivityScabs,
+                'sensitivityscaling': this.sensitivityScaling,
+                '9': this.sensitivityScaling,
+                'sensitivityredness': this.sensitivityredness,
+                '10': this.sensitivityredness,
+            };
+
+            const handler = typeMapping[data.type];
+            if (!handler) {
+                throw new BadRequestException({
+                    status: 400,
+                    message: 'Analysis Type is incorrect',
+                });
             }
+
+            return handler.offlineSaveData(data, imageRecords, imageArgs);
         } catch (e) {
-            console.log(e);
+            console.error(e);
         }
     }
 
@@ -733,56 +730,52 @@ export class AlgoAnalysisService {
         deepImage?: any,
         ultraDeepImage?: any,
     ) {
-        try {
-            switch (data.type) {
-                case 'keratin':
-                    return this.keratin.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'pores':
-                    return this.pores.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'porphyrin':
-                    return this.porphyrin.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'sebum':
-                    return this.sebum.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                // case 'sebumT':
-                //     return this.sebumT.analysis(data, taskResponse);
-                case 'shine':
-                    return this.shine.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'spots':
-                    return this.spots.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'skintone':
-                    return this.skintone.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                // case 'skintone_dior':
-                //     return this.skintone_dior.offlineSaveData(originalImage, analyzedImage, imageArgs);
-                case 'wrinkles':
-                    return this.wrinkles.offlinesaveDataImage(
-                        originalImage,
-                        analyzedImage,
-                        imageArgs,
-                        fineImage,
-                        ultraFineImage,
-                        deepImage,
-                        ultraDeepImage,
-                    );
-                case 'sensitivityscabs':
-                    return this.sensitivityScabs.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'sensitivityscaling':
-                    return this.sensitivityScaling.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'sensitivityredness':
-                    return this.sensitivityredness.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                // case 'fitzSG':
-                //     return this.fitzSG.analysis(originalImage, analyzedImage, imageArgs);
-                default:
-                    throw new BadRequestException({
-                        status: 400,
-                        message: 'Analysis Type is incorrect',
-                    });
-            }
-        } catch (e) {
-            console.log(e);
+        const typeMapping: { [key: string]: any } = {
+            'keratin': this.keratin,
+            '1': this.keratin,
+            'pores': this.pores,
+            '2': this.pores,
+            'porphyrin': this.porphyrin,
+            '3': this.porphyrin,
+            'sebum': this.sebum,
+            '4': this.sebum,
+            'shine': this.shine,
+            '5': this.shine,
+            'spots': this.spots,
+            '6': this.spots,
+            'wrinkles': this.wrinkles,
+            '7': this.wrinkles,
+            'sensitivityscabs': this.sensitivityScabs,
+            '8': this.sensitivityScabs,
+            'sensitivityscaling': this.sensitivityScaling,
+            '9': this.sensitivityScaling,
+            'sensitivityredness': this.sensitivityredness,
+            '10': this.sensitivityredness,
+        };
+
+        const handler = typeMapping[data.type];
+
+        if (!handler) {
+            throw new BadRequestException({
+                status: 400,
+                message: 'Analysis Type is incorrect',
+            });
         }
+        if (data.type === 'wrinkles' || data.type === '7') {
+            return this.wrinkles.offlinesaveDataImage(
+                originalImage,
+                analyzedImage,
+                imageArgs,
+                fineImage,
+                ultraFineImage,
+                deepImage,
+                ultraDeepImage,
+            );
+        }
+        return handler.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
     }
 
-    async SaveDataFinal(data: OfflineDatasDTO, imageRecords: any, imageArg: any) {
+    async saveDataFinal(data: OfflineDatasDTO, imageRecords: any, imageArg: any) {
         try {
             await this.saveOfflineData(data, imageRecords, imageArg);
 
@@ -1741,7 +1734,9 @@ export class AlgoAnalysisService {
             kiosk: data?.kiosk,
             imageUpload: data?.imageUpload ?? true,
             lisenceId: data?.licenseId ?? 1,
+            showing_image_flag: data?.showing_image_flag ?? false,
         };
+        console.log('=====>', data);
 
         await this.updateEnvironment(data.batch_id, environment);
     }
@@ -2888,7 +2883,6 @@ export class AlgoAnalysisService {
 
         attributeKeys.forEach((attribute) => {
             const result = data['computation'][attribute];
-
             if (result && Object.keys(result).length !== 0) {
                 const algoId = algoMapping[attribute];
 
@@ -2981,7 +2975,7 @@ export class AlgoAnalysisService {
             // saveDate
             const imageRecords = uuidv4();
 
-            const moistureT = data?.moistureU ?? -1;
+            const moistureT = data?.moistureT ?? -1;
             const moistureU = data?.moistureU ?? -1;
 
             const skinAge = this.computation.skinAge(
