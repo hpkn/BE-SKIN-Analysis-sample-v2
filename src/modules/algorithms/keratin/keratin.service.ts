@@ -171,6 +171,7 @@ export class KeratinService {
             uv_index: data.uv_index,
             appVersion: data.appVersion,
             kiosk: data?.kiosk,
+            showing_image_flag: data?.showing_image_flag ?? false,
         };
 
         await this.batchAnalysis.updateEnvironment(data.batchId, environment);

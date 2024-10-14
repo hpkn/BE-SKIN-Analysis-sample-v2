@@ -652,17 +652,53 @@ export class AlgoAnalysisController {
         },
         @Req() req: Request,
     ) {
-        try {
-            if (!file['analyzedImage'][0] || !file['originalImage'][0])
-                return res.send({
-                    status: 40002,
-                    type: 'BadRequestError',
-                    message: 'There is no necassary image file!',
-                });
+        if (!file['analyzedImage'][0] || !file['originalImage'][0])
+            return res.send({
+                status: 40002,
+                type: 'BadRequestError',
+                message: 'There is no necassary image file!',
+            });
 
+        const analysisTypeNum = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+        const analysisList = [
+            'keratin',
+            'pores',
+            'porphyrin',
+            'sebum',
+            'shine',
+            'spots',
+            'skintone',
+            'wrinkles',
+            'sensitivityscabs',
+            'sensitivityscaling',
+            'sensitivityredness',
+        ];
+
+        const checkType = analysisList.includes(data.type) || analysisTypeNum.includes(data.type);
+
+        if (checkType === false) {
+            throw new BadRequestException({
+                status: 400,
+                service: 'Offline Analysis Data saving',
+                message: 'Analysis Type is incorrect',
+            });
+        }
+
+        res.send({
+            status: 200,
+            service: 'Offline Analysis Data saving',
+            message: 'Data saved to the cloud',
+        });
+
+        // New Stuff
+        setImmediate(async () => {
+            const license = data?.licenseId ? Number(data.licenseId) : data.licenseId;
+            data.showing_image_flag = license === 5 ? 'true' : false;
+
+            console.log('data.showing_image_flag', data.showing_image_flag);
             const token = req.headers.authorization?.split(' ')[1];
-            data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
 
+            data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
             data.batchId = Number(data.batchId);
             const imageRecords = uuidv4();
 
@@ -680,21 +716,10 @@ export class AlgoAnalysisController {
                 imageArg = this.AlgoAnalysis.handleofflineImageArg(data);
             }
 
-            await this.AlgoAnalysis.SaveDataFinal(data, imageRecords, imageArg);
+            await this.AlgoAnalysis.saveDataFinal(data, imageRecords, imageArg);
 
-            //upload to DB
-            let promise1 = new Promise(function (resolve, reject) {
-                resolve(
-                    res.send({
-                        status: 200,
-                        service: 'Offline Analysis Data saving',
-                        message: 'Data saved to the cloud',
-                    }),
-                );
-            });
-
-            //Upload Images
-            const saving = await this.AlgoAnalysis.saveOfflineImage(
+            // Save Images asynchronozly
+            await this.AlgoAnalysis.saveOfflineImage(
                 data,
                 originalImage,
                 analyzedImage,
@@ -704,32 +729,10 @@ export class AlgoAnalysisController {
                 deepImage,
                 ultraDeepImage,
             );
+        });
 
-            let promise2 = new Promise(function (resolve, resject) {
-                resolve(saving);
-            });
-
-            promise1
-                .then(function (value) {
-                    return promise2;
-                })
-                .catch((error) => {
-                    return res.send({
-                        status: 500,
-                        type: 'InternalServerError',
-                        message: 'Internal server error.',
-                        error: error.message,
-                    });
-                });
-        } catch (e) {
-            console.log(e);
-            return res.send({
-                status: 500,
-                type: 'InternalServerError',
-                message: 'Internal server error.',
-                error: e.message,
-            });
-        }
+        data.batch_id = data.batchId;
+        await this.AlgoAnalysis.updateData(data, '');
     }
 
     @ApiBearerAuth('access-token')

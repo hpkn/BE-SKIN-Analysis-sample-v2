@@ -35,7 +35,11 @@ export class AnanalysisHistoryController {
     }
 
     @Get('/:customer_id/analysis-history/details')
-    async getcustomerHistoryDetail(@Res() res: Response, @Query() query: GetcustomerHistoryDTO) {
+    async getcustomerHistoryDetail(
+        @Res() res: Response,
+        @Param('customer_id') customer_id: number,
+        @Query() query: GetcustomerHistoryDTO,
+    ) {
         const result = await this.getAnalysisHistory.getcustomerHistoryDetail(query);
 
         return res.status(200).send(result);
