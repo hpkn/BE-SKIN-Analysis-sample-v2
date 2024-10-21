@@ -17,8 +17,9 @@ import {
     HttpStatus,
     BadRequestException,
 } from '@nestjs/common';
+
 import * as celery from 'celery-node';
-import e, { Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { AlgoAnalysisService } from './algoAnalysis.service';
 import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
@@ -50,6 +51,8 @@ import { ComputationService } from 'src/modules/algorithms/computation/computati
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { WebResultService } from '../webResult/webResult.service';
 import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
+import { InjectQueue, QueueEventsHost } from '@nestjs/bullmq';
+import { Queue } from 'bull';
 
 @ApiTags('Analysis')
 @Controller('analysis')
@@ -66,6 +69,7 @@ export class AlgoAnalysisController {
         private readonly batchAnalysis: BatchAnalysisService,
         private readonly computation: ComputationService,
         private readonly webResult: WebResultService,
+        @InjectQueue('analysis') private readonly analysisQueue: Queue,
     ) {}
 
     @ApiBearerAuth('access-token')
@@ -630,12 +634,12 @@ export class AlgoAnalysisController {
     @ApiBody({ type: OfflineDatasDTO })
     @UseInterceptors(
         FileFieldsInterceptor([
-            { name: 'originalImage', maxCount: 1 },
-            { name: 'analyzedImage', maxCount: 1 },
-            { name: 'fineImage', maxCount: 1 },
-            { name: 'ultraFineImage', maxCount: 1 },
-            { name: 'deepImage', maxCount: 1 },
-            { name: 'ultraDeepImage', maxCount: 1 },
+            { name: 'originalImage', maxCount: 10 },
+            { name: 'analyzedImage', maxCount: 10 },
+            { name: 'fineImage', maxCount: 10 },
+            { name: 'ultraFineImage', maxCount: 10 },
+            { name: 'deepImage', maxCount: 10 },
+            { name: 'ultraDeepImage', maxCount: 10 },
         ]),
     )
     async offline(
@@ -691,48 +695,63 @@ export class AlgoAnalysisController {
         });
 
         // New Stuff
-        setImmediate(async () => {
-            const license = data?.licenseId ? Number(data.licenseId) : data.licenseId;
-            data.showing_image_flag = license === 5 ? 'true' : false;
+        // setImmediate(async () => {
+        //     const license = data?.licenseId ? Number(data.licenseId) : data.licenseId;
+        //     data.showing_image_flag = license === 5 ? 'true' : false;
 
-            console.log('data.showing_image_flag', data.showing_image_flag);
-            const token = req.headers.authorization?.split(' ')[1];
+        //     console.log('data.showing_image_flag', data.showing_image_flag);
+        //     const token = req.headers.authorization?.split(' ')[1];
 
-            data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
-            data.batchId = Number(data.batchId);
-            const imageRecords = uuidv4();
+        //     data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
+        //     data.batchId = Number(data.batchId);
+        //     const imageRecords = uuidv4();
 
-            const analyzedImage = file.analyzedImage[0].buffer;
-            const originalImage = file.originalImage[0].buffer;
-            const fineImage = file?.fineImage ? file?.fineImage[0]?.buffer : null;
-            const ultraFineImage = file?.ultraFineImage ? file?.ultraFineImage[0]?.buffer : null;
-            const deepImage = file?.deepImage ? file?.deepImage[0]?.buffer : null;
-            const ultraDeepImage = file?.ultraDeepImage ? file?.ultraDeepImage[0]?.buffer : null;
+        //     const analyzedImage = file.analyzedImage[0].buffer;
+        //     const originalImage = file.originalImage[0].buffer;
+        //     const fineImage = file?.fineImage ? file?.fineImage[0]?.buffer : null;
+        //     const ultraFineImage = file?.ultraFineImage ? file?.ultraFineImage[0]?.buffer : null;
+        //     const deepImage = file?.deepImage ? file?.deepImage[0]?.buffer : null;
+        //     const ultraDeepImage = file?.ultraDeepImage ? file?.ultraDeepImage[0]?.buffer : null;
 
-            let imageArg;
-            if (/[0-9]/.test(data.type)) {
-                imageArg = this.AlgoAnalysis.handleCBBImageArg(data);
-            } else {
-                imageArg = this.AlgoAnalysis.handleofflineImageArg(data);
-            }
+        //     let imageArg;
+        //     if (/[0-9]/.test(data.type)) {
+        //         imageArg = this.AlgoAnalysis.handleCBBImageArg(data);
+        //     } else {
+        //         imageArg = this.AlgoAnalysis.handleofflineImageArg(data);
+        //     }
 
-            await this.AlgoAnalysis.saveDataFinal(data, imageRecords, imageArg);
+        //     await this.AlgoAnalysis.saveDataFinal(data, imageRecords, imageArg);
 
-            // Save Images asynchronozly
-            await this.AlgoAnalysis.saveOfflineImage(
-                data,
-                originalImage,
-                analyzedImage,
-                imageArg,
-                fineImage,
-                ultraFineImage,
-                deepImage,
-                ultraDeepImage,
-            );
-        });
+        //     // Save Images asynchronozly
+        //     await this.AlgoAnalysis.saveOfflineImage(
+        //         data,
+        //         originalImage,
+        //         analyzedImage,
+        //         imageArg,
+        //         fineImage,
+        //         ultraFineImage,
+        //         deepImage,
+        //         ultraDeepImage,
+        //     );
+        // });
 
         data.batch_id = data.batchId;
-        await this.AlgoAnalysis.updateData(data, '');
+        // await this.AlgoAnalysis.updateData(data, '');
+
+        const queue = await this.analysisQueue.add('save-offline-analysis', {
+            data,
+            files: {
+                analyzedImage: file.analyzedImage[0].buffer,
+                originalImage: file.originalImage[0].buffer,
+                fineImage: file?.fineImage?.[0]?.buffer,
+                ultraFineImage: file?.ultraFineImage?.[0]?.buffer,
+                deepImage: file?.deepImage?.[0]?.buffer,
+                ultraDeepImage: file?.ultraDeepImage?.[0]?.buffer,
+            },
+            token: req.headers.authorization?.split(' ')[1],
+        });
+
+        // console.log('queue ===> ', queue);
     }
 
     @ApiBearerAuth('access-token')

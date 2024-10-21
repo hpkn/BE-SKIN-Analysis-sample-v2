@@ -388,8 +388,7 @@ export class WebResultService {
         FROM
             _results 
         WHERE
-            ROW_NUMBER = 1;
-                
+            ROW_NUMBER = 1;  
             `,
             [batch_id],
         );

@@ -1247,7 +1247,11 @@ export class AlgoAnalysisService {
         const result = await this.database.executeQuery(
             `
             SELECT  
-                url,
+                CASE
+                    WHEN (an.args ->> 'showing_image_flag') = 'true' OR (an.args ->> 'licenseId') = '5'
+                    THEN NULL
+                    ELSE url
+                END AS url,
                 CASE
                     WHEN type_measurement_id = 1 THEN 'pores'
                     WHEN type_measurement_id = 2 THEN 'sensitivityscaling'
@@ -1274,11 +1278,14 @@ export class AlgoAnalysisService {
                 to_json ( scores ) ->> 'ultra_fine_score' AS ultra_fine_score,
                 to_json ( scores ) ->> 'deep_score' AS deep_score,
                 to_json ( scores ) ->> 'ultra_deep_score' AS ultra_deep_score,
-                to_json ( args ) ->> 'nth_analysis' as hash,
-                created_time
+                to_json ( record.args ) ->> 'nth_analysis' as hash,
+                an.args ->> 'lisenceId' as licenseId,
+                an.args ->> 'showing_image_flag' as no_image_license,
+                record.created_time as created_time
             FROM measurements record
-            LEFT JOIN type_images ON type_images.ID = record.type_image_id 
-            WHERE batch_id = $1 AND ( type_image_id = 18 OR type_image_id = 21);
+            LEFT JOIN type_images ON type_images.ID = record.type_image_id
+            LEFT JOIN analysis an ON an.batch_id = record.batch_id
+            WHERE record.batch_id = $1 AND ( type_image_id = 18 OR type_image_id = 21);
             `,
             [batch_id],
         );
@@ -1289,18 +1296,20 @@ export class AlgoAnalysisService {
         let batchIds = await this.getCustomerBatchID(customer_id, per, page);
 
         try {
-            const imagePromises: Promise<any>[] = batchIds.map(async (batchId: any) => {
-                const rows = await this.getImageData(batchId['batch_id']);
-                if (rows.length > 0) {
-                    return {
-                        batch_id: Number(batchId['batch_id']),
-                        customer_id: customer_id,
-                        images: [...rows],
-                    };
-                }
-            });
+            const image = await Promise.all(
+                batchIds.map(async ({ batch_id }) => {
+                    const rows = await this.getImageData(batch_id);
+                    if (rows.length > 0) {
+                        return {
+                            batch_id: Number(batch_id),
+                            customer_id,
+                            images: rows,
+                        };
+                    }
+                }),
+            );
 
-            const image = await Promise.all(imagePromises);
+            // const image = await Promise.all(imagePromises);
             const result = image.filter((result) => result !== null);
 
             for (const entry of result) {
@@ -1396,7 +1405,34 @@ export class AlgoAnalysisService {
         });
     }
 
+    processedData = (data: any, showing_image_flag: any) => {
+        if (showing_image_flag === 'true') {
+            // Iterate through each analysis type
+            Object.keys(data).forEach((key) => {
+                if (data[key].isArray()) {
+                    data[key].forEach((entry: any) => {
+                        entry.analyzedImage = null;
+                        entry.originalImage = null;
+                    });
+                }
+            });
+        }
+        return data;
+    };
     // transform wrinkles
+
+    async getLicense(batch_id: number) {
+        const result = await this.database.executeQuery(
+            `
+          SELECT 
+            args ->> 'showing_image_flag' as showing_image_flag,
+            args ->> 'lisenceId' as licenseId
+            FROM analysis WHERE batch_id = ${batch_id}
+        `,
+        );
+
+        return result;
+    }
 
     async userHistoryWithBatchId(batch_id: number) {
         try {
@@ -1636,6 +1672,12 @@ export class AlgoAnalysisService {
                 value.raw = +value.raw;
                 value.score = +value.score;
             });
+
+            const getLicense = await this.getLicense(batch_id);
+
+            const finalResult = this.processedData(respObj, getLicense[0]);
+            // console.log('=======>', respObj);
+
             return respObj;
         } catch (e) {
             console.log(e);
@@ -1736,7 +1778,6 @@ export class AlgoAnalysisService {
             lisenceId: data?.licenseId ?? 1,
             showing_image_flag: data?.showing_image_flag ?? false,
         };
-        console.log('=====>', data);
 
         await this.updateEnvironment(data.batch_id, environment);
     }
