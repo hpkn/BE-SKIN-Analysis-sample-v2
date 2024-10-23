@@ -416,54 +416,54 @@ export class WebResultService {
                 CASE
                     WHEN id IN (16, 17) THEN 
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 'Very Hydrated'
-                            WHEN AVG_SCORE BETWEEN 49 AND 80.99 THEN 'Hydrated'
-                            WHEN AVG_SCORE BETWEEN 16 AND 48.99 THEN 'Normal'
-                            WHEN AVG_SCORE BETWEEN 7 AND 15.99 THEN 'Dehydrated'
-                            WHEN AVG_SCORE BETWEEN 0 AND 5.99 THEN 'Very Dehydrated'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 'Very Hydrated'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 'Hydrated'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 'Normal'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 7 AND 15.99 THEN 'Dehydrated'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5.99 THEN 'Very Dehydrated'
                         END
                     WHEN id IN (9, 5, 15) THEN 
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 0 AND 5 THEN 'Very Dry'
-                            WHEN AVG_SCORE BETWEEN 5.99 AND 15.99 THEN 'Dry'
-                            WHEN AVG_SCORE BETWEEN 16 AND 48.99 THEN 'Normal'
-                            WHEN AVG_SCORE BETWEEN 49 AND 80.99 THEN 'Oily'
-                            WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 'Very Oily'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5 THEN 'Very Dry'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 5.99 AND 15.99 THEN 'Dry'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 'Normal'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 'Oily'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 'Very Oily'
                         END
                     ELSE
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 0 AND 5.99 THEN 'Clear'
-                            WHEN AVG_SCORE BETWEEN 6 AND 15.99 THEN 'Almost Clear'
-                            WHEN AVG_SCORE BETWEEN 16 AND 48.99 THEN 'Mild'
-                            WHEN AVG_SCORE BETWEEN 49 AND 80.99 THEN 'Moderate'
-                            WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 'Severe'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5.99 THEN 'Clear'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 6 AND 15.99 THEN 'Almost Clear'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 'Mild'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 'Moderate'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 'Severe'
                             ELSE NULL 
                         END
                 END AS keyword_value,
                 CASE
                     WHEN id IN (16, 17) THEN 
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 5
-                            WHEN AVG_SCORE BETWEEN 50 AND 80.99 THEN 4
-                            WHEN AVG_SCORE BETWEEN 17 AND 48.99 THEN 3
-                            WHEN AVG_SCORE BETWEEN 7 AND 15.99 THEN 2
-                            WHEN AVG_SCORE BETWEEN 0 AND 6.99 THEN 1
+                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 5
+                            WHEN ROUND(AVG_SCORE) BETWEEN 50 AND 80.99 THEN 4
+                            WHEN ROUND(AVG_SCORE) BETWEEN 17 AND 48.99 THEN 3
+                            WHEN ROUND(AVG_SCORE) BETWEEN 7 AND 15.99 THEN 2
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 6.99 THEN 1
                         END
                     WHEN id IN (9, 5, 15) THEN 
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 0 AND 5 THEN 1
-                            WHEN AVG_SCORE BETWEEN 5.99 AND 15.99 THEN 2
-                            WHEN AVG_SCORE BETWEEN 16 AND 48.99 THEN 3
-                            WHEN AVG_SCORE BETWEEN 49 AND 80.99 THEN 4
-                            WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 5
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5 THEN 1
+                            WHEN ROUND(AVG_SCORE) BETWEEN 5.99 AND 15.99 THEN 2
+                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 3
+                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 4
+                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 5
                         END
                     ELSE
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 0 AND 5.99 THEN 1
-                            WHEN AVG_SCORE BETWEEN 6 AND 15.99 THEN 2
-                            WHEN AVG_SCORE BETWEEN 16 AND 48.99 THEN 3
-                            WHEN AVG_SCORE BETWEEN 49 AND 80.99 THEN 4
-                            WHEN AVG_SCORE BETWEEN 81 AND 100 THEN 5
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5.99 THEN 1
+                            WHEN ROUND(AVG_SCORE) BETWEEN 6 AND 15.99 THEN 2
+                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 3
+                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 4
+                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 5
                             ELSE NULL 
                         END
                 END AS keyword_id
@@ -683,30 +683,30 @@ export class WebResultService {
                 CASE
                     WHEN id IN (16, 17) THEN 
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 71 AND 100 THEN 'Hydrated'
-                            WHEN AVG_SCORE BETWEEN 26 AND 70.99 THEN 'Normal'
-                            WHEN AVG_SCORE BETWEEN 0 AND 25.99 THEN 'Dehydrated'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 'Hydrated'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Normal'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Dehydrated'
                         END
                     ELSE
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 0 AND 25.99 THEN 'Preventive Care'
-                            WHEN AVG_SCORE BETWEEN 26 AND 70.99 THEN 'Protective Care'
-                            WHEN AVG_SCORE BETWEEN 71 AND 99.99 THEN 'Intensive Care'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Preventive Care'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Protective Care'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 'Intensive Care'
                             ELSE NULL 
                         END
                 END AS keyword_value,
                 CASE
                     WHEN id IN (16, 17) THEN 
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 71 AND 100 THEN 3
-                            WHEN AVG_SCORE BETWEEN 26 AND 70.99 THEN 2
-                            WHEN AVG_SCORE BETWEEN 0 AND 25.99 THEN 1
+                            WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 3
+                            WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
                         END
                     ELSE
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 0 AND 25.99 THEN 1
-                            WHEN AVG_SCORE BETWEEN 26 AND 70.99 THEN 2
-                            WHEN AVG_SCORE BETWEEN 71 AND 99.99 THEN 3
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
+                            WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
+                            WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 3
                             ELSE NULL 
                         END
                 END AS keyword_id
