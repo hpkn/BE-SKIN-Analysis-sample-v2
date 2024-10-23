@@ -575,43 +575,40 @@ export class AlgoAnalysisService {
 
     saveOfflineData(data: OfflineDatasDTO, imageRecords: any, imageArgs: any) {
         try {
-            switch (data.type) {
-                case 'keratin' || 1:
-                    return this.keratin.offlineSaveData(data, imageRecords, imageArgs);
-                case 'pores' || 2:
-                    return this.pores.offlineSaveData(data, imageRecords, imageArgs);
-                case 'porphyrin' || 3:
-                    return this.porphyrin.offlineSaveData(data, imageRecords, imageArgs);
-                case 'sebum' || 4:
-                    return this.sebum.offlineSaveData(data, imageRecords, imageArgs);
-                // case 'sebumT':
-                //     return this.sebumT.analysis(data, taskResponse);
-                case 'shine' || 5:
-                    return this.shine.offlineSaveData(data, imageRecords, imageArgs);
-                case 'spots' || 6:
-                    return this.spots.offlineSaveData(data, imageRecords, imageArgs);
-                // case 'skintone' || 7:
-                //     return this.skintone.offlineSaveData(data, imageRecords, imageArgs);
-                // case 'skintone_dior':
-                //     return this.skintone_dior.offlineSaveData(data, imageRecords, imageArgs);
-                case 'wrinkles' || 7:
-                    return this.wrinkles.offlineSaveData(data, imageRecords, imageArgs);
-                case 'sensitivityscabs' || 8:
-                    return this.sensitivityScabs.offlineSaveData(data, imageRecords, imageArgs);
-                case 'sensitivityscaling' || 9:
-                    return this.sensitivityScaling.offlineSaveData(data, imageRecords, imageArgs);
-                case 'sensitivityredness' || 10:
-                    return this.sensitivityredness.offlineSaveData(data, imageRecords, imageArgs);
-                // case 'fitzSG':
-                //     return this.fitzSG.analysis(data, imageRecords, imageArgs);
-                default:
-                    throw new BadRequestException({
-                        status: 400,
-                        message: 'Analysis Type is incorrect',
-                    });
+            const typeMapping: { [key: string]: any } = {
+                'keratin': this.keratin,
+                '1': this.keratin,
+                'pores': this.pores,
+                '2': this.pores,
+                'porphyrin': this.porphyrin,
+                '3': this.porphyrin,
+                'sebum': this.sebum,
+                '4': this.sebum,
+                'shine': this.shine,
+                '5': this.shine,
+                'spots': this.spots,
+                '6': this.spots,
+                'wrinkles': this.wrinkles,
+                '7': this.wrinkles,
+                'sensitivityscabs': this.sensitivityScabs,
+                '8': this.sensitivityScabs,
+                'sensitivityscaling': this.sensitivityScaling,
+                '9': this.sensitivityScaling,
+                'sensitivityredness': this.sensitivityredness,
+                '10': this.sensitivityredness,
+            };
+
+            const handler = typeMapping[data.type];
+            if (!handler) {
+                throw new BadRequestException({
+                    status: 400,
+                    message: 'Analysis Type is incorrect',
+                });
             }
+
+            return handler.offlineSaveData(data, imageRecords, imageArgs);
         } catch (e) {
-            console.log(e);
+            console.error(e);
         }
     }
 

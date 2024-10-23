@@ -49,7 +49,6 @@ import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { WebResultService } from '../webResult/webResult.service';
-import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
 
 @ApiTags('Analysis')
 @Controller('analysis')
