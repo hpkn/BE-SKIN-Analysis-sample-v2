@@ -588,19 +588,20 @@ export class WebResultService {
 
         const conditionResult = this.keywordValue(getSkinCondition);
 
-        finalResult.push({
-            measurement: 'Skin Condition',
-            value: null,
-            date: skinAgeCondition[0]?.date ?? null,
-            time: skinAgeCondition[0]?.time ?? null,
-            original_image_url: null,
-            analyzed_image_url: null,
-            avg_value: null,
-            keyword_value: conditionResult.keyword_value,
-            keyword_id: conditionResult.keyword_id,
-        });
-
+        console.log('=======>', getSkinCondition);
         if (skinAgeCondition?.length > 0) {
+            finalResult.push({
+                measurement: 'Skin Condition',
+                value: null,
+                date: skinAgeCondition[0]?.date ?? null,
+                time: skinAgeCondition[0]?.time ?? null,
+                original_image_url: null,
+                analyzed_image_url: null,
+                avg_value: null,
+                keyword_value: conditionResult.keyword_value,
+                keyword_id: conditionResult.keyword_id,
+            });
+
             finalResult.push({
                 measurement: 'SkinAge',
                 value: skinAgeCondition[0].skin_age,
