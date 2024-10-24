@@ -3,6 +3,7 @@ import { Response } from 'express';
 import { WebResultService } from './webResult.service';
 import { ApiTags } from '@nestjs/swagger';
 
+//
 @ApiTags('WebResult')
 @Controller('web-result')
 export class WebResultController {
