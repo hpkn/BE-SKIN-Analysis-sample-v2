@@ -995,16 +995,21 @@ export class AlgoAnalysisController {
             this.AlgoAnalysis.checkNullOrStringNull(moistureU);
             this.AlgoAnalysis.checkNullOrStringNull(sebumU);
 
-            console.log(typeof questFr, answers);
-
             const obj = { deviceModel: 'device' };
             const token = req.headers.authorization?.split(' ')[1];
             const isKiosk = this.AlgoAnalysis.checkIfKiosk(token, obj);
 
-            if (moistureT !== null || sebumT !== null || moistureU !== null || sebumU !== null || answers !== null) {
+            if (
+                (moistureT !== null && moistureT !== 'null' && parseFloat(moistureT) !== -1) ||
+                (sebumT !== null && sebumT !== 'null') ||
+                (moistureU !== null && moistureU !== 'null' && parseFloat(moistureU) !== -1) ||
+                (sebumU !== null && sebumU !== 'null') ||
+                answers?.length > 0
+            ) {
                 skinCondition = this.webResult.getSkinCondition(moistureT, sebumT, moistureU, sebumU, questFr);
             }
 
+            console.log('isKiosk', isKiosk);
             if (isKiosk) {
                 if (moistureU !== null || questFr !== null) {
                     skinCondition = this.webResult.computationSkinConditionKiosk100(moistureU, questFr);
