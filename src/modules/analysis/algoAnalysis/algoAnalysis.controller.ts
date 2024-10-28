@@ -16,6 +16,7 @@ import {
     Req,
     HttpStatus,
     BadRequestException,
+    Logger,
 } from '@nestjs/common';
 
 import * as celery from 'celery-node';
@@ -45,19 +46,21 @@ import {
     EncryptedCBBDTO,
     OfflineDataCBBDTO,
     OfflineDatasDTO,
+    skinToneDTO,
 } from 'src/common/Dto/analysis/offlineData.dto';
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { WebResultService } from '../webResult/webResult.service';
 import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
-import { InjectQueue, QueueEventsHost } from '@nestjs/bullmq';
+import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
 
 @ApiTags('Analysis')
 @Controller('analysis')
 // @ApiBearerAuth('access-token')
 export class AlgoAnalysisController {
+    private readonly logger = new Logger(AlgoAnalysisController.name);
     constructor(
         private readonly AlgoAnalysis: AlgoAnalysisService,
         private readonly moisture_u: MoistureUService,
@@ -69,9 +72,9 @@ export class AlgoAnalysisController {
         private readonly batchAnalysis: BatchAnalysisService,
         private readonly computation: ComputationService,
         private readonly webResult: WebResultService,
-        @InjectQueue('analysis') private readonly analysisQueue: Queue,
+        @InjectQueue('data-queue') private analysisQueue: Queue,
     ) {}
-
+    //
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @ApiOperation({
@@ -687,71 +690,72 @@ export class AlgoAnalysisController {
                 message: 'Analysis Type is incorrect',
             });
         }
-
         res.send({
             status: 200,
             service: 'Offline Analysis Data saving',
             message: 'Data saved to the cloud',
         });
-
         // New Stuff
-        // setImmediate(async () => {
-        //     const license = data?.licenseId ? Number(data.licenseId) : data.licenseId;
-        //     data.showing_image_flag = license === 5 ? 'true' : false;
+        setImmediate(async () => {
+            const license = data?.licenseId ? Number(data.licenseId) : data.licenseId;
+            data.showing_image_flag = license === 5 ? 'true' : false;
 
-        //     console.log('data.showing_image_flag', data.showing_image_flag);
-        //     const token = req.headers.authorization?.split(' ')[1];
+            console.log('data.showing_image_flag', data.showing_image_flag);
+            const token = req.headers.authorization?.split(' ')[1];
 
-        //     data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
-        //     data.batchId = Number(data.batchId);
-        //     const imageRecords = uuidv4();
+            data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
+            data.batchId = Number(data.batchId);
+            const imageRecords = uuidv4();
 
-        //     const analyzedImage = file.analyzedImage[0].buffer;
-        //     const originalImage = file.originalImage[0].buffer;
-        //     const fineImage = file?.fineImage ? file?.fineImage[0]?.buffer : null;
-        //     const ultraFineImage = file?.ultraFineImage ? file?.ultraFineImage[0]?.buffer : null;
-        //     const deepImage = file?.deepImage ? file?.deepImage[0]?.buffer : null;
-        //     const ultraDeepImage = file?.ultraDeepImage ? file?.ultraDeepImage[0]?.buffer : null;
+            const analyzedImage = file.analyzedImage[0].buffer;
+            const originalImage = file.originalImage[0].buffer;
+            const fineImage = file?.fineImage ? file?.fineImage[0]?.buffer : null;
+            const ultraFineImage = file?.ultraFineImage ? file?.ultraFineImage[0]?.buffer : null;
+            const deepImage = file?.deepImage ? file?.deepImage[0]?.buffer : null;
+            const ultraDeepImage = file?.ultraDeepImage ? file?.ultraDeepImage[0]?.buffer : null;
 
-        //     let imageArg;
-        //     if (/[0-9]/.test(data.type)) {
-        //         imageArg = this.AlgoAnalysis.handleCBBImageArg(data);
-        //     } else {
-        //         imageArg = this.AlgoAnalysis.handleofflineImageArg(data);
-        //     }
+            let imageArg;
+            if (/[0-9]/.test(data.type)) {
+                imageArg = this.AlgoAnalysis.handleCBBImageArg(data);
+            } else {
+                imageArg = this.AlgoAnalysis.handleofflineImageArg(data);
+            }
 
-        //     await this.AlgoAnalysis.saveDataFinal(data, imageRecords, imageArg);
+            await this.AlgoAnalysis.saveDataFinal(data, imageRecords, imageArg);
 
-        //     // Save Images asynchronozly
-        //     await this.AlgoAnalysis.saveOfflineImage(
-        //         data,
-        //         originalImage,
-        //         analyzedImage,
-        //         imageArg,
-        //         fineImage,
-        //         ultraFineImage,
-        //         deepImage,
-        //         ultraDeepImage,
-        //     );
-        // });
+            // Save Images asynchronozly
+            await this.AlgoAnalysis.saveOfflineImage(
+                data,
+                originalImage,
+                analyzedImage,
+                imageArg,
+                fineImage,
+                ultraFineImage,
+                deepImage,
+                ultraDeepImage,
+            );
+        });
 
         data.batch_id = data.batchId;
         // await this.AlgoAnalysis.updateData(data, '');
 
-        const queue = await this.analysisQueue.add('save-offline-analysis', {
-            data,
-            files: {
-                analyzedImage: file.analyzedImage[0].buffer,
-                originalImage: file.originalImage[0].buffer,
-                fineImage: file?.fineImage?.[0]?.buffer,
-                ultraFineImage: file?.ultraFineImage?.[0]?.buffer,
-                deepImage: file?.deepImage?.[0]?.buffer,
-                ultraDeepImage: file?.ultraDeepImage?.[0]?.buffer,
-            },
-            token: req.headers.authorization?.split(' ')[1],
-        });
+        // console.log('Bull');
+        // const queue = await this.analysisQueue.add('save-data', {
+        //     data,
+        //     files: {
+        //         analyzedImage: file.analyzedImage[0].buffer,
+        //         originalImage: file.originalImage[0].buffer,
+        //         fineImage: file?.fineImage?.[0]?.buffer,
+        //         ultraFineImage: file?.ultraFineImage?.[0]?.buffer,
+        //         deepImage: file?.deepImage?.[0]?.buffer,
+        //         ultraDeepImage: file?.ultraDeepImage?.[0]?.buffer,
+        //     },
+        //     token: req.headers.authorization?.split(' ')[1],
+        // });
 
-        // console.log('queue ===> ', queue);
+        // // Log the job information
+        // this.logger.log(`Job added with ID: ${queue.id}`);
+        // return `Job added with ID: ${queue.id}`;
     }
 
     @ApiBearerAuth('access-token')
@@ -1631,5 +1635,41 @@ export class AlgoAnalysisController {
             console.error(error);
             throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @ApiBearerAuth('access-token')
+    @ApiConsumes('multipart/form-data')
+    @Post('/skin_tone')
+    @ApiBody({ type: skinToneDTO })
+    @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 10 }]))
+    async saveSkinTone(
+        @Res() res: Response,
+        @Body() data: any,
+        @UploadedFiles()
+        file: {
+            image: Express.Multer.File[];
+        },
+        @Req() req: Request,
+    ) {
+        if (!file['image'][0])
+            return res.send({
+                status: 40002,
+                type: 'BadRequestError',
+                message: 'There is no necassary image file!',
+            });
+        data.type = 11;
+
+        data.batchId = Number(data.batchId);
+
+        const result = await this.AlgoAnalysis.saveSkinTone(data, file);
+        res.send({
+            status: 200,
+            service: 'Skin Tone',
+            result: result,
+        });
+        // New Stuff
+        // setImmediate(async () => {
+
+        // });
     }
 }

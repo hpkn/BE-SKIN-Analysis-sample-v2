@@ -20,7 +20,12 @@ import { SensitivityRednessService } from 'src/modules/algorithms/sensitivityRed
 import { SensitivtyScalingService } from 'src/modules/algorithms/sensitivtyScaling/sensitivtyScaling.service';
 import { FitzSGService } from 'src/modules/algorithms/fitzSG/fitzSG.service';
 import * as moment from 'moment';
-import { analysisCBBDTO, OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
+import {
+    analysisCBBDTO,
+    OfflineDataCBBDTO,
+    OfflineDatasDTO,
+    skinToneDTO,
+} from 'src/common/Dto/analysis/offlineData.dto';
 import { toLower } from 'lodash';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -544,6 +549,13 @@ export class AlgoAnalysisService {
                 originalImageArgs = this.S3Image.getImageArgs('originalImage', data.type, 'sensitivityscabs');
                 return {
                     analyzedImageArgs: analyzedImageArgs,
+                    originalImageArgs: originalImageArgs,
+                };
+
+            case 11:
+                originalImageArgs = this.S3Image.getImageArgs('image', data.type, 'skin_tone');
+
+                return {
                     originalImageArgs: originalImageArgs,
                 };
 
@@ -1107,7 +1119,8 @@ export class AlgoAnalysisService {
                 ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 17 ), 2 ) AS moisture_u_score,
                 ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 17 ), 2 ) AS moisture_u_computation,
                 ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 18 ), 2 ) AS moisture_score,
-                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 18 ), 2 ) AS moisture_computation
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 18 ), 2 ) AS moisture_computation,
+                MAX(scores ->> 'score') FILTER (WHERE type_measurement_id = 19) AS skin_tone
             FROM
                 analysis
                 LEFT JOIN answers_to_questions ON analysis.batch_id = answers_to_questions.batch_id
@@ -1120,6 +1133,7 @@ export class AlgoAnalysisService {
                 analysis.batch_id`,
             [batch_id],
         );
+        console.log(result);
         return result[0];
     }
 
@@ -1470,6 +1484,7 @@ export class AlgoAnalysisService {
                     WHERE
                         (
                             type_measurement_id = 17
+                            OR type_measurement_id = 19
                             OR type_measurement_id = 16  
                             OR type_measurement_id = 9 
                             OR type_measurement_id = 5 
@@ -1729,7 +1744,7 @@ export class AlgoAnalysisService {
         const analyzedImageArgs = imageArgs.analyzedImageArgs;
         const originalImageArgs = imageArgs.originalImageArgs;
 
-        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
+        if (analyzedImage) await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
         await this.S3Image.uploadImage(originalImage, originalImageArgs.sys_url);
         // await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
 
@@ -3065,6 +3080,91 @@ export class AlgoAnalysisService {
         } else {
             console.log("The value is neither null nor 'null'", typeof value);
         }
+    }
+
+    // Save skin condition
+
+    async saveSkinTone(data: skinToneDTO, files: any) {
+        const images = [];
+        const savingPromise: Promise<any>[] = [];
+        const returnOriginal: any = [];
+        for (let i = 0; i < files.image?.length; i++) {
+            const imageArg = this.handleCBBImageArg(data);
+
+            images.push([
+                data.batchId,
+                imageArg.originalImageArgs.url,
+                imageArg.originalImageArgs.sys_url,
+                imageArg.originalImageArgs.hash,
+                19,
+                21,
+                JSON.stringify({
+                    nth_analysis: uuidv4(),
+                }),
+                JSON.stringify({
+                    score: data.skinTone,
+                }),
+            ]);
+            const savingData = this.offlineCBBSaveImage(files?.image[i].buffer, '', imageArg, data);
+            savingPromise.push(savingData);
+        }
+
+        const saveOriginal = images.map((item) => {
+            returnOriginal.push({
+                batchId: data.batch_id,
+                algorithm_type: data.type,
+                // score: String(item[7].score),
+                originalImage: {
+                    id: item[3],
+                    url: item[1],
+                },
+            });
+            return {
+                batch_id: item[0],
+                url: item[1],
+                sys_url: item[2],
+                hash: item[3],
+                type_measurement_id: item[4],
+                type_image_id: item[5],
+                args: item[6],
+                scores: item[7],
+            };
+        });
+
+        const savedResult = [...saveOriginal];
+
+        console.log('we are going ====> ', savedResult);
+
+        const newArray = returnOriginal.map((item: any, index: any) => {
+            if (Number(data.type) === 7 && files.fineImage?.length > 0) {
+                // if (addFineScore && addUltraFineScore && addDeepScore && addUltraDeepScore) {
+                // }
+            }
+            return {
+                ...item,
+            };
+        });
+
+        const retObject = {
+            batch_id: data.batchId,
+            skinTone: data.skinTone,
+            result: [...newArray],
+        };
+        this.offlineCBBSaveData(savedResult);
+
+        Promise.all(savingPromise)
+            .then(() => {
+                console.log(`${data.type} : Success`);
+            })
+            .catch((error) => {
+                console.log(error);
+                // Handle errors that occurred during promise execution
+                fs.appendFile('error.log', this.getErrorLog(data.batch_id), 'utf8', (err) => {
+                    if (err) throw err;
+                });
+            });
+
+        return retObject;
     }
 }
 
