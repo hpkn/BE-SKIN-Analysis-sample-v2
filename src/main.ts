@@ -8,7 +8,8 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { HttpException, UnauthorizedException } from '@nestjs/common/exceptions';
 import { HttpStatus } from '@nestjs/common/enums';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
-
+import { BullAdapter } from 'bull-board/bullAdapter';
+import { Queue } from 'bull';
 // const logStream = fs.createWriteStream('api.log', {
 //   flags: 'a',
 // });
@@ -33,6 +34,7 @@ async function bootstrap() {
         rawBody: true,
         logger: ['log', 'error', 'warn', 'debug', 'verbose'],
     });
+
     const port = Number(process.env.PORT) || 3000;
     const hostname = process.env.HOSTNAME || 'localhost';
 

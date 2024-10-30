@@ -993,3 +993,36 @@ export class analysisCBBDTO {
     @IsOptional()
     imageUpload: any;
 }
+
+//
+
+export class skinToneDTO {
+    @ApiProperty({
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+    })
+    @IsNotEmpty()
+    // @IsArray()
+    image: string[];
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 5462,
+    })
+    @IsNotEmpty()
+    batchId?: number;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is required',
+        example: '2N1',
+    })
+    skinTone?: string | null;
+
+    @IsOptional()
+    type?: string | null;
+
+    @IsOptional()
+    batch_id: any;
+}
