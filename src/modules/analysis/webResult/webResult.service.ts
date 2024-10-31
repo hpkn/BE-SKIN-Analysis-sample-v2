@@ -616,7 +616,6 @@ export class WebResultService {
 
         const conditionResult = this.keywordValue(getSkinCondition);
 
-        console.log('=======>', getSkinCondition);
         if (skinAgeCondition?.length > 0) {
             finalResult.push({
                 measurement: 'Skin Condition',
