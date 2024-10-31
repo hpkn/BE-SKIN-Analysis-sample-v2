@@ -1426,9 +1426,6 @@ export class AlgoAnalysisService {
         });
     }
 
-<<<<<<< HEAD
- 
-=======
     processedData = (data: any, showing_image_flag: any) => {
         if (showing_image_flag === 'true') {
             // Iterate through each analysis type
@@ -1443,7 +1440,6 @@ export class AlgoAnalysisService {
         }
         return data;
     };
->>>>>>> 11a94afc6e36165b5ff10ec349369e832889e6f1
     // transform wrinkles
 
     async getLicense(batch_id: number) {
