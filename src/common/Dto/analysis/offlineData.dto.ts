@@ -410,6 +410,12 @@ export class OfflineDatasDTO {
 
     @IsOptional()
     kiosk: any;
+
+    @IsOptional()
+    showing_image_flag: any;
+
+    @IsOptional()
+    batch_id: any;
 }
 
 export class MultiArgsDTO {
@@ -699,6 +705,9 @@ export class OfflineDataCBBDTO {
 
     @IsOptional()
     kiosk: any;
+
+    @IsOptional()
+    showing_image_flag: any;
 }
 
 export class analysisCBBDTO {
@@ -983,4 +992,37 @@ export class analysisCBBDTO {
 
     @IsOptional()
     imageUpload: any;
+}
+
+//
+
+export class skinToneDTO {
+    @ApiProperty({
+        type: 'array',
+        items: { type: 'string', format: 'binary' },
+    })
+    @IsNotEmpty()
+    // @IsArray()
+    image: string[];
+
+    @ApiProperty({
+        type: String,
+        description: 'This is required',
+        example: 5462,
+    })
+    @IsNotEmpty()
+    batchId?: number;
+
+    @ApiPropertyOptional({
+        type: String,
+        description: 'This is required',
+        example: '2N1',
+    })
+    skinTone?: string | null;
+
+    @IsOptional()
+    type?: string | null;
+
+    @IsOptional()
+    batch_id: any;
 }

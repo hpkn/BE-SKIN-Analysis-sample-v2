@@ -20,7 +20,12 @@ import { SensitivityRednessService } from 'src/modules/algorithms/sensitivityRed
 import { SensitivtyScalingService } from 'src/modules/algorithms/sensitivtyScaling/sensitivtyScaling.service';
 import { FitzSGService } from 'src/modules/algorithms/fitzSG/fitzSG.service';
 import * as moment from 'moment';
-import { analysisCBBDTO, OfflineDataCBBDTO, OfflineDatasDTO } from 'src/common/Dto/analysis/offlineData.dto';
+import {
+    analysisCBBDTO,
+    OfflineDataCBBDTO,
+    OfflineDatasDTO,
+    skinToneDTO,
+} from 'src/common/Dto/analysis/offlineData.dto';
 import { toLower } from 'lodash';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 import { v4 as uuidv4 } from 'uuid';
@@ -547,6 +552,13 @@ export class AlgoAnalysisService {
                     originalImageArgs: originalImageArgs,
                 };
 
+            case 11:
+                originalImageArgs = this.S3Image.getImageArgs('image', data.type, 'skin_tone');
+
+                return {
+                    originalImageArgs: originalImageArgs,
+                };
+
             default:
                 throw new Error('No such analysis type');
         }
@@ -730,56 +742,52 @@ export class AlgoAnalysisService {
         deepImage?: any,
         ultraDeepImage?: any,
     ) {
-        try {
-            switch (data.type) {
-                case 'keratin':
-                    return this.keratin.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'pores':
-                    return this.pores.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'porphyrin':
-                    return this.porphyrin.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'sebum':
-                    return this.sebum.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                // case 'sebumT':
-                //     return this.sebumT.analysis(data, taskResponse);
-                case 'shine':
-                    return this.shine.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'spots':
-                    return this.spots.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'skintone':
-                    return this.skintone.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                // case 'skintone_dior':
-                //     return this.skintone_dior.offlineSaveData(originalImage, analyzedImage, imageArgs);
-                case 'wrinkles':
-                    return this.wrinkles.offlinesaveDataImage(
-                        originalImage,
-                        analyzedImage,
-                        imageArgs,
-                        fineImage,
-                        ultraFineImage,
-                        deepImage,
-                        ultraDeepImage,
-                    );
-                case 'sensitivityscabs':
-                    return this.sensitivityScabs.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'sensitivityscaling':
-                    return this.sensitivityScaling.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                case 'sensitivityredness':
-                    return this.sensitivityredness.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
-                // case 'fitzSG':
-                //     return this.fitzSG.analysis(originalImage, analyzedImage, imageArgs);
-                default:
-                    throw new BadRequestException({
-                        status: 400,
-                        message: 'Analysis Type is incorrect',
-                    });
-            }
-        } catch (e) {
-            console.log(e);
+        const typeMapping: { [key: string]: any } = {
+            'keratin': this.keratin,
+            '1': this.keratin,
+            'pores': this.pores,
+            '2': this.pores,
+            'porphyrin': this.porphyrin,
+            '3': this.porphyrin,
+            'sebum': this.sebum,
+            '4': this.sebum,
+            'shine': this.shine,
+            '5': this.shine,
+            'spots': this.spots,
+            '6': this.spots,
+            'wrinkles': this.wrinkles,
+            '7': this.wrinkles,
+            'sensitivityscabs': this.sensitivityScabs,
+            '8': this.sensitivityScabs,
+            'sensitivityscaling': this.sensitivityScaling,
+            '9': this.sensitivityScaling,
+            'sensitivityredness': this.sensitivityredness,
+            '10': this.sensitivityredness,
+        };
+
+        const handler = typeMapping[data.type];
+
+        if (!handler) {
+            throw new BadRequestException({
+                status: 400,
+                message: 'Analysis Type is incorrect',
+            });
         }
+        if (data.type === 'wrinkles' || data.type === '7') {
+            return this.wrinkles.offlinesaveDataImage(
+                originalImage,
+                analyzedImage,
+                imageArgs,
+                fineImage,
+                ultraFineImage,
+                deepImage,
+                ultraDeepImage,
+            );
+        }
+        return handler.offlinesaveDataImage(originalImage, analyzedImage, imageArgs);
     }
 
-    async SaveDataFinal(data: OfflineDatasDTO, imageRecords: any, imageArg: any) {
+    async saveDataFinal(data: OfflineDatasDTO, imageRecords: any, imageArg: any) {
         try {
             await this.saveOfflineData(data, imageRecords, imageArg);
 
@@ -1111,7 +1119,8 @@ export class AlgoAnalysisService {
                 ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 17 ), 2 ) AS moisture_u_score,
                 ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 17 ), 2 ) AS moisture_u_computation,
                 ROUND( AVG ( ( scores ->> 'score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 18 ), 2 ) AS moisture_score,
-                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 18 ), 2 ) AS moisture_computation
+                ROUND( MAX ( ( scores ->> 'computation_score' ) :: NUMERIC ) FILTER ( WHERE type_measurement_id = 18 ), 2 ) AS moisture_computation,
+                MAX(scores ->> 'score') FILTER (WHERE type_measurement_id = 19) AS skin_tone
             FROM
                 analysis
                 LEFT JOIN answers_to_questions ON analysis.batch_id = answers_to_questions.batch_id
@@ -1124,6 +1133,7 @@ export class AlgoAnalysisService {
                 analysis.batch_id`,
             [batch_id],
         );
+        console.log(result);
         return result[0];
     }
 
@@ -1251,7 +1261,11 @@ export class AlgoAnalysisService {
         const result = await this.database.executeQuery(
             `
             SELECT  
-                url,
+                CASE
+                    WHEN (an.args ->> 'showing_image_flag') = 'true' OR (an.args ->> 'licenseId') = '5'
+                    THEN NULL
+                    ELSE url
+                END AS url,
                 CASE
                     WHEN type_measurement_id = 1 THEN 'pores'
                     WHEN type_measurement_id = 2 THEN 'sensitivityscaling'
@@ -1278,11 +1292,14 @@ export class AlgoAnalysisService {
                 to_json ( scores ) ->> 'ultra_fine_score' AS ultra_fine_score,
                 to_json ( scores ) ->> 'deep_score' AS deep_score,
                 to_json ( scores ) ->> 'ultra_deep_score' AS ultra_deep_score,
-                to_json ( args ) ->> 'nth_analysis' as hash,
-                created_time
+                to_json ( record.args ) ->> 'nth_analysis' as hash,
+                an.args ->> 'lisenceId' as licenseId,
+                an.args ->> 'showing_image_flag' as no_image_license,
+                record.created_time as created_time
             FROM measurements record
-            LEFT JOIN type_images ON type_images.ID = record.type_image_id 
-            WHERE batch_id = $1 AND ( type_image_id = 18 OR type_image_id = 21);
+            LEFT JOIN type_images ON type_images.ID = record.type_image_id
+            LEFT JOIN analysis an ON an.batch_id = record.batch_id
+            WHERE record.batch_id = $1 AND ( type_image_id = 18 OR type_image_id = 21);
             `,
             [batch_id],
         );
@@ -1293,18 +1310,20 @@ export class AlgoAnalysisService {
         let batchIds = await this.getCustomerBatchID(customer_id, per, page);
 
         try {
-            const imagePromises: Promise<any>[] = batchIds.map(async (batchId: any) => {
-                const rows = await this.getImageData(batchId['batch_id']);
-                if (rows.length > 0) {
-                    return {
-                        batch_id: Number(batchId['batch_id']),
-                        customer_id: customer_id,
-                        images: [...rows],
-                    };
-                }
-            });
+            const image = await Promise.all(
+                batchIds.map(async ({ batch_id }) => {
+                    const rows = await this.getImageData(batch_id);
+                    if (rows.length > 0) {
+                        return {
+                            batch_id: Number(batch_id),
+                            customer_id,
+                            images: rows,
+                        };
+                    }
+                }),
+            );
 
-            const image = await Promise.all(imagePromises);
+            // const image = await Promise.all(imagePromises);
             const result = image.filter((result) => result !== null);
 
             for (const entry of result) {
@@ -1407,8 +1426,38 @@ export class AlgoAnalysisService {
         });
     }
 
+<<<<<<< HEAD
  
+=======
+    processedData = (data: any, showing_image_flag: any) => {
+        if (showing_image_flag === 'true') {
+            // Iterate through each analysis type
+            Object.keys(data).forEach((key) => {
+                if (data[key].isArray()) {
+                    data[key].forEach((entry: any) => {
+                        entry.analyzedImage = null;
+                        entry.originalImage = null;
+                    });
+                }
+            });
+        }
+        return data;
+    };
+>>>>>>> 11a94afc6e36165b5ff10ec349369e832889e6f1
     // transform wrinkles
+
+    async getLicense(batch_id: number) {
+        const result = await this.database.executeQuery(
+            `
+          SELECT 
+            args ->> 'showing_image_flag' as showing_image_flag,
+            args ->> 'lisenceId' as licenseId
+            FROM analysis WHERE batch_id = ${batch_id}
+        `,
+        );
+
+        return result;
+    }
 
     async userHistoryWithBatchId(batch_id: number) {
         try {
@@ -1446,6 +1495,7 @@ export class AlgoAnalysisService {
                     WHERE
                         (
                             type_measurement_id = 17
+                            OR type_measurement_id = 19
                             OR type_measurement_id = 16  
                             OR type_measurement_id = 9 
                             OR type_measurement_id = 5 
@@ -1648,6 +1698,12 @@ export class AlgoAnalysisService {
                 value.raw = +value.raw;
                 value.score = +value.score;
             });
+
+            const getLicense = await this.getLicense(batch_id);
+
+            const finalResult = this.processedData(respObj, getLicense[0]);
+            // console.log('=======>', respObj);
+
             return respObj;
         } catch (e) {
             console.log(e);
@@ -1699,7 +1755,7 @@ export class AlgoAnalysisService {
         const analyzedImageArgs = imageArgs.analyzedImageArgs;
         const originalImageArgs = imageArgs.originalImageArgs;
 
-        await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
+        if (analyzedImage) await this.S3Image.uploadImage(analyzedImage, analyzedImageArgs.sys_url);
         await this.S3Image.uploadImage(originalImage, originalImageArgs.sys_url);
         // await this.S3Image.uploadImage(maskImage, maskImageArgs.sys_url);
 
@@ -1746,6 +1802,7 @@ export class AlgoAnalysisService {
             kiosk: data?.kiosk,
             imageUpload: data?.imageUpload ?? true,
             lisenceId: data?.licenseId ?? 1,
+            showing_image_flag: data?.showing_image_flag ?? false,
         };
 
         await this.updateEnvironment(data.batch_id, environment);
@@ -3034,6 +3091,91 @@ export class AlgoAnalysisService {
         } else {
             console.log("The value is neither null nor 'null'", typeof value);
         }
+    }
+
+    // Save skin condition
+
+    async saveSkinTone(data: skinToneDTO, files: any) {
+        const images = [];
+        const savingPromise: Promise<any>[] = [];
+        const returnOriginal: any = [];
+        for (let i = 0; i < files.image?.length; i++) {
+            const imageArg = this.handleCBBImageArg(data);
+
+            images.push([
+                data.batchId,
+                imageArg.originalImageArgs.url,
+                imageArg.originalImageArgs.sys_url,
+                imageArg.originalImageArgs.hash,
+                19,
+                21,
+                JSON.stringify({
+                    nth_analysis: uuidv4(),
+                }),
+                JSON.stringify({
+                    score: data.skinTone,
+                }),
+            ]);
+            const savingData = this.offlineCBBSaveImage(files?.image[i].buffer, '', imageArg, data);
+            savingPromise.push(savingData);
+        }
+
+        const saveOriginal = images.map((item) => {
+            returnOriginal.push({
+                batchId: data.batch_id,
+                algorithm_type: data.type,
+                // score: String(item[7].score),
+                originalImage: {
+                    id: item[3],
+                    url: item[1],
+                },
+            });
+            return {
+                batch_id: item[0],
+                url: item[1],
+                sys_url: item[2],
+                hash: item[3],
+                type_measurement_id: item[4],
+                type_image_id: item[5],
+                args: item[6],
+                scores: item[7],
+            };
+        });
+
+        const savedResult = [...saveOriginal];
+
+        console.log('we are going ====> ', savedResult);
+
+        const newArray = returnOriginal.map((item: any, index: any) => {
+            if (Number(data.type) === 7 && files.fineImage?.length > 0) {
+                // if (addFineScore && addUltraFineScore && addDeepScore && addUltraDeepScore) {
+                // }
+            }
+            return {
+                ...item,
+            };
+        });
+
+        const retObject = {
+            batch_id: data.batchId,
+            skinTone: data.skinTone,
+            result: [...newArray],
+        };
+        this.offlineCBBSaveData(savedResult);
+
+        Promise.all(savingPromise)
+            .then(() => {
+                console.log(`${data.type} : Success`);
+            })
+            .catch((error) => {
+                console.log(error);
+                // Handle errors that occurred during promise execution
+                fs.appendFile('error.log', this.getErrorLog(data.batch_id), 'utf8', (err) => {
+                    if (err) throw err;
+                });
+            });
+
+        return retObject;
     }
 }
 

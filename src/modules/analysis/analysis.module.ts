@@ -19,7 +19,7 @@ import { SensitivityScabsService } from '../algorithms/sensitivityScabs/sensitiv
 import { SensitivityRednessService } from '../algorithms/sensitivityRedness/sensitivityRedness.service';
 import { SensitivtyScalingService } from '../algorithms/sensitivtyScaling/sensitivtyScaling.service';
 import { FitzSGService } from '../algorithms/fitzSG/fitzSG.service';
-import { BullModule } from '@nestjs/bull';
+import { BullModule, InjectQueue } from '@nestjs/bull';
 import { MoistureUService } from '../algorithms/moistureU/moistureU.service';
 import { MoistureTService } from '../algorithms/moistureT/moistureT.service';
 import { SebumUService } from '../algorithms/sebumU/sebumU.service';
@@ -27,12 +27,22 @@ import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middlew
 import { WebResultController } from './webResult/webResult.controller';
 import { WebResultService } from './webResult/webResult.service';
 import { ComputationService } from '../algorithms/computation/computation.service';
+import { createBullBoard } from '@bull-board/api';
+import { BullAdapter } from '@bull-board/api/bullAdapter';
+import { ExpressAdapter } from '@bull-board/express';
+import * as express from 'express';
 
+import { Queue } from 'bull';
 @Module({
     imports: [
         DatabaseModule,
+
         BullModule.registerQueue({
-            name: 'dataSaving',
+            name: 'data-queue',
+            // defaultJobOptions: {
+            //     attempts: 2,
+            //     delay: 120000, // 2 minutes
+            // },
         }),
     ],
     controllers: [AlgoAnalysisController, WebResultController],
@@ -64,6 +74,20 @@ import { ComputationService } from '../algorithms/computation/computation.servic
     // exports: [WebResultService],
 })
 export class AnalysisModule {
+    constructor(@InjectQueue('data-queue') private readonly dataQueue: Queue) {
+        const serverAdapter = new ExpressAdapter();
+        const app = express();
+        serverAdapter.setBasePath('/admin/queues');
+        createBullBoard({
+            queues: [new BullAdapter(this.dataQueue)],
+            serverAdapter,
+        });
+
+        app.use('/admin/queues', serverAdapter.getRouter());
+        // app.listen(3200, () => {
+        //     console.log('Bull-Board running on http://localhost:3200/admin/queues');
+        // });
+    }
     // Auth Middleware
     configure(consumer: MiddlewareConsumer) {
         consumer

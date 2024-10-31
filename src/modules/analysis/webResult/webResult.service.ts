@@ -325,42 +325,70 @@ export class WebResultService {
         const result = await this.database.executeQuery(
             `
             WITH _results AS (
-                SELECT DISTINCT
-                    type_measurements."name" AS measurement,
-                    to_json(original_img.scores) ->> 'score' as value,
-                    to_json(original_img.scores) ->> 'computation_score' as computation_score,
-                    record.created_time::date as date,
-                    record.created_time::time as time,
-                    record.analysis_comment as analysis_comment,
-                    COALESCE(record.args ->> 'imageUpload', 'true') as imageUpload,
-                    original_img.url AS original_image_url,
-                    analyzed_img.url AS analyzed_image_url,
-                    ROW_NUMBER() OVER (PARTITION BY type_measurements."name") AS ROW_NUMBER
-                FROM
-                    analysis record
-                    LEFT JOIN measurements as original_img ON record.batch_id = original_img.batch_id  AND original_img.type_image_id = 21 
-                    LEFT JOIN type_measurements ON type_measurements.ID = original_img.type_measurement_id 
-                    LEFT JOIN measurements as analyzed_img ON record.batch_id = analyzed_img.batch_id AND analyzed_img.type_image_id = 18
-                        AND (original_img.args ->> 'nth_analysis' = analyzed_img.args ->> 'nth_analysis' OR type_measurements."name" = 'moistureT' OR type_measurements."name" = 'moistureU') -- Add the join condition here                 
-                WHERE
-                    record.batch_id = $1 AND (analyzed_img.type_image_id = 18)  
-                GROUP by type_measurements."name", original_img.url, analyzed_img.url, original_img.scores, record.created_time, original_img.type_measurement_id, record.analysis_comment, COALESCE(record.args ->> 'imageUpload', 'true')
-            )
-            SELECT
-                measurement,
-                value,
-                computation_score,
-                date,
-                time,
-                original_image_url,
-                analyzed_image_url,
-                analysis_comment,
-                imageUpload
+            SELECT DISTINCT
+                type_measurements."name" AS measurement,
+                to_json(original_img.scores) ->> 'score' AS value,
+                to_json(original_img.scores) ->> 'computation_score' AS computation_score,
+                record.created_time::date AS date,
+                record.created_time::time AS time,
+                record.analysis_comment AS analysis_comment,
+                COALESCE(record.args ->> 'imageUpload', 'true') AS imageUpload,
+                -- Conditionally set original_image_url to NULL
+                CASE
+                    WHEN (record.args ->> 'showing_image_flag') = 'true' OR (record.args ->> 'licenseId') = '5'
+                    THEN NULL
+                    ELSE original_img.url
+                END AS original_image_url,
+                -- Conditionally set analyzed_image_url to NULL
+                CASE
+                    WHEN (record.args ->> 'showing_image_flag') = 'true' OR (record.args ->> 'licenseId') = '5'
+                    THEN NULL
+                    ELSE analyzed_img.url
+                END AS analyzed_image_url,
+                ROW_NUMBER() OVER (PARTITION BY type_measurements."name") AS ROW_NUMBER
             FROM
-                _results 
+                analysis record
+            LEFT JOIN measurements AS original_img 
+                ON record.batch_id = original_img.batch_id  
+                AND original_img.type_image_id = 21 
+            LEFT JOIN type_measurements 
+                ON type_measurements.ID = original_img.type_measurement_id 
+            LEFT JOIN measurements AS analyzed_img 
+                ON record.batch_id = analyzed_img.batch_id 
+                AND analyzed_img.type_image_id = 18
+                AND (original_img.args ->> 'nth_analysis' = analyzed_img.args ->> 'nth_analysis' 
+                    OR type_measurements."name" = 'moistureT' 
+                    OR type_measurements."name" = 'moistureU') 
             WHERE
-                ROW_NUMBER = 1;
-                
+                record.batch_id = $1
+                AND analyzed_img.type_image_id = 18  
+            GROUP BY
+                type_measurements."name", 
+                original_img.url, 
+                analyzed_img.url, 
+                original_img.scores, 
+                record.created_time, 
+                record.analysis_comment, 
+                original_img.type_measurement_id, 
+                COALESCE(record.args ->> 'imageUpload', 'true'),
+                -- Extracted fields from JSON for grouping
+                (record.args ->> 'showing_image_flag'),
+                (record.args ->> 'licenseId')
+        )
+        SELECT
+            measurement,
+            value,
+            computation_score,
+            date,
+            time,
+            original_image_url,
+            analyzed_image_url,
+            analysis_comment,
+            imageUpload
+        FROM
+            _results 
+        WHERE
+            ROW_NUMBER = 1;  
             `,
             [batch_id],
         );
