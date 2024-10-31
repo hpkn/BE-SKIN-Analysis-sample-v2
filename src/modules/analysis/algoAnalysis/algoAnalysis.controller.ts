@@ -16,9 +16,11 @@ import {
     Req,
     HttpStatus,
     BadRequestException,
+    Logger,
 } from '@nestjs/common';
+
 import * as celery from 'celery-node';
-import e, { Request, Response } from 'express';
+import { Request, Response } from 'express';
 import { AlgoAnalysisService } from './algoAnalysis.service';
 import { FileInterceptor, FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
@@ -44,16 +46,21 @@ import {
     EncryptedCBBDTO,
     OfflineDataCBBDTO,
     OfflineDatasDTO,
+    skinToneDTO,
 } from 'src/common/Dto/analysis/offlineData.dto';
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { WebResultService } from '../webResult/webResult.service';
+import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
+import { InjectQueue } from '@nestjs/bull';
+import { Queue } from 'bull';
 
 @ApiTags('Analysis')
 @Controller('analysis')
 // @ApiBearerAuth('access-token')
 export class AlgoAnalysisController {
+    private readonly logger = new Logger(AlgoAnalysisController.name);
     constructor(
         private readonly AlgoAnalysis: AlgoAnalysisService,
         private readonly moisture_u: MoistureUService,
@@ -65,8 +72,9 @@ export class AlgoAnalysisController {
         private readonly batchAnalysis: BatchAnalysisService,
         private readonly computation: ComputationService,
         private readonly webResult: WebResultService,
+        @InjectQueue('data-queue') private analysisQueue: Queue,
     ) {}
-
+    //
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @ApiOperation({
@@ -629,12 +637,12 @@ export class AlgoAnalysisController {
     @ApiBody({ type: OfflineDatasDTO })
     @UseInterceptors(
         FileFieldsInterceptor([
-            { name: 'originalImage', maxCount: 1 },
-            { name: 'analyzedImage', maxCount: 1 },
-            { name: 'fineImage', maxCount: 1 },
-            { name: 'ultraFineImage', maxCount: 1 },
-            { name: 'deepImage', maxCount: 1 },
-            { name: 'ultraDeepImage', maxCount: 1 },
+            { name: 'originalImage', maxCount: 10 },
+            { name: 'analyzedImage', maxCount: 10 },
+            { name: 'fineImage', maxCount: 10 },
+            { name: 'ultraFineImage', maxCount: 10 },
+            { name: 'deepImage', maxCount: 10 },
+            { name: 'ultraDeepImage', maxCount: 10 },
         ]),
     )
     async offline(
@@ -651,17 +659,51 @@ export class AlgoAnalysisController {
         },
         @Req() req: Request,
     ) {
-        try {
-            if (!file['analyzedImage'][0] || !file['originalImage'][0])
-                return res.send({
-                    status: 40002,
-                    type: 'BadRequestError',
-                    message: 'There is no necassary image file!',
-                });
+        if (!file['analyzedImage'][0] || !file['originalImage'][0])
+            return res.send({
+                status: 40002,
+                type: 'BadRequestError',
+                message: 'There is no necassary image file!',
+            });
 
+        const analysisTypeNum = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10'];
+        const analysisList = [
+            'keratin',
+            'pores',
+            'porphyrin',
+            'sebum',
+            'shine',
+            'spots',
+            'skintone',
+            'wrinkles',
+            'sensitivityscabs',
+            'sensitivityscaling',
+            'sensitivityredness',
+        ];
+
+        const checkType = analysisList.includes(data.type) || analysisTypeNum.includes(data.type);
+
+        if (checkType === false) {
+            throw new BadRequestException({
+                status: 400,
+                service: 'Offline Analysis Data saving',
+                message: 'Analysis Type is incorrect',
+            });
+        }
+        res.send({
+            status: 200,
+            service: 'Offline Analysis Data saving',
+            message: 'Data saved to the cloud',
+        });
+        // New Stuff
+        setImmediate(async () => {
+            const license = data?.licenseId ? Number(data.licenseId) : data.licenseId;
+            data.showing_image_flag = license === 5 ? 'true' : false;
+
+            console.log('data.showing_image_flag', data.showing_image_flag);
             const token = req.headers.authorization?.split(' ')[1];
-            data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
 
+            data.kiosk = this.AlgoAnalysis.checkIfKiosk(token, data);
             data.batchId = Number(data.batchId);
             const imageRecords = uuidv4();
 
@@ -679,21 +721,10 @@ export class AlgoAnalysisController {
                 imageArg = this.AlgoAnalysis.handleofflineImageArg(data);
             }
 
-            await this.AlgoAnalysis.SaveDataFinal(data, imageRecords, imageArg);
+            await this.AlgoAnalysis.saveDataFinal(data, imageRecords, imageArg);
 
-            //upload to DB
-            let promise1 = new Promise(function (resolve, reject) {
-                resolve(
-                    res.send({
-                        status: 200,
-                        service: 'Offline Analysis Data saving',
-                        message: 'Data saved to the cloud',
-                    }),
-                );
-            });
-
-            //Upload Images
-            const saving = await this.AlgoAnalysis.saveOfflineImage(
+            // Save Images asynchronozly
+            await this.AlgoAnalysis.saveOfflineImage(
                 data,
                 originalImage,
                 analyzedImage,
@@ -703,32 +734,28 @@ export class AlgoAnalysisController {
                 deepImage,
                 ultraDeepImage,
             );
+        });
 
-            let promise2 = new Promise(function (resolve, resject) {
-                resolve(saving);
-            });
+        data.batch_id = data.batchId;
+        // await this.AlgoAnalysis.updateData(data, '');
 
-            promise1
-                .then(function (value) {
-                    return promise2;
-                })
-                .catch((error) => {
-                    return res.send({
-                        status: 500,
-                        type: 'InternalServerError',
-                        message: 'Internal server error.',
-                        error: error.message,
-                    });
-                });
-        } catch (e) {
-            console.log(e);
-            return res.send({
-                status: 500,
-                type: 'InternalServerError',
-                message: 'Internal server error.',
-                error: e.message,
-            });
-        }
+        // console.log('Bull');
+        // const queue = await this.analysisQueue.add('save-data', {
+        //     data,
+        //     files: {
+        //         analyzedImage: file.analyzedImage[0].buffer,
+        //         originalImage: file.originalImage[0].buffer,
+        //         fineImage: file?.fineImage?.[0]?.buffer,
+        //         ultraFineImage: file?.ultraFineImage?.[0]?.buffer,
+        //         deepImage: file?.deepImage?.[0]?.buffer,
+        //         ultraDeepImage: file?.ultraDeepImage?.[0]?.buffer,
+        //     },
+        //     token: req.headers.authorization?.split(' ')[1],
+        // });
+
+        // // Log the job information
+        // this.logger.log(`Job added with ID: ${queue.id}`);
+        // return `Job added with ID: ${queue.id}`;
     }
 
     @ApiBearerAuth('access-token')
@@ -1613,5 +1640,41 @@ export class AlgoAnalysisController {
             console.error(error);
             throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
         }
+    }
+
+    @ApiBearerAuth('access-token')
+    @ApiConsumes('multipart/form-data')
+    @Post('/skin_tone')
+    @ApiBody({ type: skinToneDTO })
+    @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 10 }]))
+    async saveSkinTone(
+        @Res() res: Response,
+        @Body() data: any,
+        @UploadedFiles()
+        file: {
+            image: Express.Multer.File[];
+        },
+        @Req() req: Request,
+    ) {
+        if (!file['image'][0])
+            return res.send({
+                status: 40002,
+                type: 'BadRequestError',
+                message: 'There is no necassary image file!',
+            });
+        data.type = 11;
+
+        data.batchId = Number(data.batchId);
+
+        const result = await this.AlgoAnalysis.saveSkinTone(data, file);
+        res.send({
+            status: 200,
+            service: 'Skin Tone',
+            result: result,
+        });
+        // New Stuff
+        // setImmediate(async () => {
+
+        // });
     }
 }

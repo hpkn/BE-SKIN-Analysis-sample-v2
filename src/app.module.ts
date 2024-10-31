@@ -13,6 +13,7 @@ import { TimingMiddleware } from './common/middleWare/timingMiddleware/timing.mi
 import { ErrorNotificationFilter } from './common/exceptions/errorNotification/errorNotification.filter';
 import { ApiKeyModule } from './modules/apiKey-auth/apikey.module';
 import { ApiKeyMiddleware } from './common/middleWare/authMiddlware/apikey.middleware';
+import { BullModule } from '@nestjs/bull';
 
 @Module({
     imports: [
@@ -20,6 +21,13 @@ import { ApiKeyMiddleware } from './common/middleWare/authMiddlware/apikey.middl
             isGlobal: true,
             envFilePath: ['env/.env'],
         }),
+        BullModule.forRoot({
+            redis: {
+                host: 'localhost',
+                port: 6379,
+            },
+        }),
+
         DatabaseModule,
         ImagesModule,
         HistoryModule,
