@@ -14,6 +14,7 @@ import { ErrorNotificationFilter } from './common/exceptions/errorNotification/e
 import { ApiKeyModule } from './modules/apiKey-auth/apikey.module';
 import { ApiKeyMiddleware } from './common/middleWare/authMiddlware/apikey.middleware';
 import { BullModule } from '@nestjs/bull';
+import { HttpModule } from '@nestjs/axios';
 
 @Module({
     imports: [
@@ -27,7 +28,7 @@ import { BullModule } from '@nestjs/bull';
                 port: 6379,
             },
         }),
-
+        HttpModule,
         DatabaseModule,
         ImagesModule,
         HistoryModule,

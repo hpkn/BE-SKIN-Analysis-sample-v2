@@ -33,10 +33,11 @@ import { ExpressAdapter } from '@bull-board/express';
 import * as express from 'express';
 
 import { Queue } from 'bull';
+import { HttpModule } from '@nestjs/axios';
 @Module({
     imports: [
         DatabaseModule,
-
+        HttpModule,
         BullModule.registerQueue({
             name: 'data-queue',
             // defaultJobOptions: {
