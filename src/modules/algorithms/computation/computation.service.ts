@@ -5,44 +5,85 @@ import { Injectable, Inject, HttpException } from '@nestjs/common';
 export class ComputationService {
     constructor() {}
 
-    skinAge(wrinkleCal: number, pigmCalc: number, birth_year: number) {
+    // skinAge(wrinkleCal: number, pigmCalc: number, birth_year: number) {
+    //     let now_year = new Date().getFullYear();
+    //     let biologic_age = Number(now_year) - Number(birth_year);
+
+    //     let skin_age = Math.round(100 - (Number(wrinkleCal) + Number(pigmCalc)) / 2);
+
+    //     if (!wrinkleCal || !pigmCalc || wrinkleCal === null || pigmCalc === null) return biologic_age;
+
+    //     if (skin_age >= 0 && skin_age <= 12) {
+    //         skin_age = biologic_age + 4;
+    //     }
+    //     if (skin_age >= 13 && skin_age <= 24) {
+    //         skin_age = biologic_age + 3;
+    //     }
+    //     if (skin_age >= 25 && skin_age <= 36) {
+    //         skin_age = biologic_age + 2;
+    //     }
+    //     if (skin_age >= 37 && skin_age <= 48) {
+    //         skin_age = biologic_age + 1;
+    //     }
+    //     if (skin_age >= 49 && skin_age <= 60) {
+    //         skin_age = biologic_age - 1;
+    //     }
+
+    //     if (skin_age >= 61 && skin_age <= 72) {
+    //         skin_age = biologic_age - 2;
+    //     }
+
+    //     if (skin_age >= 73 && skin_age <= 84) {
+    //         skin_age = biologic_age - 3;
+    //     }
+
+    //     if (skin_age >= 85 && skin_age <= 100) {
+    //         skin_age = biologic_age - 4;
+    //     }
+
+    //     return skin_age;
+    // }
+
+    skinAge(wrinkleScore: number, pigmentationSpotsScore: number, birth_year: number): number {
+        let impactFactor = 100 - (wrinkleScore + pigmentationSpotsScore) / 2;
+
         let now_year = new Date().getFullYear();
-        let biologic_age = Number(now_year) - Number(birth_year);
+        let realBiologicalAge = Number(now_year) - Number(birth_year);
 
-        let skin_age = Math.round(100 - (Number(wrinkleCal) + Number(pigmCalc)) / 2);
-
-        if (!wrinkleCal || !pigmCalc || wrinkleCal === null || pigmCalc === null) return biologic_age;
-
-        if (skin_age >= 0 && skin_age <= 12) {
-            skin_age = biologic_age + 4;
-        }
-        if (skin_age >= 13 && skin_age <= 24) {
-            skin_age = biologic_age + 3;
-        }
-        if (skin_age >= 25 && skin_age <= 36) {
-            skin_age = biologic_age + 2;
-        }
-        if (skin_age >= 37 && skin_age <= 48) {
-            skin_age = biologic_age + 1;
-        }
-        if (skin_age >= 49 && skin_age <= 60) {
-            skin_age = biologic_age - 1;
+        // let skin_age = Math.round(100 - (Number(wrinkleCal) + Number(pigmCalc)) / 2);
+        // let realBiologicalAge
+        if (realBiologicalAge > 60) {
+            realBiologicalAge = 60;
         }
 
-        if (skin_age >= 61 && skin_age <= 72) {
-            skin_age = biologic_age - 2;
+        let skinAge = realBiologicalAge;
+
+        // Conditions for calculating skin age
+        if (impactFactor > 0 && impactFactor <= 13) {
+            skinAge = realBiologicalAge + 4;
+        } else if (impactFactor > 13 && impactFactor <= 25) {
+            skinAge = realBiologicalAge + 3;
+        } else if (impactFactor > 25 && impactFactor <= 37) {
+            skinAge = realBiologicalAge + 2;
+        } else if (impactFactor > 37 && impactFactor <= 49) {
+            skinAge = realBiologicalAge + 1;
+        } else if (impactFactor > 49 && impactFactor <= 61) {
+            skinAge = realBiologicalAge - 1;
+        } else if (impactFactor > 61 && impactFactor <= 73) {
+            skinAge = realBiologicalAge - 2;
+        } else if (impactFactor > 73 && impactFactor <= 85) {
+            skinAge = realBiologicalAge - 3;
+        } else if (impactFactor > 85 && impactFactor <= 100) {
+            skinAge = realBiologicalAge - 4;
         }
 
-        if (skin_age >= 73 && skin_age <= 84) {
-            skin_age = biologic_age - 3;
+        if (skinAge < 0) {
+            skinAge = realBiologicalAge + 1;
         }
 
-        if (skin_age >= 85 && skin_age <= 100) {
-            skin_age = biologic_age - 4;
-        }
-
-        return skin_age;
+        return Math.round(skinAge);
     }
+
     // SKIN QUESTIONNAIRES
     quest_score(ans: any) {
         //1 -> 1
