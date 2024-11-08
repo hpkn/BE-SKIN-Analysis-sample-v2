@@ -105,7 +105,7 @@ export class WebResultService {
             if (sScoreT >= 49 && sScoreT < 81) tZoneType = oily; // Here
             if (sScoreT >= 81 && sScoreT <= 99) tZoneType = veryOily;
         }
-
+        //
         if (mScoreT >= 49 && mScoreT < 81) {
             if (sScoreT >= 0 && sScoreT < 6) tZoneType = normal;
             if (sScoreT >= 6 && sScoreT < 16) tZoneType = normal;
@@ -774,7 +774,6 @@ export class WebResultService {
             token,
         };
 
-        console.log(url);
         try {
             const response = await firstValueFrom(
                 this.httpService.post(url, data, {
