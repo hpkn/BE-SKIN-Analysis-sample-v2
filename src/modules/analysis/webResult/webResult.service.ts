@@ -1,8 +1,10 @@
-import { Injectable } from '@nestjs/common';
+import { GoneException, Injectable } from '@nestjs/common';
 
 import { DatabaseService } from 'src/database/database.service';
 import { AlgoAnalysisService } from '../algoAnalysis/algoAnalysis.service';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
+import { HttpService } from '@nestjs/axios';
+import { firstValueFrom } from 'rxjs';
 
 @Injectable()
 export class WebResultService {
@@ -10,6 +12,7 @@ export class WebResultService {
         private database: DatabaseService,
         private readonly AlgoAnalysis: AlgoAnalysisService,
         private readonly computation: ComputationService,
+        private readonly httpService: HttpService,
     ) {}
 
     getSkinCondition(mScoreT: number, sScoreT: number, mScoreU: number, sScoreU: number, sebumQAScore: number) {
@@ -616,7 +619,7 @@ export class WebResultService {
 
         const conditionResult = this.keywordValue(getSkinCondition);
 
-        if (skinAgeCondition[0]?.date) {
+        if (skinAgeCondition?.length > 0) {
             finalResult.push({
                 measurement: 'Skin Condition',
                 value: null,
@@ -628,9 +631,7 @@ export class WebResultService {
                 keyword_value: conditionResult.keyword_value,
                 keyword_id: conditionResult.keyword_id,
             });
-        }
 
-        if (skinAgeCondition?.length > 0 && skinAgeCondition[0].skin_age > 0) {
             finalResult.push({
                 measurement: 'SkinAge',
                 value: skinAgeCondition[0].skin_age,
@@ -712,30 +713,30 @@ export class WebResultService {
                 CASE
                     WHEN id IN (16, 17) THEN 
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 71 AND 100 THEN 'Hydrated'
-                            WHEN AVG_SCORE BETWEEN 26 AND 70.99 THEN 'Normal'
-                            WHEN AVG_SCORE BETWEEN 0 AND 25.99 THEN 'Dehydrated'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 'Hydrated'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Normal'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Dehydrated'
                         END
                     ELSE
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 0 AND 25.99 THEN 'Preventive Care'
-                            WHEN AVG_SCORE BETWEEN 26 AND 70.99 THEN 'Protective Care'
-                            WHEN AVG_SCORE BETWEEN 71 AND 99.99 THEN 'Intensive Care'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Preventive Care'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Protective Care'
+                            WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 'Intensive Care'
                             ELSE NULL 
                         END
                 END AS keyword_value,
                 CASE
                     WHEN id IN (16, 17) THEN 
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 71 AND 100 THEN 3
-                            WHEN AVG_SCORE BETWEEN 26 AND 70.99 THEN 2
-                            WHEN AVG_SCORE BETWEEN 0 AND 25.99 THEN 1
+                            WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 3
+                            WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
                         END
                     ELSE
                         CASE 
-                            WHEN AVG_SCORE BETWEEN 0 AND 25.99 THEN 1
-                            WHEN AVG_SCORE BETWEEN 26 AND 70.99 THEN 2
-                            WHEN AVG_SCORE BETWEEN 71 AND 99.99 THEN 3
+                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
+                            WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
+                            WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 3
                             ELSE NULL 
                         END
                 END AS keyword_id
@@ -765,5 +766,284 @@ export class WebResultService {
         }
 
         return result;
+    }
+
+    async decodeToken(token: string): Promise<any> {
+        const url = process.env.CRM + '/web-results/decode_web_result';
+        const data = {
+            token,
+        };
+
+        console.log(url);
+        try {
+            const response = await firstValueFrom(
+                this.httpService.post(url, data, {
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                }),
+            );
+
+            return response.data;
+        } catch (err) {
+            console.error(err);
+            throw err;
+        }
+    }
+
+    async finalWebResult(token: string) {
+        const decodeToken = await this.decodeToken(token);
+
+        if (decodeToken?.expires) {
+            throw new GoneException({
+                status: 410,
+                message: 'Web result is expired',
+            });
+        }
+
+        return this.combinedWebResult(decodeToken?.batch_id);
+    }
+
+    async combinedWebResult(batch_id: number) {
+        const result = await this.database.executeQuery(
+            `
+            WITH _avg_scores AS (
+                SELECT 
+                    tp."name" AS measurement,
+                    tp."id" AS id,
+                    COALESCE(
+                        ROUND(AVG((to_json(scores) ->> 'computation_score')::NUMERIC), 2), 
+                        ROUND(AVG((to_json(scores) ->> 'score')::NUMERIC), 2)
+                    ) AS avg_score
+                FROM measurements AS ms
+                JOIN type_measurements AS tp ON tp."id" = ms.type_measurement_id 
+                WHERE ms.batch_id = $1 AND ms.type_image_id = 21
+                GROUP BY tp."name", tp."id"
+            ),
+
+            _results AS (
+                SELECT DISTINCT
+                    tm."name" AS measurement,
+                    (to_json(oi.scores) ->> 'answers') as answers,
+                    oi.scores ->> 'score' AS value,
+                    oi.scores ->> 'computation_score' AS computation_score,
+                    rec.created_time::date AS date,
+                    rec.created_time::time AS time,
+                    rec.analysis_comment AS analysis_comment,
+                    COALESCE(rec.args ->> 'imageUpload', 'true') AS imageUpload,
+                    COALESCE((rec.args ->> 'kiosk')::boolean, false) AS isKiosk,
+                    CASE
+                        WHEN rec.args ->> 'showing_image_flag' = 'true' OR rec.args ->> 'licenseId' = '5' THEN NULL
+                        ELSE oi.url
+                    END AS original_image_url,
+                    CASE
+                        WHEN rec.args ->> 'showing_image_flag' = 'true' OR rec.args ->> 'licenseId' = '5' THEN NULL
+                        ELSE ai.url
+                    END AS analyzed_image_url,
+                    ROW_NUMBER() OVER (PARTITION BY tm."name") AS row_number
+                FROM analysis rec
+                LEFT JOIN measurements oi ON rec.batch_id = oi.batch_id AND oi.type_image_id = 21
+                LEFT JOIN type_measurements tm ON tm."id" = oi.type_measurement_id
+                LEFT JOIN measurements ai 
+                    ON rec.batch_id = ai.batch_id 
+                    AND ai.type_image_id = 18
+                    AND (
+                        oi.args ->> 'nth_analysis' = ai.args ->> 'nth_analysis' 
+                        OR tm."name" = 'moistureT' 
+                        OR tm."name" = 'moistureU'
+                    )
+                WHERE rec.batch_id = $1
+                AND ai.type_image_id = 18  
+                GROUP BY 
+                    tm."name", 
+                    oi.url, 
+                    ai.url, 
+                    oi.scores, 
+                    rec.created_time, 
+                    rec.analysis_comment, 
+                    COALESCE(rec.args ->> 'imageUpload', 'true'),
+                    COALESCE((rec.args ->> 'kiosk')::boolean, false),
+                    rec.args ->> 'showing_image_flag',
+                    rec.args ->> 'licenseId'
+            )
+            SELECT
+                r.measurement,
+                (r.value),
+                r.computation_score,
+                r.answers,
+                r.date,
+                r.time,
+                r.original_image_url,
+                r.analyzed_image_url,
+                r.analysis_comment,
+                r.imageUpload,
+                r.isKiosk,
+                ROUND(a.avg_score, 2) AS avg_value,
+                CASE 
+                    WHEN isKiosk = true THEN
+                        CASE 
+                            WHEN id IN (16, 17) THEN 
+                                CASE 
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 'Hydrated'
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Normal'
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Dehydrated'
+                                END
+                            ELSE
+                                CASE 
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Preventive Care'
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Protective Care'
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 'Intensive Care'
+                                    ELSE NULL 
+                                END
+                        END
+                    ELSE
+                        CASE 
+                            WHEN id IN (16, 17) THEN 
+                                CASE 
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 'Hydrated'
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Normal'
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Dehydrated'
+                                END
+                            ELSE
+                                CASE 
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Preventive Care'
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Protective Care'
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 'Intensive Care'
+                                    ELSE NULL 
+                                END
+                        END
+                END AS keyword_value,
+                CASE 
+                    WHEN isKiosk = true THEN
+                        CASE 
+                            WHEN id IN (16, 17) THEN 
+                                CASE 
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 3
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
+                                END
+                            ELSE
+                                CASE 
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 3
+                                    ELSE NULL 
+                                END
+                        END
+                    ELSE
+                        CASE 
+                            WHEN id IN (16, 17) THEN 
+                                CASE 
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 3
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
+                                END
+                            ELSE
+                                CASE 
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
+                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 3
+                                    ELSE NULL 
+                                END
+                        END
+                END AS keyword_id
+            FROM
+                _results r
+            JOIN
+                _avg_scores a ON r.measurement = a.measurement
+            WHERE
+                r.row_number = 1;
+
+
+            `,
+            [batch_id],
+        );
+
+        const skinAgeCondition = await this.getSkinAge(batch_id);
+        const analysis_comment = result[0]?.analysis_comment;
+        let moistureT;
+        let moistureU;
+        let sebumT;
+        let sebumU;
+        const answers = result[0]?.answers ?? '';
+
+        const checkKiosk = result[0]?.iskiosk ?? false;
+        const processedData = result.map((item: any) => {
+            const { imageupload, answers, iskiosk, ...rest } = item;
+
+            if (item.measurement === 'moistureT' || item.measurement === 'moistureU') {
+                rest.original_image_url = null;
+                rest.analyzed_image_url = null;
+            }
+
+            if (item.measurement === 'moistureT') moistureT = item.avg_value;
+            if (item.measurement === 'moistureU') moistureU = item.avg_value;
+            if (item.measurement === 'sebumT') sebumT = item.avg_value;
+            if (item.measurement === 'sebumU') sebumU = item.avg_value;
+
+            delete item.answers;
+            delete item.analysis_comment;
+            delete item.iskiosk;
+
+            return {
+                ...rest,
+                value: item.value !== null ? parseFloat(item.value) : null,
+                computation_score: item.computation_score !== null ? parseFloat(item.computation_score) : null,
+                avg_value: item.avg_value !== null ? parseFloat(item.avg_value) : null,
+            };
+        });
+
+        let getSkinCondition = skinAgeCondition[0]?.skin_condition;
+
+        let questFr = -1;
+        if (answers !== null) {
+            questFr = this.computation.questionnaireFrequency(answers, 5);
+        }
+        if (!skinAgeCondition[0]?.skin_condition) {
+            getSkinCondition = this.getSkinCondition(
+                Number(moistureT),
+                Number(sebumT),
+                Number(moistureU),
+                Number(sebumU),
+                questFr,
+            );
+
+            if (checkKiosk === 'true' || checkKiosk === true) {
+                getSkinCondition = this.computationSkinConditionKiosk100(moistureU, questFr);
+            }
+        }
+
+        const conditionResult = this.keywordValue(getSkinCondition);
+
+        if (skinAgeCondition?.length > 0) {
+            processedData.push({
+                measurement: 'Skin Condition',
+                value: null,
+                date: skinAgeCondition[0]?.date ?? null,
+                time: skinAgeCondition[0]?.time ?? null,
+                original_image_url: null,
+                analyzed_image_url: null,
+                avg_value: null,
+                keyword_value: conditionResult.keyword_value,
+                keyword_id: conditionResult.keyword_id,
+            });
+
+            processedData.push({
+                measurement: 'SkinAge',
+                value: skinAgeCondition[0].skin_age,
+                date: skinAgeCondition[0]?.date,
+                time: skinAgeCondition[0]?.time,
+                original_image_url: null,
+                analyzed_image_url: null,
+                avg_value: null,
+                keyword_value: skinAgeCondition[0]?.skin_age,
+                keyword_id: null,
+            });
+        }
+
+        return {
+            result: processedData,
+            analysis_comment: analysis_comment,
+        };
     }
 }

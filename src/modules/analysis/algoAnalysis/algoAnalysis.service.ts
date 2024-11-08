@@ -1402,6 +1402,13 @@ export class AlgoAnalysisService {
 
     // (item.score != null || item.raw != null) && !seen.has(identifier)
 
+    // removeDuplicate_(array) {
+    //     if (!Array.isArray(array)) {
+    //         return [];
+    //     }
+    
+    //     const seen = new Set();
+    
     removeDuplicate_(array: any) {
         const seen = new Set();
 
