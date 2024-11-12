@@ -44,18 +44,23 @@ export class ComputationService {
     //     return skin_age;
     // }
 
-    skinAge(wrinkleScore: number, pigmentationSpotsScore: number, birth_year: number): number {
+    skinAge(wrinkleScore: any, pigmentationSpotsScore: any, birth_year: number): number {
+        wrinkleScore = wrinkleScore ? Number(wrinkleScore) : wrinkleScore;
+        pigmentationSpotsScore = pigmentationSpotsScore ? Number(pigmentationSpotsScore) : pigmentationSpotsScore;
         let impactFactor = 100 - (wrinkleScore + pigmentationSpotsScore) / 2;
 
         let now_year = new Date().getFullYear();
         let realBiologicalAge = Number(now_year) - Number(birth_year);
 
+        console.log('====>', wrinkleScore, pigmentationSpotsScore, realBiologicalAge, impactFactor);
         // let skin_age = Math.round(100 - (Number(wrinkleCal) + Number(pigmCalc)) / 2);
         // let realBiologicalAge
         if (realBiologicalAge > 60) {
             realBiologicalAge = 60;
         }
 
+        //  31
+        // spot = 23  wrinles = 60 birthday = 1980
         let skinAge = realBiologicalAge;
 
         // Conditions for calculating skin age
@@ -80,6 +85,8 @@ export class ComputationService {
         if (skinAge < 0) {
             skinAge = realBiologicalAge + 1;
         }
+
+        console.log('skinAge', skinAge);
 
         return Math.round(skinAge);
     }

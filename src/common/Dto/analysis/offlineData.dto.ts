@@ -1003,7 +1003,7 @@ export class skinToneDTO {
     })
     @IsNotEmpty()
     // @IsArray()
-    image: string[];
+    images: string[];
 
     @ApiProperty({
         type: String,

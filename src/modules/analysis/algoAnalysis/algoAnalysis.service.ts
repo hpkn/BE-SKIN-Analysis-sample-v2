@@ -1406,9 +1406,9 @@ export class AlgoAnalysisService {
     //     if (!Array.isArray(array)) {
     //         return [];
     //     }
-    
+
     //     const seen = new Set();
-    
+
     removeDuplicate_(array: any) {
         const seen = new Set();
 
@@ -1835,6 +1835,9 @@ export class AlgoAnalysisService {
 
     async fetchAgeCondition(batchId: number) {
         try {
+            // COALESCE(ROUND(AVG((to_json(scores)->>'computation_score')::NUMERIC), 2), ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2)) AS AVG_SCORE
+
+            // COALESCE(round(AVG((to_json(scores) ->> 'computation_score')::numeric),2), round(AVG((to_json(scores) ->> 'score')::numeric),2))
             const update = await this.database.executeQuery(
                 `
                 SELECT
@@ -1847,8 +1850,8 @@ export class AlgoAnalysisService {
                         WHEN tp.id = 5 THEN 'sebumU'
                     END AS measurement,
                     CASE
-                        WHEN tp.id = 8 THEN  round(AVG((to_json(scores) ->> 'computation_score')::numeric),2)
-                        WHEN tp.id = 4 THEN round(AVG((to_json(scores) ->> 'computation_score')::numeric),2)
+                        WHEN tp.id = 8 THEN COALESCE(round(AVG((to_json(scores) ->> 'computation_score')::numeric),2), round(AVG((to_json(scores) ->> 'score')::numeric),2))
+                        WHEN tp.id = 4 THEN COALESCE(round(AVG((to_json(scores) ->> 'computation_score')::numeric),2), round(AVG((to_json(scores) ->> 'score')::numeric),2))
                         WHEN tp.id = 16 THEN round(AVG((to_json(scores) ->> 'score')::numeric),2)
                         WHEN tp.id = 9 THEN round(AVG((to_json(scores) ->> 'score')::numeric),2)
                         WHEN tp.id = 17 THEN round(AVG((to_json(scores) ->> 'score')::numeric),2)
