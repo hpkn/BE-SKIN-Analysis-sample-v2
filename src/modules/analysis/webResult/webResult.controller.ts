@@ -24,6 +24,8 @@ export class WebResultController {
                     });
                 }
             }
+
+            // const result = await this.webResult.combinedWebResult(batch_id);
             const result = await this.webResult.getBatchId(batch_id);
 
             return res.status(200).json({
@@ -35,5 +37,18 @@ export class WebResultController {
         } catch (e) {
             throw new Error(e);
         }
+    }
+
+    @Get('/cndpskin/encrypted/:resultToken')
+    async getWebResultByToken(@Param('resultToken') resultToken: string, @Res() res: Response) {
+        const result = await this.webResult.finalWebResult(resultToken);
+
+        return res.status(200).json({
+            status: 200,
+            service: 'getAnalysisData for WebResult',
+            analysis_comment: result.analysis_comment,
+            body: result?.result,
+        });
+        // return decodeToken;
     }
 }
