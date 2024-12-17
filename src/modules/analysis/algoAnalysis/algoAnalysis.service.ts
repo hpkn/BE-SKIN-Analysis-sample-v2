@@ -1958,13 +1958,8 @@ export class AlgoAnalysisService {
     async saveSkinCondtion(batch_id: number, skinCondtion: any, skinAge: any) {
         const condition = skinCondtion?.length === 0 ? -1 : skinCondtion === null ? -1 : skinCondtion;
 
-        const skinAgeCondition = { skinCondition: JSON.stringify(condition), skinAge: skinAge };
-        const inserData = [
-            batch_id,
-            18,
-            21,
-            JSON.stringify(skinAgeCondition), // Pass as a JSON object
-        ];
+        const skinAgeCondition = { skinCondition: condition, skinAge: skinAge };
+        const inserData = [batch_id, 18, 21, JSON.stringify(skinAgeCondition)];
 
         const checkExistenceQuery = `
             SELECT 1 FROM measurements 
