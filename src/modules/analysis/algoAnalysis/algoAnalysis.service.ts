@@ -1958,39 +1958,19 @@ export class AlgoAnalysisService {
     saveSkinCondtion(batch_id: number, skinCondtion: any, skinAge: any) {
         const condition = skinCondtion?.length === 0 ? '-1' : skinCondtion === null ? '-1' : skinCondtion;
 
-        // const existingRecord = await this.yourRepository.findOne({
-        //     where: { batch_id, type_measurement_id, type_image_id, scores },
-        // });
-
-        // if (existingRecord) {
-        //     // If a record already exists, return null or an appropriate response
-        //     return null; // Or handle as needed
-        // }
-
-        const inserData = [
-            batch_id,
-            18,
-            21,
-            `{"skinCondtion": ${JSON.stringify(condition)}, "skinAge": ${JSON.stringify(skinAge)}}`,
-        ];
-        const regex = /CONFLICT/i;
-        const update = `
+        try {
+            const update = `
                 INSERT INTO measurements (batch_id, type_measurement_id, type_image_id, scores)
-                VALUES ($1, $2, $3, $4)
-                ON CONFLICT (batch_id, type_measurement_id, type_image_id, scores)
-                DO NOTHING RETURNING *`;
+                VALUES (${batch_id}, 18, 21, '{"skinCondtion": ${JSON.stringify(
+                condition,
+            )}, "skinAge": ${JSON.stringify(skinAge)}}')
+            `;
 
-        this.database.executeQuery(update, inserData).catch((error) => {
-            if (regex.test(error)) {
-                console.log(error);
-            } else {
-                throw new error({
-                    message: error,
-                });
-            }
-        });
-
-        return update;
+            this.database.executeQuery(update);
+            return update;
+        } catch (e) {
+            console.log('check', e);
+        }
     }
 
     async calculateRevisit(CUSTOMER_ID_LIST: number[], THIS_MONTH: string) {
