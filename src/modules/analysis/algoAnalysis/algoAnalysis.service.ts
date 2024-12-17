@@ -1955,22 +1955,45 @@ export class AlgoAnalysisService {
         }
     }
 
-    saveSkinCondtion(batch_id: number, skinCondtion: any, skinAge: any) {
-        const condition = skinCondtion?.length === 0 ? '-1' : skinCondtion === null ? '-1' : skinCondtion;
+    async saveSkinCondtion(batch_id: number, skinCondtion: any, skinAge: any) {
+        const condition = skinCondtion?.length === 0 ? -1 : skinCondtion === null ? -1 : skinCondtion;
+
+        const skinAgeCondition = { skinCondition: JSON.stringify(condition), skinAge: skinAge };
+        const inserData = [
+            batch_id,
+            18,
+            21,
+            JSON.stringify(skinAgeCondition), // Pass as a JSON object
+        ];
+
+        const checkExistenceQuery = `
+            SELECT 1 FROM measurements 
+            WHERE batch_id = $1 
+            AND type_measurement_id = $2 
+            AND type_image_id = $3 
+            AND scores = $4
+            LIMIT 1;
+        `;
+
+        const update = `
+            INSERT INTO measurements (batch_id, type_measurement_id, type_image_id, scores)
+            VALUES ($1, $2, $3, $4)
+            RETURNING *;`;
 
         try {
-            const update = `
-                INSERT INTO measurements (batch_id, type_measurement_id, type_image_id, scores)
-                VALUES (${batch_id}, 18, 21, '{"skinCondtion": ${JSON.stringify(
-                condition,
-            )}, "skinAge": ${JSON.stringify(skinAge)}}')
-            `;
-
-            this.database.executeQuery(update);
-            return update;
-        } catch (e) {
-            console.log('check', e);
+            const exists = await this.database.executeQuery(checkExistenceQuery, inserData);
+            if (exists.length === 0) {
+                const result = await this.database.executeQuery(update, inserData);
+            } else {
+                console.log('Record already exists, no insert needed');
+            }
+            // If result is empty, that means nothing was inserted due to conflict
+        } catch (error) {
+            console.error('Error executing query:', error);
+            throw new Error(error.message || 'Error executing query');
         }
+
+        return update;
     }
 
     async calculateRevisit(CUSTOMER_ID_LIST: number[], THIS_MONTH: string) {
