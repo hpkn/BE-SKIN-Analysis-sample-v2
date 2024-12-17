@@ -999,71 +999,71 @@ export class AlgoAnalysisController {
         let { batch_id, bithYear } = body;
         let skinCondition = null;
 
-        try {
-            const { spots, wrinkles, moistureT, sebumT, moistureU, sebumU } = await this.AlgoAnalysis.skinAgeOperation(
-                Number(batch_id),
-            );
+        // try {
+        const { spots, wrinkles, moistureT, sebumT, moistureU, sebumU } = await this.AlgoAnalysis.skinAgeOperation(
+            Number(batch_id),
+        );
 
-            const skinAge = this.computation.skinAge(wrinkles, spots, bithYear);
+        const skinAge = this.computation.skinAge(wrinkles, spots, bithYear);
 
-            // const { moisture, sebum } = this.webResult.skinCondition(moistureT, moistureU, sebumT, sebumU);
+        // const { moisture, sebum } = this.webResult.skinCondition(moistureT, moistureU, sebumT, sebumU);
 
-            const answers = await this.AlgoAnalysis.fetchQuestion(Number(batch_id));
+        const answers = await this.AlgoAnalysis.fetchQuestion(Number(batch_id));
 
-            let questFr = -1;
-            if (answers !== null) {
-                questFr = this.computation.questionnaireFrequency(answers, 5);
-            }
-
-            this.AlgoAnalysis.checkNullOrStringNull(spots);
-            this.AlgoAnalysis.checkNullOrStringNull(wrinkles);
-            this.AlgoAnalysis.checkNullOrStringNull(moistureT);
-            this.AlgoAnalysis.checkNullOrStringNull(sebumT);
-            this.AlgoAnalysis.checkNullOrStringNull(moistureU);
-            this.AlgoAnalysis.checkNullOrStringNull(sebumU);
-
-            const obj = { deviceModel: 'device' };
-            const token = req.headers.authorization?.split(' ')[1];
-            const isKiosk = this.AlgoAnalysis.checkIfKiosk(token, obj);
-
-            if (
-                (moistureT !== null && moistureT !== 'null' && parseFloat(moistureT) !== -1) ||
-                (sebumT !== null && sebumT !== 'null') ||
-                (moistureU !== null && moistureU !== 'null' && parseFloat(moistureU) !== -1) ||
-                (sebumU !== null && sebumU !== 'null') ||
-                answers?.length > 0
-            ) {
-                skinCondition = this.webResult.getSkinCondition(moistureT, sebumT, moistureU, sebumU, questFr);
-            }
-
-            console.log('isKiosk', isKiosk);
-            if (isKiosk) {
-                if (moistureU !== null || questFr !== null) {
-                    skinCondition = this.webResult.computationSkinConditionKiosk100(moistureU, questFr);
-                }
-            }
-
-            this.AlgoAnalysis.saveSkinCondtion(Number(batch_id), skinCondition, skinAge);
-
-            return res.status(200).json({
-                status: 200,
-                message: 'Success',
-                service: 'Skin Age & Condition',
-                body: {
-                    skinAge: skinAge,
-                    skinCondition: skinCondition,
-                    keyword_id: skinCondition,
-                },
-            });
-        } catch (error) {
-            console.log(error);
-            return res.send({
-                status: 500,
-                type: 'InternalServerError',
-                message: 'Internal server error.',
-                error: error.message,
-            });
+        let questFr = -1;
+        if (answers !== null) {
+            questFr = this.computation.questionnaireFrequency(answers, 5);
         }
+
+        this.AlgoAnalysis.checkNullOrStringNull(spots);
+        this.AlgoAnalysis.checkNullOrStringNull(wrinkles);
+        this.AlgoAnalysis.checkNullOrStringNull(moistureT);
+        this.AlgoAnalysis.checkNullOrStringNull(sebumT);
+        this.AlgoAnalysis.checkNullOrStringNull(moistureU);
+        this.AlgoAnalysis.checkNullOrStringNull(sebumU);
+
+        const obj = { deviceModel: 'device' };
+        const token = req.headers.authorization?.split(' ')[1];
+        const isKiosk = this.AlgoAnalysis.checkIfKiosk(token, obj);
+
+        if (
+            (moistureT !== null && moistureT !== 'null' && parseFloat(moistureT) !== -1) ||
+            (sebumT !== null && sebumT !== 'null') ||
+            (moistureU !== null && moistureU !== 'null' && parseFloat(moistureU) !== -1) ||
+            (sebumU !== null && sebumU !== 'null') ||
+            answers?.length > 0
+        ) {
+            skinCondition = this.webResult.getSkinCondition(moistureT, sebumT, moistureU, sebumU, questFr);
+        }
+
+        console.log('isKiosk', isKiosk);
+        if (isKiosk) {
+            if (moistureU !== null || questFr !== null) {
+                skinCondition = this.webResult.computationSkinConditionKiosk100(moistureU, questFr);
+            }
+        }
+
+        this.AlgoAnalysis.saveSkinCondtion(Number(batch_id), skinCondition, skinAge);
+
+        return res.status(200).json({
+            status: 200,
+            message: 'Success',
+            service: 'Skin Age & Condition',
+            body: {
+                skinAge: skinAge,
+                skinCondition: skinCondition,
+                keyword_id: skinCondition,
+            },
+        });
+        // } catch (error) {
+        // console.log(error);
+        // return res.send({
+        //     status: 500,
+        //     type: 'InternalServerError',
+        //     message: 'Internal server error.',
+        //     error: error.message,
+        // });
+        // }
     }
 
     // Encrypted CBB
