@@ -324,80 +324,6 @@ export class WebResultService {
         }
     }
 
-    async webResult(batch_id: number) {
-        const result = await this.database.executeQuery(
-            `
-            WITH _results AS (
-            SELECT DISTINCT
-                type_measurements."name" AS measurement,
-                to_json(original_img.scores) ->> 'score' AS value,
-                to_json(original_img.scores) ->> 'computation_score' AS computation_score,
-                record.created_time::date AS date,
-                record.created_time::time AS time,
-                record.analysis_comment AS analysis_comment,
-                COALESCE(record.args ->> 'imageUpload', 'true') AS imageUpload,
-                -- Conditionally set original_image_url to NULL
-                CASE
-                    WHEN (record.args ->> 'showing_image_flag') = 'true' OR (record.args ->> 'licenseId') = '5'
-                    THEN NULL
-                    ELSE original_img.url
-                END AS original_image_url,
-                -- Conditionally set analyzed_image_url to NULL
-                CASE
-                    WHEN (record.args ->> 'showing_image_flag') = 'true' OR (record.args ->> 'licenseId') = '5'
-                    THEN NULL
-                    ELSE analyzed_img.url
-                END AS analyzed_image_url,
-                ROW_NUMBER() OVER (PARTITION BY type_measurements."name") AS ROW_NUMBER
-            FROM
-                analysis record
-            LEFT JOIN measurements AS original_img 
-                ON record.batch_id = original_img.batch_id  
-                AND original_img.type_image_id = 21 
-            LEFT JOIN type_measurements 
-                ON type_measurements.ID = original_img.type_measurement_id 
-            LEFT JOIN measurements AS analyzed_img 
-                ON record.batch_id = analyzed_img.batch_id 
-                AND analyzed_img.type_image_id = 18
-                AND (original_img.args ->> 'nth_analysis' = analyzed_img.args ->> 'nth_analysis' 
-                    OR type_measurements."name" = 'moistureT' 
-                    OR type_measurements."name" = 'moistureU') 
-            WHERE
-                record.batch_id = $1
-                AND analyzed_img.type_image_id = 18  
-            GROUP BY
-                type_measurements."name", 
-                original_img.url, 
-                analyzed_img.url, 
-                original_img.scores, 
-                record.created_time, 
-                record.analysis_comment, 
-                original_img.type_measurement_id, 
-                COALESCE(record.args ->> 'imageUpload', 'true'),
-                -- Extracted fields from JSON for grouping
-                (record.args ->> 'showing_image_flag'),
-                (record.args ->> 'licenseId')
-        )
-        SELECT
-            measurement,
-            value,
-            computation_score,
-            date,
-            time,
-            original_image_url,
-            analyzed_image_url,
-            analysis_comment,
-            imageUpload
-        FROM
-            _results 
-        WHERE
-            ROW_NUMBER = 1;  
-            `,
-            [batch_id],
-        );
-        return result;
-    }
-
     async webResultNoImage(batch_id: number) {
         const result = await this.database.executeQuery(
             `
@@ -438,163 +364,52 @@ export class WebResultService {
         return result;
     }
 
-    async webResultAverageGeneral(batch_id: number) {
-        const result = await this.database.executeQuery(
-            `
-            SELECT 
-                ROUND(AVG_SCORE, 2) AS avg,
-                NAME AS measurement,
-                CASE
-                    WHEN id IN (16, 17) THEN 
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 'Very Hydrated'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 'Hydrated'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 'Normal'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 7 AND 15.99 THEN 'Dehydrated'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5.99 THEN 'Very Dehydrated'
-                        END
-                    WHEN id IN (9, 5, 15) THEN 
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5 THEN 'Very Dry'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 5.99 AND 15.99 THEN 'Dry'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 'Normal'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 'Oily'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 'Very Oily'
-                        END
-                    ELSE
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5.99 THEN 'Clear'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 6 AND 15.99 THEN 'Almost Clear'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 'Mild'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 'Moderate'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 'Severe'
-                            ELSE NULL 
-                        END
-                END AS keyword_value,
-                CASE
-                    WHEN id IN (16, 17) THEN 
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 5
-                            WHEN ROUND(AVG_SCORE) BETWEEN 50 AND 80.99 THEN 4
-                            WHEN ROUND(AVG_SCORE) BETWEEN 17 AND 48.99 THEN 3
-                            WHEN ROUND(AVG_SCORE) BETWEEN 7 AND 15.99 THEN 2
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 6.99 THEN 1
-                        END
-                    WHEN id IN (9, 5, 15) THEN 
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5 THEN 1
-                            WHEN ROUND(AVG_SCORE) BETWEEN 5.99 AND 15.99 THEN 2
-                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 3
-                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 4
-                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 5
-                        END
-                    ELSE
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5.99 THEN 1
-                            WHEN ROUND(AVG_SCORE) BETWEEN 6 AND 15.99 THEN 2
-                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 3
-                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 4
-                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 5
-                            ELSE NULL 
-                        END
-                END AS keyword_id
-            FROM (
-                SELECT 
-                    tp.NAME as Name,
-                    tp."id" as id,
-                    COALESCE(ROUND(AVG((to_json(scores)->>'computation_score')::NUMERIC), 2), ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2)) AS AVG_SCORE
-                FROM measurements AS ms
-                JOIN type_measurements AS tp ON tp."id" = ms.type_measurement_id 
-                WHERE batch_id = $1 AND type_image_id = 21
-                GROUP BY tp.NAME, tp."id"
-            ) AS subquery;
-            `,
-            [batch_id],
-        );
-        return result;
-    }
-
-    async getSkinAge(batch_id: number) {
-        const result = await this.database.executeQuery(
-            `SELECT scores ->> 'skinAge' as skin_age, scores ->> 'skinCondtion' as skin_condition, created_time::date as date, created_time::time as time
-            FROM measurements 
-            WHERE batch_id = $1 AND type_image_id = 21 AND type_measurement_id = 18`,
-            [batch_id],
-        );
-
-        return result;
-    }
-
-    // Check Kiosk
-    async checkIfkiosk(batch_id: number) {
-        const result = await this.database.executeQuery(
-            `
-                SELECT args ->> 'kiosk' as kiosk, args ->> 'app_id' as app_id
-                FROM analysis WHERE batch_id = $1
-            `,
-            [batch_id],
-        );
-
-        return result[0];
-    }
-
     /* 
         Analysis Web Result
     */
     async getBatchId(batch_id: number) {
-        let result = await this.webResult(batch_id);
-        const checkKiosk = await this.checkIfkiosk(batch_id);
-
-        const avg = await this.webResultAverage(batch_id, checkKiosk);
-        const skinAgeCondition = await this.getSkinAge(batch_id);
+        let result = await this.getCombinedResults(batch_id);
         const analysis_comment = result[0]?.analysis_comment;
-        const imageUpload = result.length > 0 ? result[0]?.imageUpload : false;
-
-        let moistureT = null;
-        let moistureU = null;
-        let sebumT = null;
-        let sebumU = null;
 
         let finalResult: any = [];
-
-        if (imageUpload === false) {
-            result = await this.webResultNoImage(batch_id);
-        }
+        let skinAge = null;
+        let skinCondition;
 
         for (let i = 0; i < result.length; i++) {
             if (!result[i]['original_image_url']) result[i]['original_image_url'] = null;
-
             if (!result[i]['analyzed_image_url']) result[i]['analyzed_image_url'] = null;
 
             if (result[i]['measurement'] === 'moistureT' || result[i]['measurement'] === 'moistureU') {
                 result[i]['analyzed_image_url'] = null;
                 result[i]['original_image_url'] = null;
             }
+
+            if (result[i]['skin_age'] !== null) skinAge = result[i]['skin_age'];
+            if (result[i]['skin_condition'] !== null) skinCondition = result[i]['skin_condition'];
             result[i].value = +result[i].value;
-            for (let j = 0; j < avg.length; j++) {
-                if (avg[j].measurement === 'moistureT') moistureT = avg[j].avg;
-                if (avg[j].measurement === 'moistureU') moistureU = avg[j].avg;
-                if (avg[j].measurement === 'sebumT') sebumT = avg[j].avg;
-                if (avg[j].measurement === 'sebumU') sebumU = avg[j].avg;
+            result[i]['avg_value'] = parseFloat(result[i].avg_score);
+            result[i]['keyword_id'] = parseFloat(result[i].keyword_id);
 
-                if (result[i]['measurement'] === avg[j].measurement) {
-                    result[i]['avg_value'] = parseFloat(avg[j].avg);
-                    result[i]['keyword_value'] = avg[j]['keyword_value'];
-                    result[i]['keyword_id'] = parseFloat(avg[j].keyword_id);
-                    // result[i]['label'] = avg[j].label;
-                    // result[i]['comment'] = avg[j].comment;
-                    // result[i]['xy_coordinates'] = avg[j].xy_coordinates;
-                }
-
-                if (result[i]['computation_score']) {
-                    result[i]['computation_score'] = Number(result[i]['computation_score']);
-                }
+            if (result[i]['computation_score']) {
+                result[i]['computation_score'] = Number(result[i]['computation_score']);
             }
+
             if (result[i]['measurement'] === 'skinCondition') delete result[i];
             if (result[i]?.imageupload) delete result[i]?.imageupload;
-            delete finalResult[i]?.analysis_comment;
-            finalResult = result;
+            // delete result[i]?.analysis_comment;
+            delete result[i]?.skin_age;
+            delete result[i]?.skin_condition;
+            delete result[i]?.app_id;
+            delete result[i]?.kiosk;
+            delete result[i]?.avg_score;
+
+            console.log(result[i]);
+            if (result[i] !== undefined) {
+                finalResult.push(result[i]);
+            }
         }
+
+        console.log('skinAge, skinCondition ===>', skinAge, skinCondition);
 
         const answers = await this.AlgoAnalysis.fetchQuestion(Number(batch_id));
 
@@ -602,29 +417,15 @@ export class WebResultService {
         if (answers !== null) {
             questFr = this.computation.questionnaireFrequency(answers, 5);
         }
-        let getSkinCondition = skinAgeCondition[0]?.skin_condition;
-        if (!skinAgeCondition[0]?.skin_condition) {
-            getSkinCondition = this.getSkinCondition(
-                Number(moistureT),
-                Number(sebumT),
-                Number(moistureU),
-                Number(sebumU),
-                questFr,
-            );
 
-            if (checkKiosk?.kiosk === 'true' || checkKiosk?.kiosk === true) {
-                getSkinCondition = this.computationSkinConditionKiosk100(moistureU, questFr);
-            }
-        }
+        const conditionResult = this.keywordValue(skinCondition);
 
-        const conditionResult = this.keywordValue(getSkinCondition);
-
-        if (skinAgeCondition?.length > 0) {
+        if (skinCondition !== null) {
             finalResult.push({
                 measurement: 'Skin Condition',
                 value: null,
-                date: skinAgeCondition[0]?.date ?? null,
-                time: skinAgeCondition[0]?.time ?? null,
+                date: finalResult[0]?.date ?? null,
+                time: finalResult[0]?.time ?? null,
                 original_image_url: null,
                 analyzed_image_url: null,
                 avg_value: null,
@@ -634,13 +435,13 @@ export class WebResultService {
 
             finalResult.push({
                 measurement: 'SkinAge',
-                value: skinAgeCondition[0].skin_age,
-                date: skinAgeCondition[0]?.date,
-                time: skinAgeCondition[0]?.time,
+                value: skinAge,
+                date: finalResult[0]?.date,
+                time: finalResult[0]?.time,
                 original_image_url: null,
                 analyzed_image_url: null,
                 avg_value: null,
-                keyword_value: skinAgeCondition[0]?.skin_age,
+                keyword_value: skinAge,
                 keyword_id: null,
             });
         }
@@ -649,32 +450,6 @@ export class WebResultService {
             result: finalResult,
             analysis_comment: analysis_comment,
         };
-    }
-
-    async checkExpiration(batch_id: number, checkDuration: number) {
-        const result = await this.database.executeQuery(`SELECT request_date FROM analysis WHERE batch_id = $1`, [
-            batch_id,
-        ]);
-
-        if (result.length === 0) {
-            return true;
-        }
-        if (result[0].request_date === null) {
-            const update = `
-                    UPDATE analysis
-                    SET request_date = $1
-                    WHERE batch_id = $2
-                  `;
-
-            this.database.executeQuery(update, [new Date(), batch_id]);
-            return true;
-        }
-        const requestDate = new Date(result[0].request_date);
-
-        const differenceInMs = new Date().getTime() - requestDate.getTime();
-        const differenceInSeconds = differenceInMs / 1000;
-
-        return differenceInSeconds > checkDuration;
     }
 
     async getRequestDate(batch_id: number) {
@@ -702,70 +477,6 @@ export class WebResultService {
         } else {
             return true;
         }
-    }
-
-    async webResultAverageKiosk(batch_id: number) {
-        const result = await this.database.executeQuery(
-            `
-            SELECT 
-                ROUND(AVG_SCORE, 2) AS avg,
-                NAME AS measurement,
-                CASE
-                    WHEN id IN (16, 17) THEN 
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 'Hydrated'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Normal'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Dehydrated'
-                        END
-                    ELSE
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Preventive Care'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Protective Care'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 'Intensive Care'
-                            ELSE NULL 
-                        END
-                END AS keyword_value,
-                CASE
-                    WHEN id IN (16, 17) THEN 
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 3
-                            WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
-                        END
-                    ELSE
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
-                            WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
-                            WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 3
-                            ELSE NULL 
-                        END
-                END AS keyword_id
-            FROM (
-                SELECT 
-                    tp.NAME as Name,
-                    tp."id" as id,
-                    COALESCE(ROUND(AVG((to_json(scores)->>'computation_score')::NUMERIC), 2), ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2)) AS AVG_SCORE
-                FROM measurements AS ms
-                JOIN type_measurements AS tp ON tp."id" = ms.type_measurement_id 
-                WHERE batch_id = $1 AND type_image_id = 21
-                GROUP BY tp.NAME, tp."id"
-            ) AS subquery;
-            `,
-            [batch_id],
-        );
-        return result;
-    }
-
-    async webResultAverage(batch_id: number, checkKiosk: any) {
-        let result;
-
-        result = this.webResultAverageGeneral(batch_id);
-        const appId = checkKiosk?.app_id ? Number(checkKiosk?.app_id) : 0;
-        if ((checkKiosk?.kiosk === 'true' || checkKiosk?.kiosk === true) && appId === 110) {
-            result = this.webResultAverageKiosk(batch_id);
-        }
-
-        return result;
     }
 
     async decodeToken(token: string): Promise<any> {
@@ -800,249 +511,181 @@ export class WebResultService {
             });
         }
 
-        return this.combinedWebResult(decodeToken?.batch_id);
+        return this.getBatchId(decodeToken?.batch_id);
     }
 
-    async combinedWebResult(batch_id: number) {
-        const result = await this.database.executeQuery(
-            `
-            WITH _avg_scores AS (
+    async getCombinedResults(batch_id: number) {
+        const query = `
+           WITH filtered_measurements AS (
+                SELECT 
+                    m.batch_id,
+                    tm."name" AS measurement,
+                    tm.id AS type_measurement_id,
+                    m.args ->> 'nth_analysis' AS nth_analysis,
+                    MAX(m.scores ->> 'skinAge') AS skin_age,
+                    MAX(m.scores ->> 'skinCondtion') AS skin_condition,
+                    MAX(to_json(m.scores) ->> 'score') AS value,
+                    MAX(to_json(m.scores) ->> 'computation_score') AS computation_score,
+                    MAX(CASE WHEN m.type_image_id = 21 THEN m.url ELSE NULL END) AS original_image_url,
+                    MAX(CASE WHEN m.type_image_id = 18 THEN m.url ELSE NULL END) AS analyzed_image_url
+                FROM measurements m
+                INNER JOIN type_measurements tm 
+                    ON tm.id = m.type_measurement_id
+                WHERE m.batch_id = $1
+                GROUP BY m.batch_id, tm."name", tm.id, m.args ->> 'nth_analysis'
+            ),
+            analysis_kiosk AS (
+                SELECT 
+                    CASE 
+                        WHEN EXISTS (
+                            SELECT 1 
+                            FROM analysis a 
+                            WHERE a.batch_id = $1 AND a.args ->> 'kiosk' = 'true'
+                        ) THEN 'true'
+                        ELSE 'false'
+                    END AS kiosk_value
+            ), 
+            classification_keywords AS (
                 SELECT 
                     tp."name" AS measurement,
-                    tp."id" AS id,
+                    tp."id" AS type_measurement_id,
                     COALESCE(
-                        ROUND(AVG((to_json(scores) ->> 'computation_score')::NUMERIC), 2), 
-                        ROUND(AVG((to_json(scores) ->> 'score')::NUMERIC), 2)
-                    ) AS avg_score
-                FROM measurements AS ms
-                JOIN type_measurements AS tp ON tp."id" = ms.type_measurement_id 
-                WHERE ms.batch_id = $1 AND ms.type_image_id = 21
-                GROUP BY tp."name", tp."id"
+                        ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), 
+                        ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)
+                    ) AS avg_score,
+                    CASE WHEN ak.kiosk_value = 'true' THEN
+                            CASE
+                                WHEN tp."id" IN (16, 17) THEN 
+                                    CASE 
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 71 AND 100 THEN 'Hydrated'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2))  BETWEEN 26 AND 70.99 THEN 'Normal'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 0 AND 25.99 THEN 'Dehydrated'
+                                    END
+                                ELSE
+                                    CASE 
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 0 AND 25.99 THEN 'Preventive Care'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 26 AND 70.99 THEN 'Protective Care'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 71 AND 99.99 THEN 'Intensive Care'
+                                    END
+                            END
+                        ELSE
+                            CASE
+                                WHEN tp."id" IN (16, 17) THEN 
+                                    CASE 
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 81 AND 100 THEN 'Very Hydrated'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 49 AND 80.99 THEN 'Hydrated'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 16 AND 48.99 THEN 'Normal'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 7 AND 15.99 THEN 'Dehydrated'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 0 AND 5.99 THEN 'Very Dehydrated'
+                                    END
+                                WHEN tp."id" IN (9, 5, 15) THEN 
+                                    CASE 
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 0 AND 5 THEN 'Very Dry'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 5.99 AND 15.99 THEN 'Dry'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 16 AND 48.99 THEN 'Normal'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 49 AND 80.99 THEN 'Oily'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 81 AND 100 THEN 'Very Oily'
+                                    END        
+                                ELSE
+                                    CASE 
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 0 AND 5.99 THEN 'Clear'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 6 AND 15.99 THEN 'Almost Clear'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 16 AND 48.99 THEN 'Mild'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 49 AND 80.99 THEN 'Moderate'
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 81 AND 100 THEN 'Severe'
+                                        ELSE NULL 
+                                    END
+                            END
+                    END AS keyword_value,
+                    CASE WHEN ak.kiosk_value = 'true' THEN
+                            CASE
+                                WHEN tp."id" IN (16, 17) THEN 
+                                    CASE 
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 71 AND 100 THEN 3
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 26 AND 70.99 THEN 2
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 0 AND 25.99 THEN 1
+                                    END
+                                ELSE
+                                    CASE 
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 0 AND 25.99 THEN 1
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 26 AND 70.99 THEN 2
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 71 AND 99.99 THEN 3
+                                    END
+                            END
+                        ELSE
+                            CASE
+                                WHEN tp."id" IN (16, 17) THEN 
+                                    CASE 
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 81 AND 100 THEN 5
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 50 AND 80.99 THEN 4
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 17 AND 48.99 THEN 3
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 7 AND 15.99 THEN 2
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 0 AND 6.99 THEN 1
+                                    END
+                                WHEN tp."id" IN (9, 5, 15) THEN 
+                                    CASE 
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 0 AND 5 THEN 1
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 5.99 AND 15.99 THEN 2
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 16 AND 48.99 THEN 3
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 49 AND 80.99 THEN 4
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 81 AND 100 THEN 5
+                                    END    
+                                ELSE
+                                    CASE 
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 0 AND 5.99 THEN 1
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 6 AND 15.99 THEN 2
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 16 AND 48.99 THEN 3
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 49 AND 80.99 THEN 4
+                                        WHEN COALESCE(ROUND(AVG((m.scores ->> 'computation_score')::NUMERIC), 2), ROUND(AVG((m.scores ->> 'score')::NUMERIC), 2)) BETWEEN 81 AND 100 THEN 5
+                                        ELSE NULL 
+                                    END
+                            END
+                    END AS keyword_id
+                FROM measurements m
+                INNER JOIN type_measurements tp ON tp."id" = m.type_measurement_id
+                CROSS JOIN analysis_kiosk ak
+                WHERE m.batch_id = $1 AND m.type_image_id = 21
+                GROUP BY tp."name", tp."id", ak.kiosk_value
             ),
-
-            _results AS (
-                SELECT DISTINCT
-                    tm."name" AS measurement,
-                    (to_json(oi.scores) ->> 'answers') as answers,
-                    oi.scores ->> 'score' AS value,
-                    oi.scores ->> 'computation_score' AS computation_score,
-                    rec.created_time::date AS date,
-                    rec.created_time::time AS time,
-                    rec.analysis_comment AS analysis_comment,
-                    COALESCE(rec.args ->> 'imageUpload', 'true') AS imageUpload,
-                    COALESCE((rec.args ->> 'kiosk')::boolean, false) AS isKiosk,
-                    CASE
-                        WHEN rec.args ->> 'showing_image_flag' = 'true' OR rec.args ->> 'licenseId' = '5' THEN NULL
-                        ELSE oi.url
-                    END AS original_image_url,
-                    CASE
-                        WHEN rec.args ->> 'showing_image_flag' = 'true' OR rec.args ->> 'licenseId' = '5' THEN NULL
-                        ELSE ai.url
-                    END AS analyzed_image_url,
-                    ROW_NUMBER() OVER (PARTITION BY tm."name") AS row_number
-                FROM analysis rec
-                LEFT JOIN measurements oi ON rec.batch_id = oi.batch_id AND oi.type_image_id = 21
-                LEFT JOIN type_measurements tm ON tm."id" = oi.type_measurement_id
-                LEFT JOIN measurements ai 
-                    ON rec.batch_id = ai.batch_id 
-                    AND ai.type_image_id = 18
-                    AND (
-                        oi.args ->> 'nth_analysis' = ai.args ->> 'nth_analysis' 
-                        OR tm."name" = 'moistureT' 
-                        OR tm."name" = 'moistureU'
-                    )
-                WHERE rec.batch_id = $1
-                AND ai.type_image_id = 18  
-                GROUP BY 
-                    tm."name", 
-                    oi.url, 
-                    ai.url, 
-                    oi.scores, 
-                    rec.created_time, 
-                    rec.analysis_comment, 
-                    COALESCE(rec.args ->> 'imageUpload', 'true'),
-                    COALESCE((rec.args ->> 'kiosk')::boolean, false),
-                    rec.args ->> 'showing_image_flag',
-                    rec.args ->> 'licenseId'
+            filtered_analysis AS (
+                SELECT 
+                    a.batch_id,
+                    a.created_time::date AS date,
+                    a.created_time::time AS time,
+                    a.analysis_comment,
+                    COALESCE(a.args ->> 'imageUpload', 'true') AS imageUpload,
+                    a.args ->> 'kiosk' AS kiosk,
+                    a.args ->> 'app_id' AS app_id
+                FROM analysis a
+                WHERE a.batch_id = $1
             )
-            SELECT
-                r.measurement,
-                (r.value),
-                r.computation_score,
-                r.answers,
-                r.date,
-                r.time,
-                r.original_image_url,
-                r.analyzed_image_url,
-                r.analysis_comment,
-                r.imageUpload,
-                r.isKiosk,
-                ROUND(a.avg_score, 2) AS avg_value,
-                CASE 
-                    WHEN isKiosk = true THEN
-                        CASE 
-                            WHEN id IN (16, 17) THEN 
-                                CASE 
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 'Hydrated'
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Normal'
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Dehydrated'
-                                END
-                            ELSE
-                                CASE 
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Preventive Care'
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Protective Care'
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 'Intensive Care'
-                                    ELSE NULL 
-                                END
-                        END
-                    ELSE
-                        CASE 
-                            WHEN id IN (16, 17) THEN 
-                                CASE 
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 'Hydrated'
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Normal'
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Dehydrated'
-                                END
-                            ELSE
-                                CASE 
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 'Preventive Care'
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 'Protective Care'
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 'Intensive Care'
-                                    ELSE NULL 
-                                END
-                        END
-                END AS keyword_value,
-                CASE 
-                    WHEN isKiosk = true THEN
-                        CASE 
-                            WHEN id IN (16, 17) THEN 
-                                CASE 
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 3
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
-                                END
-                            ELSE
-                                CASE 
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 3
-                                    ELSE NULL 
-                                END
-                        END
-                    ELSE
-                        CASE 
-                            WHEN id IN (16, 17) THEN 
-                                CASE 
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 100 THEN 3
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
-                                END
-                            ELSE
-                                CASE 
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 25.99 THEN 1
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 26 AND 70.99 THEN 2
-                                    WHEN ROUND(AVG_SCORE) BETWEEN 71 AND 99.99 THEN 3
-                                    ELSE NULL 
-                                END
-                        END
-                END AS keyword_id
-            FROM
-                _results r
-            JOIN
-                _avg_scores a ON r.measurement = a.measurement
-            WHERE
-                r.row_number = 1;
+            SELECT DISTINCT ON (fm.measurement)  
+                fm.measurement,
+                fm.skin_age,
+                fm.skin_condition,
+                fm.computation_score,
+                fm.value,
+                fm.original_image_url,
+                fm.analyzed_image_url,
+                ck.avg_score,
+                ck.keyword_value,
+                ck.keyword_id,
+                fa.date,
+                fa.time,
+                fa.analysis_comment,
+                fa.imageUpload,
+                fa.kiosk,
+                fa.app_id
+            FROM filtered_measurements fm
+            LEFT JOIN classification_keywords ck 
+                ON fm.measurement = ck.measurement
+            LEFT JOIN filtered_analysis fa 
+                ON fm.batch_id = fa.batch_id
+            ORDER BY fm.measurement, fm.nth_analysis;
 
+        `;
 
-            `,
-            [batch_id],
-        );
-
-        const skinAgeCondition = await this.getSkinAge(batch_id);
-        const analysis_comment = result[0]?.analysis_comment;
-        let moistureT;
-        let moistureU;
-        let sebumT;
-        let sebumU;
-        const answers = result[0]?.answers ?? '';
-
-        const checkKiosk = result[0]?.iskiosk ?? false;
-        const processedData = result.map((item: any) => {
-            const { imageupload, answers, iskiosk, ...rest } = item;
-
-            if (item.measurement === 'moistureT' || item.measurement === 'moistureU') {
-                rest.original_image_url = null;
-                rest.analyzed_image_url = null;
-            }
-
-            if (item.measurement === 'moistureT') moistureT = item.avg_value;
-            if (item.measurement === 'moistureU') moistureU = item.avg_value;
-            if (item.measurement === 'sebumT') sebumT = item.avg_value;
-            if (item.measurement === 'sebumU') sebumU = item.avg_value;
-
-            delete item.answers;
-            delete item.analysis_comment;
-            delete item.iskiosk;
-
-            return {
-                ...rest,
-                value: item.value !== null ? parseFloat(item.value) : null,
-                computation_score: item.computation_score !== null ? parseFloat(item.computation_score) : null,
-                avg_value: item.avg_value !== null ? parseFloat(item.avg_value) : null,
-            };
-        });
-
-        let getSkinCondition = skinAgeCondition[0]?.skin_condition;
-
-        let questFr = -1;
-        if (answers !== null) {
-            questFr = this.computation.questionnaireFrequency(answers, 5);
-        }
-        if (!skinAgeCondition[0]?.skin_condition) {
-            getSkinCondition = this.getSkinCondition(
-                Number(moistureT),
-                Number(sebumT),
-                Number(moistureU),
-                Number(sebumU),
-                questFr,
-            );
-
-            if (checkKiosk === 'true' || checkKiosk === true) {
-                getSkinCondition = this.computationSkinConditionKiosk100(moistureU, questFr);
-            }
-        }
-
-        const conditionResult = this.keywordValue(getSkinCondition);
-
-        if (skinAgeCondition?.length > 0) {
-            processedData.push({
-                measurement: 'Skin Condition',
-                value: null,
-                date: skinAgeCondition[0]?.date ?? null,
-                time: skinAgeCondition[0]?.time ?? null,
-                original_image_url: null,
-                analyzed_image_url: null,
-                avg_value: null,
-                keyword_value: conditionResult.keyword_value,
-                keyword_id: conditionResult.keyword_id,
-            });
-
-            processedData.push({
-                measurement: 'SkinAge',
-                value: skinAgeCondition[0].skin_age,
-                date: skinAgeCondition[0]?.date,
-                time: skinAgeCondition[0]?.time,
-                original_image_url: null,
-                analyzed_image_url: null,
-                avg_value: null,
-                keyword_value: skinAgeCondition[0]?.skin_age,
-                keyword_id: null,
-            });
-        }
-
-        return {
-            result: processedData,
-            analysis_comment: analysis_comment,
-        };
+        const result = await this.database.executeQuery(query, [batch_id]);
+        return result;
     }
 }
