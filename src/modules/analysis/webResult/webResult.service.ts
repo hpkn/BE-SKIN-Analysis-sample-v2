@@ -324,80 +324,6 @@ export class WebResultService {
         }
     }
 
-    async webResult(batch_id: number) {
-        const result = await this.database.executeQuery(
-            `
-            WITH _results AS (
-            SELECT DISTINCT
-                type_measurements."name" AS measurement,
-                to_json(original_img.scores) ->> 'score' AS value,
-                to_json(original_img.scores) ->> 'computation_score' AS computation_score,
-                record.created_time::date AS date,
-                record.created_time::time AS time,
-                record.analysis_comment AS analysis_comment,
-                COALESCE(record.args ->> 'imageUpload', 'true') AS imageUpload,
-                -- Conditionally set original_image_url to NULL
-                CASE
-                    WHEN (record.args ->> 'showing_image_flag') = 'true' OR (record.args ->> 'licenseId') = '5'
-                    THEN NULL
-                    ELSE original_img.url
-                END AS original_image_url,
-                -- Conditionally set analyzed_image_url to NULL
-                CASE
-                    WHEN (record.args ->> 'showing_image_flag') = 'true' OR (record.args ->> 'licenseId') = '5'
-                    THEN NULL
-                    ELSE analyzed_img.url
-                END AS analyzed_image_url,
-                ROW_NUMBER() OVER (PARTITION BY type_measurements."name") AS ROW_NUMBER
-            FROM
-                analysis record
-            LEFT JOIN measurements AS original_img 
-                ON record.batch_id = original_img.batch_id  
-                AND original_img.type_image_id = 21 
-            LEFT JOIN type_measurements 
-                ON type_measurements.ID = original_img.type_measurement_id 
-            LEFT JOIN measurements AS analyzed_img 
-                ON record.batch_id = analyzed_img.batch_id 
-                AND analyzed_img.type_image_id = 18
-                AND (original_img.args ->> 'nth_analysis' = analyzed_img.args ->> 'nth_analysis' 
-                    OR type_measurements."name" = 'moistureT' 
-                    OR type_measurements."name" = 'moistureU') 
-            WHERE
-                record.batch_id = $1
-                AND analyzed_img.type_image_id = 18  
-            GROUP BY
-                type_measurements."name", 
-                original_img.url, 
-                analyzed_img.url, 
-                original_img.scores, 
-                record.created_time, 
-                record.analysis_comment, 
-                original_img.type_measurement_id, 
-                COALESCE(record.args ->> 'imageUpload', 'true'),
-                -- Extracted fields from JSON for grouping
-                (record.args ->> 'showing_image_flag'),
-                (record.args ->> 'licenseId')
-        )
-        SELECT
-            measurement,
-            value,
-            computation_score,
-            date,
-            time,
-            original_image_url,
-            analyzed_image_url,
-            analysis_comment,
-            imageUpload
-        FROM
-            _results 
-        WHERE
-            ROW_NUMBER = 1;  
-            `,
-            [batch_id],
-        );
-        return result;
-    }
-
     async webResultNoImage(batch_id: number) {
         const result = await this.database.executeQuery(
             `
@@ -438,123 +364,12 @@ export class WebResultService {
         return result;
     }
 
-    async webResultAverageGeneral(batch_id: number) {
-        const result = await this.database.executeQuery(
-            `
-            SELECT 
-                ROUND(AVG_SCORE, 2) AS avg,
-                NAME AS measurement,
-                CASE
-                    WHEN id IN (16, 17) THEN 
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 'Very Hydrated'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 'Hydrated'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 'Normal'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 7 AND 15.99 THEN 'Dehydrated'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5.99 THEN 'Very Dehydrated'
-                        END
-                    WHEN id IN (9, 5, 15) THEN 
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5 THEN 'Very Dry'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 5.99 AND 15.99 THEN 'Dry'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 'Normal'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 'Oily'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 'Very Oily'
-                        END
-                    ELSE
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5.99 THEN 'Clear'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 6 AND 15.99 THEN 'Almost Clear'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 'Mild'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 'Moderate'
-                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 'Severe'
-                            ELSE NULL 
-                        END
-                END AS keyword_value,
-                CASE
-                    WHEN id IN (16, 17) THEN 
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 5
-                            WHEN ROUND(AVG_SCORE) BETWEEN 50 AND 80.99 THEN 4
-                            WHEN ROUND(AVG_SCORE) BETWEEN 17 AND 48.99 THEN 3
-                            WHEN ROUND(AVG_SCORE) BETWEEN 7 AND 15.99 THEN 2
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 6.99 THEN 1
-                        END
-                    WHEN id IN (9, 5, 15) THEN 
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5 THEN 1
-                            WHEN ROUND(AVG_SCORE) BETWEEN 5.99 AND 15.99 THEN 2
-                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 3
-                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 4
-                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 5
-                        END
-                    ELSE
-                        CASE 
-                            WHEN ROUND(AVG_SCORE) BETWEEN 0 AND 5.99 THEN 1
-                            WHEN ROUND(AVG_SCORE) BETWEEN 6 AND 15.99 THEN 2
-                            WHEN ROUND(AVG_SCORE) BETWEEN 16 AND 48.99 THEN 3
-                            WHEN ROUND(AVG_SCORE) BETWEEN 49 AND 80.99 THEN 4
-                            WHEN ROUND(AVG_SCORE) BETWEEN 81 AND 100 THEN 5
-                            ELSE NULL 
-                        END
-                END AS keyword_id
-            FROM (
-                SELECT 
-                    tp.NAME as Name,
-                    tp."id" as id,
-                    COALESCE(ROUND(AVG((to_json(scores)->>'computation_score')::NUMERIC), 2), ROUND(AVG((to_json(scores)->>'score')::NUMERIC), 2)) AS AVG_SCORE
-                FROM measurements AS ms
-                JOIN type_measurements AS tp ON tp."id" = ms.type_measurement_id 
-                WHERE batch_id = $1 AND type_image_id = 21
-                GROUP BY tp.NAME, tp."id"
-            ) AS subquery;
-            `,
-            [batch_id],
-        );
-        return result;
-    }
-
-    async getSkinAge(batch_id: number) {
-        const result = await this.database.executeQuery(
-            `SELECT scores ->> 'skinAge' as skin_age, scores ->> 'skinCondtion' as skin_condition, created_time::date as date, created_time::time as time
-            FROM measurements 
-            WHERE batch_id = $1 AND type_image_id = 21 AND type_measurement_id = 18`,
-            [batch_id],
-        );
-
-        return result;
-    }
-
-    // Check Kiosk
-    async checkIfkiosk(batch_id: number) {
-        const result = await this.database.executeQuery(
-            `
-                SELECT args ->> 'kiosk' as kiosk, args ->> 'app_id' as app_id
-                FROM analysis WHERE batch_id = $1
-            `,
-            [batch_id],
-        );
-
-        return result[0];
-    }
-
     /* 
         Analysis Web Result
     */
     async getBatchId(batch_id: number) {
-        // let result = await this.webResult(batch_id);
-        // const checkKiosk = await this.checkIfkiosk(batch_id);
-
-        // const avg = await this.webResultAverage(batch_id, checkKiosk);
-        // const skinAgeCondition = await this.getSkinAge(batch_id);
-
         let result = await this.getCombinedResults(batch_id);
         const analysis_comment = result[0]?.analysis_comment;
-
-        let moistureT = null;
-        let moistureU = null;
-        let sebumT = null;
-        let sebumU = null;
 
         let finalResult: any = [];
         let skinAge = null;
@@ -635,32 +450,6 @@ export class WebResultService {
             result: finalResult,
             analysis_comment: analysis_comment,
         };
-    }
-
-    async checkExpiration(batch_id: number, checkDuration: number) {
-        const result = await this.database.executeQuery(`SELECT request_date FROM analysis WHERE batch_id = $1`, [
-            batch_id,
-        ]);
-
-        if (result.length === 0) {
-            return true;
-        }
-        if (result[0].request_date === null) {
-            const update = `
-                    UPDATE analysis
-                    SET request_date = $1
-                    WHERE batch_id = $2
-                  `;
-
-            this.database.executeQuery(update, [new Date(), batch_id]);
-            return true;
-        }
-        const requestDate = new Date(result[0].request_date);
-
-        const differenceInMs = new Date().getTime() - requestDate.getTime();
-        const differenceInSeconds = differenceInMs / 1000;
-
-        return differenceInSeconds > checkDuration;
     }
 
     async getRequestDate(batch_id: number) {
