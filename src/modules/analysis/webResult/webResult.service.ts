@@ -793,10 +793,10 @@ export class WebResultService {
     async finalWebResult(token: string) {
         const decodeToken = await this.decodeToken(token);
 
-        if (decodeToken?.expires) {
+        if (decodeToken?.isExpired) {
             throw new GoneException({
-                status: 410,
-                message: 'Web result is expired',
+              status: 410,
+              message: 'Web result is expired',
             });
         }
 
