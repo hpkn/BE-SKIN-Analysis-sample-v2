@@ -1133,7 +1133,7 @@ export class AlgoAnalysisService {
                 analysis.batch_id`,
             [batch_id],
         );
-        console.log(result);
+
         return result[0];
     }
 
@@ -1245,6 +1245,8 @@ export class AlgoAnalysisService {
     async userAnalysisHistory(customer_id: number, per: number, page: number): Promise<any[]> {
         let batchIds = await this.getCustomerBatchID(customer_id, per, page);
 
+        const arrayOfBatches = batchIds.map((batchId) => batchId['batch_id']);
+        console.log(batchIds);
         try {
             const queries = batchIds.map((batchId) => this.getAnalysisByBatchId(batchId['batch_id']));
             const results = await Promise.all(queries);
