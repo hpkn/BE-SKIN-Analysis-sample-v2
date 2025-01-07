@@ -10,6 +10,7 @@ import { HttpStatus } from '@nestjs/common/enums';
 import { CorsOptions } from '@nestjs/common/interfaces/external/cors-options.interface';
 import { BullAdapter } from 'bull-board/bullAdapter';
 import { Queue } from 'bull';
+import * as tls from 'tls';
 // const logStream = fs.createWriteStream('api.log', {
 //   flags: 'a',
 // });
@@ -22,13 +23,53 @@ async function bootstrap() {
     const ssl = process.env.SSL === 'true' ? true : false;
     let httpsOptions = null;
     if (ssl) {
-        const keyPath = process.env.SSL_KEY_PATH || '';
-        const certPath = process.env.SSL_CERT_PATH || '';
-        httpsOptions = {
-            key: fs.readFileSync(keyPath),
-            cert: fs.readFileSync(certPath),
+        const defaultKeyPath = process.env.SSL_KEY_PATH || '';
+        const defaultCertPath = process.env.SSL_CERT_PATH || '';
+    
+        const cnKeyPath =
+          process.env.REGION === 'CHINA' ? process.env.SSL_KEY_PATH_CN : '';
+    
+        const cnCertPath =
+          process.env.REGION === 'CHINA' ? process.env.SSL_CERT_PATH_CN : '';
+    
+        // Load default SSL certificate (1.116.243.170)
+        const defaultCert = {
+          key: fs.readFileSync(defaultKeyPath),
+          cert: fs.readFileSync(defaultCertPath),
         };
-    }
+    
+        // Load China-specific SSL certificate (v2-api.chowis.cn)
+        const cnCert =  process.env.REGION === 'CHINA' ? {
+          key: fs.readFileSync(cnKeyPath),
+          cert: fs.readFileSync(cnCertPath),
+        } : {};
+    
+        // let cnCert = process.env.REGION === 'CHINA' ? cnCert_ : {}; 
+    
+        httpsOptions = {
+          key: defaultCert.key,
+          cert: defaultCert.cert,
+          SNICallback: (servername: string, cb: Function) => {
+            console.log(`SNICallback invoked for servername: ${servername}`);
+            try {
+              if (servername === 'v2-api.chowis.cn') {
+                console.log('Serving SSL for v2-api.chowis.cn', cnCert);
+                return cb(null, tls.createSecureContext(cnCert));
+              }
+    
+              // Default SSL certificate for 1.116.243.170 and any other domains
+              console.log('Serving SSL for 1.116.243.170 or default');
+              return cb(null, tls.createSecureContext(defaultCert));
+            } catch (error) {
+              console.error(
+                `Error in SNICallback for ${servername}:`,
+                error.message,
+              );
+              return cb(error);
+            }
+          },
+        };
+      }
     const app = await NestFactory.create(AppModule, {
         httpsOptions,
         rawBody: true,
