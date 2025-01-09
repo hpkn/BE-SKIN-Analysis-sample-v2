@@ -508,8 +508,8 @@ export class WebResultService {
 
         if (decodeToken?.isExpired) {
             throw new GoneException({
-                status: 410,
-                message: 'Web result is expired',
+              status: 410,
+              message: 'Web result is expired',
             });
         }
 
