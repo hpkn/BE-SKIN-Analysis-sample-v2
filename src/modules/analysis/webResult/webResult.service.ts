@@ -419,6 +419,7 @@ export class WebResultService {
         }
 
         const conditionResult = this.keywordValue(skinCondition);
+        console.log("Skin ConditionSkin ConditionSkin Condition",conditionResult)
 
         if (skinCondition !== null) {
             finalResult.push({
