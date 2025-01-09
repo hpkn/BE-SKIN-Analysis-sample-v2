@@ -197,6 +197,7 @@ export class WebResultService {
 
         let keyword_value = '';
 
+
         switch (skinCondition) {
             case veryDry:
                 keyword_value = 'very_dry';
@@ -275,6 +276,7 @@ export class WebResultService {
         // If either one of the sebum score is missing, we will always give "combination" as skin condition
         // Truth is in this case we should not call this algorithm at all
         let condition: string = 'combination';
+        
         if (skinCondition === veryDry) condition = 'very_dry';
         if (skinCondition === dry) condition = 'dry';
         if (skinCondition === combination) condition = 'combination';
@@ -403,12 +405,12 @@ export class WebResultService {
             delete result[i]?.kiosk;
             delete result[i]?.avg_score;
 
-            console.log(result[i]);
             if (result[i] !== undefined) {
                 finalResult.push(result[i]);
             }
-        }
+            
 
+        }
         console.log('skinAge, skinCondition ===>', skinAge, skinCondition);
 
         const answers = await this.AlgoAnalysis.fetchQuestion(Number(batch_id));
@@ -523,7 +525,7 @@ export class WebResultService {
                     tm.id AS type_measurement_id,
                     m.args ->> 'nth_analysis' AS nth_analysis,
                     MAX(m.scores ->> 'skinAge') AS skin_age,
-                    MAX(m.scores ->> 'skinCondtion') AS skin_condition,
+                    MAX(m.scores ->> 'skinCondition') AS skin_condition,
                     MAX(to_json(m.scores) ->> 'score') AS value,
                     MAX(to_json(m.scores) ->> 'computation_score') AS computation_score,
                     MAX(CASE WHEN m.type_image_id = 21 THEN m.url ELSE NULL END) AS original_image_url,
