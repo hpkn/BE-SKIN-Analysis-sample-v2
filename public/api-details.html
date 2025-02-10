@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="ko">
+    <head>
+        <meta charset="UTF-8" />
+        <title>CNDP 피부 분석 API 상세 설명</title>
+        <style>
+            body {
+                font-family: Arial, sans-serif;
+                margin: 2em;
+            }
+
+            h2 {
+                border-bottom: 1px solid #ccc;
+                padding-bottom: 0.5em;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1>CNDP 피부 분석 API 상세 설명</h1>
+
+        <!-- Global overview (optional) -->
+        <h2>API Endpoints Overview</h2>
+        <ul>
+            <li><a href="#requestBatchId">GET /analysis/requestBatchId</a></li>
+            <li><a href="#offlineCBB">POST /analysis/offlineCBB</a></li>
+            <li><a href="#analysisCBB">POST /analysis/analysisCBB</a></li>
+            <li><a href="#skinAgeCondition">POST /analyis/SkinAgeCondition</a></li>
+            <!-- add more endpoints as needed -->
+        </ul>
+
+        <!-- Detailed sections -->
+        <h2 id="requestBatchId">GET /analysis/requestBatchId</h2>
+        <p>
+            <strong>Notice:</strong> Primary API to request a batch_id that will be used to perform and save analysis
+            results.<br />
+            <strong>설명:</strong> 분석 결과를 수행 및 저장하기 위해 사용될 batch_id를 요청하는 기본 API입니다.
+        </p>
+
+        <h2 id="offlineCBB">POST /analysis/offlineCBB</h2>
+        <p>
+            <strong>Notice:</strong> Main endpoint for CBB analysis that includes images. The
+            <code>type</code> parameter should match the corresponding analysis type (e.g., type=1 for keratin, type=2
+            for pores, etc.). The response is a JSON object containing the analysis results.<br />
+            <strong>설명:</strong> 이미지가 포함된 CBB 분석을 위한 주요 API 엔드포인트입니다.
+            <code>type</code> 매개변수는 각 분석 유형(예: keratin: type=1, pores: type=2 등)에 해당하는 ID를 지정하며,
+            응답은 분석 결과를 포함하는 JSON 객체로 반환됩니다.
+        </p>
+
+        <h2 id="analysisCBB">POST /analysis/analysisCBB</h2>
+        <p>
+            <strong>Notice:</strong> Main endpoint for CBB analysis without images. Also used to save offline analysis
+            without images.<br />
+            <strong>설명:</strong> 이미지 없이 수행되는 CBB 분석 및 이미지 없는 오프라인 분석 결과 저장을 위한 주요 API
+            엔드포인트입니다.
+        </p>
+
+        <h2 id="skinAgeCondition">POST /analyis/SkinAgeCondition</h2>
+        <p>
+            <strong>Notice:</strong> API for Skin Age Condition analysis and data saving. Must be called after all other
+            analysis APIs because it uses the saved data from those analyses.<br />
+            <strong>설명:</strong> 피부 나이 및 상태 분석 API입니다. 다른 분석 API 호출 후, 저장된 데이터를 기반으로
+            추가 분석을 진행하기 위해 호출해야 합니다.
+        </p>
+
+        <!-- Add more detailed sections for each endpoint as needed -->
+    </body>
+</html>
