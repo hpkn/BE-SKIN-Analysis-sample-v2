@@ -33,8 +33,8 @@ jobs:
 
             - name: SSH into server
               run: |
-                  sshpass -p ${{ secrets.TEST_SERVER_PASSWORD }} ssh -o StrictHostKeyChecking=no -p 2479 backendtestuser@59.12.54.63 -v << EOF
-                    cd /home/backendtestuser/Repositories/CNDP-SKIN-v2/
+                  sshpass -p ${{ secrets.TEST_SERVER_PASSWORD }} ssh -o StrictHostKeyChecking=no -p 0000 paulhassang@127.0.0.1 -v << EOF
+                    cd /home/backendtestuser/Repositories/BE-SKIN-Analysis-sample/
 
                     # Check if the working directory is clean
                     if git status --porcelain | grep .; then
@@ -78,3 +78,4 @@ jobs:
             # sudo docker run -d -p 2024:2024 --name test-container-container chowisbackend/test-container:latest
             # sudo docker pull chowisbackend/test-container:latest
             # certbot certonly --dns-google --agree-tos \ -d "*.example.com"git
+

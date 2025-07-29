@@ -18,8 +18,8 @@ jobs:
 
             - name: SSH into server and run sync.sh
               run: |
-                  sshpass -p ${{ secrets.SERVER_PASSWORD }} ssh -o StrictHostKeyChecking=no ubuntu@1.116.243.170 << EOF
-                    cd /home/ubuntu/repositories/BE-CNDP-SKIN-v2/
+                  sshpass -p ${{ secrets.SERVER_PASSWORD }} ssh -o StrictHostKeyChecking=no ubuntu@1.0.0.0 << EOF
+                    cd /home/ubuntu/repositories/BE-Analysis-sample-v2/
                     # Check if the working directory is clean
                     if git status --porcelain | grep .; then
                       echo "Working directory is not clean, commit changes"
@@ -29,7 +29,7 @@ jobs:
 
                     echo "pull changes from main"
                     git pull origin main
-                    sudo bash -s < /home/ubuntu/repositories/BE-CNDP-SKIN-v2/sync.sh
+                    sudo bash -s < /home/ubuntu/repositories/BE-Analysis-sample-v2/sync.sh
                   EOF
 
     # Ohio
@@ -48,8 +48,8 @@ jobs:
 
             - name: SSH into server and run sync.sh
               run: |
-                  ssh -o StrictHostKeyChecking=no -T -i <(echo "${{ secrets.OHIO_KEY }}") ubuntu@52.14.217.107 << EOF
-                    cd /home/ubuntu/repositories/BE-CNDP-SKIN-v2/
+                  ssh -o StrictHostKeyChecking=no -T -i <(echo "${{ secrets.OHIO_KEY }}") ubuntu@127.0.0.1 << EOF
+                    cd /home/ubuntu/repositories/BE-CNDP-Analysis-sample-v2/
                     # Check if the working directory is clean
                     if git status --porcelain | grep .; then
                       echo "Working directory is not clean, commit changes"
@@ -77,8 +77,8 @@ jobs:
 
             - name: SSH into server and run sync.sh
               run: |
-                  ssh -o StrictHostKeyChecking=no -T -i <(echo "${{ secrets.GLOBAL_KEY }}") ubuntu@13.36.54.183 << EOF
-                    cd /home/ubuntu/repositories/BE-CNDP-SKIN-v2/
+                  ssh -o StrictHostKeyChecking=no -T -i <(echo "${{ secrets.GLOBAL_KEY }}") ubuntu@127.0.0.1 << EOF
+                    cd /home/ubuntu/repositories/BE-SKIN-Analysis-sample-v2/
                     # Check if the working directory is clean
                     if git status --porcelain | grep .; then
                       echo "Working directory is not clean, commit changes"
@@ -88,7 +88,7 @@ jobs:
 
                     echo "pull changes from main"
                     git pull origin main
-                    sudo bash -s < /home/ubuntu/repositories/BE-CNDP-SKIN-v2/sync.sh
+                    sudo bash -s < /home/ubuntu/repositories/BE-SKIN-Analysis-sample-v2/sync.sh
                   EOF
 
     # Removing Old action
@@ -111,3 +111,4 @@ jobs:
                       -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                       -H "Accept: application/vnd.github.v3+json"
                   done
+
