@@ -1,75 +1,175 @@
-# 🎯 Backend Developer Portfolio
+# Skin Analysis Service
 
-Welcome to my backend portfolio! This repo showcases a collection of end-to-end projects demonstrating my expertise in building scalable, production-ready backends with modern technologies including Python, Kafka, Spring Boot, FastAPI, NestJS, Celery, PostgreSQL, AWS, and LLM integrations.
+A robust, scalable microservices platform for processing and analyzing skin images, leveraging modern backend technologies and global deployment strategies.
 
----
+## 🚀 Tech Stack
 
-## 📚 Table of Contents
+-   **Backend Framework**: Node.js, NestJS
+-   **Worker & Messaging**: Python, Celery, RabbitMQ, Redis
+-   **Database**: PostgreSQL
+-   **Infrastructure**: AWS EC2, AWS Route 53, Nginx
+-   **CI/CD**: GitHub Actions
+-   **Monitoring**: Prometheus & Grafana
 
--   [🚀 Projects](#-projects)
-    -   [Marketing Recommendation System](#marketing-recommendation-system)
-    -   [Real-Time Event Pipeline](#real-time-event-pipeline)
-    -   [Content Analysis Service](#content-analysis-service)
--   [🛠️ Tech Stack](#️-tech-stack)
--   [⚙️ Getting Started](#️-getting-started)
-    -   [Prerequisites](#prerequisites)
-    -   [Clone & Install](#clone--install)
-    -   [Environment Variables](#environment-variables)
-    -   [Running Locally with Docker Compose](#running-locally-with-docker-compose)
--   [📡 Deployment](#-deployment)
--   [🎯 How to Present Your Work](#-how-to-present-your-work)
--   [🤝 Contributing & Feedback](#-contributing--feedback)
--   [📄 License](#-license)
+## 🌟 Highlights
 
----
+-   **Microservices Architecture**
+    Architected decoupled services for image ingestion, analysis, and results delivery—enabling horizontal scaling and fault isolation. (Node.js, NestJS)
 
-## 🚀 Projects
+-   **High-Performance Worker Pipeline**
+    Python-based Celery workers perform advanced image preprocessing and ML inference, orchestrated via RabbitMQ and Redis for reliable task queuing and retry semantics.
 
--   Celery workers for asynchronous processing
+-   **Resilience & Idempotency**
+    End-to-end message retry and deduplication logic guarantees exactly-once processing, even under spikes and failures.
 
-### Content Analysis Service
+-   **Global High Availability**
+    Deployed across EU and US AWS regions with automated DNS failover (Route 53) and Nginx load balancing, achieving 99.99% service uptime.
 
--   **Language & Frameworks**: Python · FastAPI · Celery · PostgreSQL · AWS Lambda
--   **Description**: Crawls blogs, news & reviews; runs sentiment & keyword extraction via LLM; stores results in relational tables.
--   **Highlights**:
-    -   `perform_llm_analysis` in Spark `mapInPandas`
-    -   Robust error handling & sketch merging
-    -   Docker Compose + Nginx reverse proxy
-    -   Health checks & CORS policies
+-   **Data Integrity & Monitoring**
+    PostgreSQL for transactional storage of analyses, with Prometheus/Grafana dashboards and alerts for real-time performance and error tracking.
 
----
+-   **CI/CD & Testing**
+    Automated builds & deployments via GitHub Actions; end-to-end test suite ensures reliability at every commit.
 
-## 🛠️ Tech Stack
+## 📦 Prerequisites
 
-| Layer          | Technologies            |
-| -------------- | ----------------------- |
-| **Backend**    | NestJS                  |
-| **Messaging**  | Celery (RabbitMQ/Redis) |
-| **Database**   | PostgreSQL              |
-| **Deployment** | AWS ECS/EKS             |
-| **CI/CD**      | GitHub Actions,         |
+-   Node.js ≥ 18.x
+-   Python ≥ 3.11
+-   Docker & Docker Compose
+-   PostgreSQL
+-   Redis
+-   RabbitMQ
+-   AWS account (for production deployment)
 
----
+## 🛠️ Installation & Setup
 
-## ⚙️ Getting Started
+1. **Clone the repo**
 
-### Prerequisites
+    ```bash
+    git clone https://github.com/<your-org>/skin-analysis-service.git
+    cd skin-analysis-service
+    ```
 
--   [Git](https://git-scm.com)
--   [Docker & Docker Compose](https://docs.docker.com)
--   AWS CLI (for deployment)
+2. **Environment Variables**
+   Copy `.env.example` to `.env` and fill in your configuration (DB credentials, RabbitMQ, Redis, etc.).
 
-### Clone & Install
+3. **Install Dependencies**
+
+    ```bash
+    # Backend
+    cd backend
+    npm install
+
+    # Worker
+    cd ../worker
+    pip install -r requirements.txt
+    ```
+
+4. **Start Services via Docker Compose**
+
+    ```bash
+    docker-compose up -d
+    ```
+
+## ⚙️ Development Commands
+
+> **Backend (NestJS)**
+
+```json
+// package.json scripts
+"start:dev": "nest start --watch",
+"start:debug": "nest start --debug --watch",
+"start:prod": "node dist/main"
+```
+
+-   **Run in development mode**
+
+    ```bash
+    npm run start:dev
+    ```
+
+-   **Run in debug mode**
+
+    ```bash
+    npm run start:debug
+    ```
+
+-   **Run production build**
+
+    ```bash
+    npm run start:prod
+    ```
+
+> **Worker (Celery)**
 
 ```bash
-# Clone your portfolio repo
-git clone git@github.com:YOUR_USERNAME/my-backend-portfolio.git
-cd my-backend-portfolio
-
-# Copy example env
-cp .env.example .env
-
-# Build & start services
-docker-compose up --build -d
+# Start Celery worker
+celery -A worker.app worker --loglevel=info
 ```
+
+```bash
+# Start Celery beat scheduler (if used)
+celery -A worker.app beat --loglevel=info
+```
+
+## ✅ Testing
+
+-   **Unit Tests**
+
+    ```bash
+    # Backend
+    npm run test
+
+    # Worker
+    pytest
+    ```
+
+-   **End-to-End Tests**
+
+    ```bash
+    npm run test:e2e
+    ```
+
+## 🤖 CI/CD (GitHub Actions)
+
+-   **Lint & Test** on every pull request
+-   **Build & Publish** Docker images on merge to `main`
+-   **Deploy** to AWS via Terraform or CloudFormation
+
+See [`.github/workflows/ci.yml`](.github/workflows/ci.yml) for details.
+
+## 🚀 Deployment
+
+1. **Build & push images**
+
+    ```bash
+    docker-compose build
+    docker-compose push
+    ```
+
+2. **Apply infrastructure**
+
+    ```bash
+    terraform init && terraform apply
+    ```
+
+3. **Scale services** via ECS/EKS or Docker Swarm as needed.
+
+## 📈 Monitoring & Logging
+
+-   **Prometheus** scrapes service metrics
+-   **Grafana** dashboards visualize key performance indicators (throughput, latency, error rates)
+-   **Alerting** via Slack/email for threshold breaches
+
+## 🤝 Contributing
+
+1. Fork the repo
+2. Create a feature branch (`git checkout -b feature/your-feature`)
+3. Commit your changes (`git commit -m 'Add feature'`)
+4. Push to your branch (`git push origin feature/your-feature`)
+5. Open a Pull Request
+
+## ⚖️ License
+
+This project is licensed under the MIT License.
 

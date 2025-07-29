@@ -402,3 +402,4 @@ ecosystem.config.js
 
 cleanup.sh
 
+.env*
