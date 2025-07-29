@@ -1,9 +1,10 @@
 import { Controller, Get, Res, Param, Query } from '@nestjs/common';
 import { Response } from 'express';
 import { WebResultService } from './webResult.service';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiTags, ApiExcludeController } from '@nestjs/swagger';
 
 //
+@ApiExcludeController()
 @ApiTags('WebResult')
 @Controller('web-result')
 export class WebResultController {
@@ -38,3 +39,4 @@ export class WebResultController {
         // return decodeToken;
     }
 }
+

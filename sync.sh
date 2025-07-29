@@ -7,7 +7,7 @@ source ~/.nvm/nvm.sh
 echo "Starting deployment process"
 
 # Change directory to where your application is located
-cd /home/ubuntu/repositories/BE-CNDP-SKIN-v2/
+cd /home/ubuntu/repositories/BE-SKIN-Analysis-sample/
 
 # RUN DB migration
 echo "Run DB Migration"

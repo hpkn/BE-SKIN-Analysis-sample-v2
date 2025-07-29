@@ -58,3 +58,4 @@ export class AppModule {
         // consumer.apply(AuthMiddleware).forRoutes('web-result/*');
     }
 }
+

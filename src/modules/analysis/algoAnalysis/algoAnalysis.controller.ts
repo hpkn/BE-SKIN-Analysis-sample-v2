@@ -50,13 +50,33 @@ import {
 } from 'src/common/Dto/analysis/offlineData.dto';
 import { BatchAnalysisService } from '../batchAnalysis/batchAnalysis.service';
 import { ComputationService } from 'src/modules/algorithms/computation/computation.service';
-import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+    ApiBearerAuth,
+    ApiBody,
+    ApiConsumes,
+    ApiExcludeEndpoint,
+    ApiOperation,
+    ApiResponse,
+    ApiTags,
+} from '@nestjs/swagger';
 import { WebResultService } from '../webResult/webResult.service';
 import { AuthMiddleware } from 'src/common/middleWare/authMiddlware/auth.middleware';
 import { InjectQueue } from '@nestjs/bull';
 import { Queue } from 'bull';
+import {
+    AnalysisMoistureUResponseDto,
+    AnalysisResponseDto,
+    AnalysisSebumUResponseBodyDto,
+    CustomerAnalysisHistoryMainResponseDto,
+    OfflineAnalysisDataResponseDto,
+    OfflineAnalysisDataSavingResponseDto,
+    RequestBatchIdResponseDto,
+    SkinAgeConditionResponseDto,
+    SkinToneResponseDto,
+    UserAnalysisHistoryResponseDto,
+    UserAnalysisImageHistoryResponseDto,
+} from 'src/common/Dto/analysis/response.dto';
 
-@ApiTags('Analysis')
 @Controller('analysis')
 // @ApiBearerAuth('access-token')
 export class AlgoAnalysisController {
@@ -74,237 +94,43 @@ export class AlgoAnalysisController {
         private readonly webResult: WebResultService,
         @InjectQueue('data-queue') private analysisQueue: Queue,
     ) {}
-    //
+    /*************** ANALYSIS API ***************/
+
+    @ApiTags('Analysis')
     @ApiBearerAuth('access-token')
-    @ApiConsumes('multipart/form-data')
-    @ApiOperation({
-        summary: 'Single analysis, Expecting a single image per analysis.',
-        security: [{ bearerToken: [] }],
+    @Get('/requestBatchId')
+    @ApiResponse({
+        status: 200,
+        description: 'Successfully requested a batch id.',
+        type: RequestBatchIdResponseDto,
     })
-    @ApiBody({ type: AlgoAnalysisDTO })
-    @Post('')
-    @HttpCode(200)
-    @UseInterceptors(FileInterceptor('image'))
-    async getcustomerHistory(@Body() data: any, @UploadedFile() image: Express.Multer.File, @Res() res: Response) {
-        if (!image)
-            return res.send({
-                status: 40002,
-                type: 'BadRequestError',
-                message: 'No file!',
-            });
-
-        data.batch_id = Number(data.batch_id);
-
-        const imageRecords = uuidv4();
-        const client = celery.createClient('redis://localhost', 'redis://');
-        let algoList = [
-            'keratin',
-            'pores',
-            'porphyrin',
-            'sebum',
-            'shine',
-            'spots',
-            'skintone',
-            'wrinkles',
-            'sensitivityscabs',
-            'sensitivityscaling',
-            'sensitivityredness',
-        ];
-        if (!algoList.includes(data.type)) {
-            throw new HttpException(`We don't have such type of algorithm -> ${data.type}`, 40001);
-        }
-        // console.time('celery');
-        const originalImage = image.buffer.toString('base64');
-
-        data.task = this.AlgoAnalysis.getTaskByAlgoType(data.type);
-
-        const task = client.createTask(data.task.taskName);
-
-        let result: any;
-
-        if (data.task.taskName === 'CNDP_SkinTone') {
-            result = task.applyAsync([
-                originalImage,
-                '/home/ubuntu/backendtestuser/repositories/cfa-python/CNDP/files/chart.png',
-            ]);
-        } else if (data.task.taskName === 'CNDP_FitzSG') {
-            result = task.applyAsync([
-                originalImage,
-                '/home/ubuntu/backendtestuser/repositories/cfa-python/CNDP/files/chart.png',
-            ]);
-        } else {
-            result = task.applyAsync([originalImage]);
-        }
-
-        const taskResponse = await result?.get();
-
-        if (taskResponse.err) {
-            // console.log(taskResponse.err, 'cndp-skin');
-            return res.send({
-                status: 40004,
-                service: `analysis - ${data.task.taskName}`,
-                message: 'Internal server error.',
-                error: taskResponse.err,
-            });
-        }
-        const imageArg = this.AlgoAnalysis.handleImageArg(data);
-
-        const result_ = await this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse, imageArg);
-        // const computation = this.computation.computationResult(data.type, data.answers, result_.score);
-        // result_.computation_score = computation['computation_score'];
-        // result_.questionnaire_score = computation['questionnaire_score'];
-
-        // result_.computation = computation;
-        let promise1 = new Promise(function (resolve, reject) {
-            resolve(res.send({ status: 200, message: 'Success', body: result_ }));
-        });
-        const coputaionResutl: any = {};
-
-        // coputaionResutl.computation_score = computation['computation_score'];
-        // coputaionResutl.questionnaire_score = computation['questionnaire_score'];
-        const saving = await this.AlgoAnalysis.finalSave(
-            coputaionResutl,
-            data,
-            image,
-            imageRecords,
-            taskResponse,
-            imageArg,
-        );
-        let promise2 = new Promise(function (resolve, resject) {
-            resolve(saving);
-        });
-
-        promise1
-            .then(function (value) {
-                return promise2;
-            })
-            .catch((error) => {
-                console.log(error);
-                return res.send({
-                    status: 500,
-                    type: 'InternalServerError',
-                    message: 'Internal server error.',
-                    error: error.message,
-                });
-            });
-    }
-
-    @ApiBearerAuth('access-token')
-    @Get('/getAnalysisData/:batch_id')
-    async getAnalysisData(@Param('batch_id') batch_id: number, @Res() res: Response) {
+    async getBatchId(@Query() param: historyDTO, @Res() res: Response, @Req() req: Request) {
         try {
-            const result = await this.AlgoAnalysis.getAnalysisData(batch_id);
+            let { customer_id } = param;
 
-            const image = await this.AlgoAnalysis.getImageByBatch(batch_id);
+            // Token From Header
+            const token = req.headers.authorization?.split(' ')[1];
 
-            if (image.length > 0) {
-                result['images'] = image;
-            }
+            const insert = await this.batchAnalysis.insertInAnalysis(customer_id, token);
             return res.status(200).json({
                 status: 200,
-                service: 'getAnalysisData',
-                body: result,
+                service: 'requestBatchId',
+                body: { batch_id: insert },
             });
-        } catch (error) {
-            console.log(error);
-            return res.send({
-                status: 500,
-                type: 'InternalServerError',
-                message: 'Internal server error.',
-                error: error.message,
-            });
+        } catch (e) {
+            throw new Error(e);
         }
     }
 
-    @ApiBearerAuth('access-token')
-    @Post('/history/')
-    async userAnalysisHistory(@Query() param: paginationDTO, @Res() res: Response, @Body() body: historyDTO) {
-        console.log('here analysis');
-        let { per, page } = param;
-
-        let { customer_id } = body;
-
-        this.AlgoAnalysis.userAnalysisHistory(Number(customer_id), Number(per), Number(page))
-            .then((data) => {
-                return res.status(200).json({
-                    status: 200,
-                    msg: 'Success',
-                    service: 'getUserAnalysisHistory',
-                    body: {
-                        rest_items: data?.length,
-                        current_page: page,
-                        analysis_list: data,
-                    },
-                });
-            })
-            .catch((error) => {
-                console.log(error);
-                return res.send({
-                    status: 500,
-                    type: 'InternalServerError',
-                    message: 'Internal server error.',
-                    error: error.message,
-                });
-            });
-    }
-
-    @ApiBearerAuth('access-token')
-    @Post('/history/image')
-    async userAnalysisImageHistory(@Query() param: paginationDTO, @Res() res: Response, @Body() body: historyDTO) {
-        let { per, page } = param;
-
-        let { customer_id } = body;
-        try {
-            const data = await this.AlgoAnalysis.userAnalysisImageHistory(
-                Number(customer_id),
-                Number(per),
-                Number(page),
-            );
-
-            return res.status(200).json({
-                status: 200,
-                msg: 'Success',
-                service: 'getUserAnalysisImageHistory',
-                body: data,
-            });
-        } catch (error) {
-            console.log(error);
-            return res.send({
-                status: 500,
-                type: 'InternalServerError',
-                message: 'Internal server error.',
-                error: error.message,
-            });
-        }
-    }
-
-    @ApiBearerAuth('access-token')
-    @Get('/history/result')
-    async userAnalysisImageHistoryWithBatchId(@Query() param: BatchIdCheckerDto, @Res() res: Response) {
-        let { batch_id } = param;
-        try {
-            const data = await this.AlgoAnalysis.userHistoryWithBatchId(Number(batch_id));
-
-            return res.status(200).json({
-                status: 200,
-                msg: 'Success',
-                service: 'getUserAnalysisImageHistory',
-                body: data,
-            });
-        } catch (error) {
-            console.log(error);
-            return res.send({
-                status: 500,
-                type: 'InternalServerError',
-                message: 'Internal server error.',
-                error: error.message,
-            });
-        }
-    }
-
+    @ApiTags('Analysis')
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: MoistureDTO })
+    @ApiResponse({
+        status: 200,
+        description: 'Successfully saved Moisture U analysis data.',
+        type: AnalysisMoistureUResponseDto,
+    })
     @Post('/moistureU')
     async moistureU(@Res() res: Response, @Body() body: any) {
         try {
@@ -339,9 +165,15 @@ export class AlgoAnalysisController {
         }
     }
 
+    @ApiTags('Analysis')
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: MoistureDTO })
+    @ApiResponse({
+        status: 200,
+        description: 'Successfully saved Moisture T analysis data.',
+        type: AnalysisMoistureUResponseDto,
+    })
     @Post('/moistureT')
     async moistureT(@Res() res: Response, @Body() body: any) {
         try {
@@ -377,9 +209,15 @@ export class AlgoAnalysisController {
         }
     }
 
+    @ApiTags('Analysis')
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: MoistureDTO })
+    @ApiResponse({
+        status: 200,
+        description: 'Successfully saved Sebum U analysis data.',
+        type: AnalysisSebumUResponseBodyDto,
+    })
     @Post('/sebumU')
     @UseInterceptors(
         FileFieldsInterceptor([
@@ -460,9 +298,15 @@ export class AlgoAnalysisController {
             });
     }
 
+    @ApiTags('Analysis')
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: MoistureDTO })
+    @ApiResponse({
+        status: 200,
+        description: 'Successfully saved Sebum U analysis data.',
+        type: AnalysisSebumUResponseBodyDto,
+    })
     @Post('/sebumT')
     @UseInterceptors(
         FileFieldsInterceptor([
@@ -542,6 +386,7 @@ export class AlgoAnalysisController {
             });
     }
 
+    @ApiExcludeEndpoint()
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @ApiBody({ type: MoistureDTO })
@@ -631,8 +476,14 @@ export class AlgoAnalysisController {
         }
     }
 
+    @ApiTags('Analysis')
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
+    @ApiResponse({
+        status: 200,
+        description: 'Successfully saved Sebum U analysis data.',
+        type: OfflineAnalysisDataSavingResponseDto,
+    })
     @Post('/offline')
     @ApiBody({ type: OfflineDatasDTO })
     @UseInterceptors(
@@ -758,69 +609,10 @@ export class AlgoAnalysisController {
         // return `Job added with ID: ${queue.id}`;
     }
 
-    @ApiBearerAuth('access-token')
-    @Get('/requestBatchId')
-    async getBatchId(@Query() param: historyDTO, @Res() res: Response, @Req() req: Request) {
-        try {
-            let { customer_id } = param;
-
-            // Token From Header
-            const token = req.headers.authorization?.split(' ')[1];
-
-            const insert = await this.batchAnalysis.insertInAnalysis(customer_id, token);
-            return res.status(200).json({
-                status: 200,
-                service: 'requestBatchId',
-                body: { batch_id: insert },
-            });
-        } catch (e) {
-            throw new Error(e);
-        }
-    }
-
-    @ApiBearerAuth('access-token')
-    @Post('/comment')
-    async analysisComment(@Body() bady: AnalysisCommentDTO, @Res() res: Response, @Req() req: Request) {
-        try {
-            let { batchId, comment } = bady;
-
-            this.batchAnalysis.analysisComment(Number(batchId), comment);
-
-            return res.status(200).json({
-                status: 200,
-                service: 'analysis/comment',
-                respone: 'Comment inserted',
-            });
-        } catch (e) {
-            throw new Error(e);
-        }
-    }
-
-    @ApiBearerAuth('access-token')
-    @Delete('/deleteAnalysisData/:batch_id')
-    async deleteBatch(@Param('batch_id') batch_id: number, @Res() res: Response) {
-        try {
-            const result = await this.batchAnalysis.deleleBatch(batch_id);
-
-            return res.status(200).json({
-                status: 200,
-                type: 'DeleteAnalysisData',
-                message: 'Successfully Deleted.',
-            });
-        } catch (error) {
-            console.log(error);
-            return res.send({
-                status: 500,
-                type: 'InternalServerError',
-                message: 'Internal server error.',
-                error: error.message,
-            });
-        }
-    }
-
     /*
         IMAGE UPLOAD CBB
     */
+    @ApiTags('Analysis')
     @ApiOperation({
         summary:
             'CBB offline analysis, Expecting multiple originalImage and analyzedImage. The response will include score average, computation and questionnaire',
@@ -831,79 +623,7 @@ export class AlgoAnalysisController {
     @ApiResponse({
         status: 200,
         description: 'Success',
-        schema: {
-            type: 'object',
-            properties: {
-                status: { type: 'number', example: 200 },
-                service: { type: 'string', example: 'Success' },
-                body: {
-                    type: 'object',
-                    properties: {
-                        computation_score: { type: 'number', example: 56.4 },
-                        questionnaire_score: { type: 'number', example: 70.0 },
-                        score_average: { type: 'number', example: 53.33 },
-                        keyWord: { type: 'string', example: 'Mild' },
-                        result: {
-                            type: 'array',
-                            example: [
-                                {
-                                    batchId: 426416,
-                                    algorithm_type: 'wrinkles',
-                                    // ver: 'CDS_SP_2.1.2',
-                                    score: 60,
-                                    analyzedImage: {
-                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                    },
-                                    originalImage: {
-                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                    },
-                                    fineImage: {
-                                        id: 'a336b1eb-8acb-4812-9a84-5164a6dc383c',
-                                        url: 'localhost:3100/image/a336b1eb-8acb-4812-9a84-5164a6dc383c',
-                                    },
-                                    ultraFineImage: {
-                                        id: 'd0883ad5-75c3-4963-addf-2b4e7bcaa63e',
-                                        url: 'localhost:3100/image/d0883ad5-75c3-4963-addf-2b4e7bcaa63e',
-                                    },
-                                    deepImage: {
-                                        id: '708361a9-2f25-4f65-b2a7-55dd5de232c8',
-                                        url: 'localhost:3100/image/708361a9-2f25-4f65-b2a7-55dd5de232c8',
-                                    },
-                                    ultraDeepImage: {
-                                        id: 'ebabcbcb-d536-44be-8e3b-d5234c7ab2a8',
-                                        url: 'localhost:3100/image/ebabcbcb-d536-44be-8e3b-d5234c7ab2a8',
-                                    },
-                                    // maskImage: {
-                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    // },
-                                },
-                                {
-                                    batchId: 426416,
-                                    algorithm_type: 'spots',
-                                    // ver: 'CDS_SP_2.1.2',
-                                    score: 56,
-                                    analyzedImage: {
-                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                    },
-                                    originalImage: {
-                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                    },
-                                    // maskImage: {
-                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    // },
-                                },
-                            ],
-                        },
-                    },
-                },
-            },
-        },
+        type: OfflineAnalysisDataResponseDto,
     })
     @ApiBearerAuth('access-token')
     @Post('offlineCBB')
@@ -956,45 +676,14 @@ export class AlgoAnalysisController {
         }
     }
 
-    @ApiBearerAuth('access-token')
-    @Post('/countConsultation')
-    async analysisCount(@Body() body: countCustomerDto, @Res() res: Response) {
-        try {
-            let { customer_ids } = body;
-
-            console.log('here param', body);
-            const insert = await this.AlgoAnalysis.countAnalysis(customer_ids);
-
-            return res.status(200).json({
-                status: 200,
-                service: 'requestBatchId',
-                body: { batch_id: insert },
-            });
-        } catch (e) {
-            throw new Error(e);
-        }
-    }
-
-    @ApiBearerAuth('access-token')
-    @Post('/allConsultation')
-    async calculateRevisit(@Res() res: Response, @Body() body: allCustomerDto) {
-        try {
-            let { customer_ids, month } = body;
-
-            const result = await this.AlgoAnalysis.calculateRevisit(customer_ids, month);
-
-            return res.status(200).json({
-                status: 200,
-                service: 'requestBatchId',
-                body: { result: result },
-            });
-        } catch (e) {
-            console.log(e);
-        }
-    }
-
+    @ApiTags('Analysis')
     @ApiBearerAuth('access-token')
     @Post('/skinAgeCondition')
+    @ApiResponse({
+        status: 200,
+        description: 'Successfully saved Skin Age and Condition analysis data.',
+        type: SkinAgeConditionResponseDto,
+    })
     async skinAgeCondition(@Body() body: SkinAgeConditionDto, @Res() res: Response, @Req() req: Request) {
         let { batch_id, bithYear } = body;
         let skinCondition = null;
@@ -1066,295 +755,10 @@ export class AlgoAnalysisController {
         // }
     }
 
-    // Encrypted CBB
-    @ApiOperation({
-        summary: 'encryptedCBB, is the version of the CBB accepting encrypted score and decripts them',
-        security: [{ bearerToken: [] }],
-    })
-    @ApiConsumes('multipart/form-data')
-    @ApiBody({ type: EncryptedCBBDTO })
-    @ApiResponse({
-        status: 200,
-        description: 'Success',
-        schema: {
-            type: 'object',
-            properties: {
-                status: { type: 'number', example: 200 },
-                service: { type: 'string', example: 'Success' },
-                body: {
-                    type: 'object',
-                    properties: {
-                        computation_score: { type: 'number', example: 56.4 },
-                        questionnaire_score: { type: 'number', example: 70.0 },
-                        score_average: { type: 'number', example: 53.33 },
-                        keyWord: { type: 'string', example: 'Mild' },
-                        result: {
-                            type: 'array',
-                            example: [
-                                {
-                                    batchId: 426416,
-                                    algorithm_type: 'spots',
-                                    // ver: 'CDS_SP_2.1.2',
-                                    score: 60,
-                                    analyzedImage: {
-                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                    },
-                                    originalImage: {
-                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                    },
-                                    // maskImage: {
-                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    // },
-                                },
-                                {
-                                    batchId: 426416,
-                                    algorithm_type: 'spots',
-                                    // ver: 'CDS_SP_2.1.2',
-                                    score: 56,
-                                    analyzedImage: {
-                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                    },
-                                    originalImage: {
-                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                    },
-                                    // maskImage: {
-                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    // },
-                                },
-                            ],
-                        },
-                    },
-                },
-            },
-        },
-    })
-    @ApiBearerAuth('access-token')
-    @Post('encryptedCBB')
-    @HttpCode(200)
-    @UseInterceptors(
-        FileFieldsInterceptor([
-            { name: 'originalImage', maxCount: 5 },
-            { name: 'analyzedImage', maxCount: 5 },
-        ]),
-    )
-    async encryptionCBB(
-        @Body() data: any,
-        @UploadedFiles() files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
-        @Res() res: Response,
-    ) {
-        data.encryptedCBB = true;
-        try {
-            if (!files?.analyzedImage || !files?.originalImage) {
-                return res.status(HttpStatus.BAD_REQUEST).send({
-                    status: 40002,
-                    type: 'BadRequestError',
-                    message: 'No file!',
-                });
-            }
-
-            if (files?.analyzedImage.length !== files?.originalImage.length) {
-                return res.status(HttpStatus.BAD_REQUEST).send({
-                    status: 40002,
-                    type: 'BadRequestError',
-                    message: 'The number of analyzed images does not match number of original images',
-                });
-            }
-
-            data.label = Array.isArray(data.label)
-                ? data.label?.map((str: any) => str.trim())
-                : data.label?.split(',').map((str: string) => str.trim());
-
-            data.comment = Array.isArray(data.comment)
-                ? data.comment?.map((str: string) => str.trim())
-                : data.comment?.split(',').map((str: string) => str.trim());
-
-            data.xy_coordinates = Array.isArray(data.xy_coordinates)
-                ? data.xy_coordinates?.map((str: string) => str.trim())
-                : data.xy_coordinates?.split(',').map((str: string) => str.trim());
-
-            const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
-            new Promise(function (resolve, reject) {
-                resolve(
-                    res.send({
-                        status: 200,
-                        message: 'Success',
-                        body: {
-                            result,
-                        },
-                    }),
-                );
-            });
-
-            await this.AlgoAnalysis.updateData(data, '');
-        } catch (error) {
-            console.error(error);
-            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
-    @ApiOperation({
-        summary:
-            'CBB offline analysis, Expecting multiple originalImage and analyzedImage. The response will include score average, computation and questionnaire',
-        security: [{ bearerToken: [] }],
-    })
-    @ApiConsumes('multipart/form-data')
-    @ApiBody({ type: OfflineDataCBBDTO })
-    @ApiResponse({
-        status: 200,
-        description: 'Success',
-        schema: {
-            type: 'object',
-            properties: {
-                status: { type: 'number', example: 200 },
-                service: { type: 'string', example: 'Success' },
-                body: {
-                    type: 'object',
-                    properties: {
-                        computation_score: { type: 'number', example: 56.4 },
-                        questionnaire_score: { type: 'number', example: 70.0 },
-                        score_average: { type: 'number', example: 53.33 },
-                        keyWord: { type: 'string', example: 'Mild' },
-                        result: {
-                            type: 'array',
-                            example: [
-                                {
-                                    batchId: 426416,
-                                    algorithm_type: 'spots',
-                                    // ver: 'CDS_SP_2.1.2',
-                                    score: 60,
-                                    analyzedImage: {
-                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                    },
-                                    originalImage: {
-                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                    },
-                                    // maskImage: {
-                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    // },
-                                },
-                                {
-                                    batchId: 426416,
-                                    algorithm_type: 'spots',
-                                    // ver: 'CDS_SP_2.1.2',
-                                    score: 56,
-                                    analyzedImage: {
-                                        id: '9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                        url: 'staging.chowis.cloud:3444/image/9d013def-5dc5-4779-869b-86f844fa6dd8',
-                                    },
-                                    originalImage: {
-                                        id: '4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                        url: 'staging.chowis.cloud:3444/image/4ee67b15-e06e-4280-a169-fef29bc9ec4d',
-                                    },
-                                    // maskImage: {
-                                    //     id: '29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    //     url: 'staging.chowis.cloud:3444/image/29e0ea4a-e989-4ef9-b8b7-c4100b9650fe',
-                                    // },
-                                },
-                            ],
-                        },
-                    },
-                },
-            },
-        },
-    })
-    @ApiBearerAuth('access-token')
-    @Post('kheadspa-cbb')
-    @HttpCode(200)
-    @UseInterceptors(
-        FileFieldsInterceptor([
-            { name: 'originalImage', maxCount: 5 },
-            { name: 'analyzedImage', maxCount: 5 },
-        ]),
-    )
-    async kheadSpa(
-        @Body() data: any,
-        @UploadedFiles() files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
-        @Res() res: Response,
-    ) {
-        data.kHeadSpa = true;
-        try {
-            if (!files?.analyzedImage || !files?.originalImage) {
-                return res.status(HttpStatus.BAD_REQUEST).send({
-                    status: 40002,
-                    type: 'BadRequestError',
-                    message: 'No file!',
-                });
-            }
-
-            if (files?.analyzedImage.length !== files?.originalImage.length) {
-                return res.status(HttpStatus.BAD_REQUEST).send({
-                    status: 40002,
-                    type: 'BadRequestError',
-                    message: 'The number of analyzed images does not match number of original images',
-                });
-            }
-
-            data.label = Array.isArray(data.label)
-                ? data.label?.map((str: any) => str.trim())
-                : data.label?.split(',').map((str: string) => str.trim());
-
-            data.comment = Array.isArray(data.comment)
-                ? data.comment?.map((str: string) => str.trim())
-                : data.comment?.split(',').map((str: string) => str.trim());
-
-            data.xy_coordinates = Array.isArray(data.xy_coordinates)
-                ? data.xy_coordinates?.map((str: string) => str.trim())
-                : data.xy_coordinates?.split(',').map((str: string) => str.trim());
-
-            if (data.fineScore) {
-                data.fineScore = Array.isArray(data.fineScore)
-                    ? data.fineScore.map((str: string) => Number(str.trim()))
-                    : data.fineScore?.split(',').map((str: string) => Number(str.trim()));
-            }
-
-            if (data.ultraFineScore) {
-                data.ultraFineScore = Array.isArray(data.ultraFineScore)
-                    ? data.ultraFineScore.map((str: string) => Number(str.trim()))
-                    : data.ultraFineScore?.split(',').map((str: string) => Number(str.trim()));
-            }
-
-            if (data.deepScore) {
-                data.deepScore = Array.isArray(data.deepScore)
-                    ? data.deepScore.map((str: string) => Number(str.trim()))
-                    : data.deepScore?.split(',').map((str: string) => Number(str.trim()));
-            }
-
-            if (data.ultraDeepScore) {
-                data.ultraDeepScore = Array.isArray(data.ultraDeepScore)
-                    ? data.ultraDeepScore.map((str: string) => Number(str.trim()))
-                    : data.ultraDeepScore?.split(',').map((str: string) => Number(str.trim()));
-            }
-
-            const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
-            new Promise(function (resolve, reject) {
-                resolve(
-                    res.send({
-                        status: 200,
-                        message: 'Success',
-                        body: result,
-                    }),
-                );
-            });
-
-            await this.AlgoAnalysis.updateData(data, '');
-        } catch (error) {
-            console.error(error);
-            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
-        }
-    }
-
     /*
         KIOSK CBB 
     */
+    @ApiTags('Analysis')
     @ApiOperation({
         summary: 'CBB API For Kiosk',
         security: [{ bearerToken: [] }],
@@ -1494,92 +898,15 @@ export class AlgoAnalysisController {
     @ApiOperation({
         security: [{ bearerToken: [] }],
     })
+    @ApiTags('Analysis')
     @ApiBearerAuth('access-token')
-    @Post('/analysisCBB')
-    @ApiBody({ type: analysisCBBDTO })
     @ApiResponse({
         status: 200,
-        description: 'Success',
-        schema: {
-            type: 'object',
-            properties: {
-                status: { type: 'number', example: 200 },
-                message: { type: 'string', example: 'Success' },
-                result: {
-                    type: 'object',
-                    example: {
-                        skinAge: 20,
-                        moistureT: 13,
-                        moistureU: 13,
-                        skinCondition: 'dry',
-                        keratin: {
-                            computation_score: 12,
-                            questionnaire_score: 0,
-                            keyWord: 'Almost Clear',
-                            keyword_id: 2,
-                            average: 12,
-                        },
-                        pores: {
-                            computation_score: 12,
-                            questionnaire_score: 0,
-                            keyWord: 'Almost Clear',
-                            keyword_id: 2,
-                            average: 12,
-                        },
-                        impurities: {
-                            computation_score: 12,
-                            questionnaire_score: 0,
-                            keyWord: 'Almost Clear',
-                            keyword_id: 2,
-                            average: 12,
-                        },
-                        sebumT: {
-                            computation_score: 12,
-                            questionnaire_score: 0,
-                            keyWord: 'Almost Clear',
-                            keyword_id: 2,
-                            average: 12,
-                        },
-                        sebumU: {
-                            computation_score: 12,
-                            questionnaire_score: 0,
-                            keyWord: 'Almost Clear',
-                            keyword_id: 2,
-                            average: 12,
-                        },
-                        oiliness: {
-                            computation_score: 19.6,
-                            questionnaire_score: 50,
-                            keyWord: 'Mild',
-                            keyword_id: 3,
-                            average: 12,
-                        },
-                        spots: {
-                            computation_score: 12,
-                            questionnaire_score: 0,
-                            keyWord: 'Almost Clear',
-                            keyword_id: 2,
-                            average: 12,
-                        },
-                        wrinkles: {
-                            computation_score: 12,
-                            questionnaire_score: 0,
-                            keyWord: 'Almost Clear',
-                            keyword_id: 2,
-                            average: 12,
-                        },
-                        redness: {
-                            computation_score: 20.200000000000003,
-                            questionnaire_score: 53,
-                            keyWord: 'Mild',
-                            keyword_id: 3,
-                            average: 12,
-                        },
-                    },
-                },
-            },
-        },
+        description: 'Successfully saved analysis data.',
+        type: AnalysisResponseDto,
     })
+    @Post('/analysisCBB')
+    @ApiBody({ type: analysisCBBDTO })
     async cbbWithoutImage(@Body() data: any, @Res() res: Response) {
         try {
             if (!data?.batch_id || data?.batch_id === null || data?.batch_id === '') {
@@ -1642,10 +969,16 @@ export class AlgoAnalysisController {
         }
     }
 
+    @ApiTags('Analysis')
     @ApiBearerAuth('access-token')
     @ApiConsumes('multipart/form-data')
     @Post('/skin_tone')
     @ApiBody({ type: skinToneDTO })
+    @ApiResponse({
+        status: 200,
+        description: 'Successfully saved Skin Tone analysis data.',
+        type: SkinToneResponseDto,
+    })
     @UseInterceptors(FileFieldsInterceptor([{ name: 'image', maxCount: 10 }]))
     async saveSkinTone(
         @Res() res: Response,
@@ -1676,6 +1009,513 @@ export class AlgoAnalysisController {
         // setImmediate(async () => {
 
         // });
+    }
+
+    /*************** HISTORY API ***************/
+
+    @ApiTags('History')
+    @ApiExcludeEndpoint()
+    @ApiBearerAuth('access-token')
+    @Get('/getAnalysisData/:batch_id')
+    async getAnalysisData(@Param('batch_id') batch_id: number, @Res() res: Response) {
+        try {
+            const result = await this.AlgoAnalysis.getAnalysisData(batch_id);
+
+            const image = await this.AlgoAnalysis.getImageByBatch(batch_id);
+
+            if (image.length > 0) {
+                result['images'] = image;
+            }
+            return res.status(200).json({
+                status: 200,
+                service: 'getAnalysisData',
+                body: result,
+            });
+        } catch (error) {
+            console.log(error);
+            return res.send({
+                status: 500,
+                type: 'InternalServerError',
+                message: 'Internal server error.',
+                error: error.message,
+            });
+        }
+    }
+
+    @ApiTags('History')
+    @ApiBearerAuth('access-token')
+    @ApiResponse({
+        status: 200,
+        description: 'Successfully retrieved customer analysis history.',
+        type: UserAnalysisHistoryResponseDto,
+    })
+    @Post('/history/')
+    async userAnalysisHistory(@Query() param: paginationDTO, @Res() res: Response, @Body() body: historyDTO) {
+        console.log('here analysis');
+        let { per, page } = param;
+
+        let { customer_id } = body;
+
+        this.AlgoAnalysis.userAnalysisHistory(Number(customer_id), Number(per), Number(page))
+            .then((data) => {
+                return res.status(200).json({
+                    status: 200,
+                    msg: 'Success',
+                    service: 'getUserAnalysisHistory',
+                    body: {
+                        rest_items: data?.length,
+                        current_page: page,
+                        analysis_list: data,
+                    },
+                });
+            })
+            .catch((error) => {
+                console.log(error);
+                return res.send({
+                    status: 500,
+                    type: 'InternalServerError',
+                    message: 'Internal server error.',
+                    error: error.message,
+                });
+            });
+    }
+
+    @ApiTags('History')
+    @ApiBearerAuth('access-token')
+    @ApiResponse({
+        status: 200,
+        description: 'Successfully retrieved customer analysis image history.',
+        type: UserAnalysisImageHistoryResponseDto,
+    })
+    @Post('/history/image')
+    async userAnalysisImageHistory(@Query() param: paginationDTO, @Res() res: Response, @Body() body: historyDTO) {
+        let { per, page } = param;
+
+        let { customer_id } = body;
+        try {
+            const data = await this.AlgoAnalysis.userAnalysisImageHistory(
+                Number(customer_id),
+                Number(per),
+                Number(page),
+            );
+
+            return res.status(200).json({
+                status: 200,
+                msg: 'Success',
+                service: 'getUserAnalysisImageHistory',
+                body: data,
+            });
+        } catch (error) {
+            console.log(error);
+            return res.send({
+                status: 500,
+                type: 'InternalServerError',
+                message: 'Internal server error.',
+                error: error.message,
+            });
+        }
+    }
+
+    @ApiTags('History')
+    @ApiBearerAuth('access-token')
+    @ApiResponse({
+        status: 200,
+        description: 'Successfully retrieved customer analysis image history details.',
+        type: CustomerAnalysisHistoryMainResponseDto,
+    })
+    @ApiResponse({
+        status: 200,
+        description: 'Successfully retrieved customer analysis image history.',
+        type: UserAnalysisImageHistoryResponseDto,
+    })
+    @Get('/history/result')
+    async userAnalysisImageHistoryWithBatchId(@Query() param: BatchIdCheckerDto, @Res() res: Response) {
+        let { batch_id } = param;
+        try {
+            const data = await this.AlgoAnalysis.userHistoryWithBatchId(Number(batch_id));
+
+            return res.status(200).json({
+                status: 200,
+                msg: 'Success',
+                service: 'getUserAnalysisImageHistory',
+                body: data,
+            });
+        } catch (error) {
+            console.log(error);
+            return res.send({
+                status: 500,
+                type: 'InternalServerError',
+                message: 'Internal server error.',
+                error: error.message,
+            });
+        }
+    }
+
+    /*************** OTHERS APIS ***************/
+
+    @ApiTags('Others')
+    @ApiBearerAuth('access-token')
+    @Post('/countConsultation')
+    async analysisCount(@Body() body: countCustomerDto, @Res() res: Response) {
+        try {
+            let { customer_ids } = body;
+
+            console.log('here param', body);
+            const insert = await this.AlgoAnalysis.countAnalysis(customer_ids);
+
+            return res.status(200).json({
+                status: 200,
+                service: 'requestBatchId',
+                body: { batch_id: insert },
+            });
+        } catch (e) {
+            throw new Error(e);
+        }
+    }
+
+    @ApiTags('Others')
+    @ApiBearerAuth('access-token')
+    @Post('/allConsultation')
+    async calculateRevisit(@Res() res: Response, @Body() body: allCustomerDto) {
+        try {
+            let { customer_ids, month } = body;
+
+            const result = await this.AlgoAnalysis.calculateRevisit(customer_ids, month);
+
+            return res.status(200).json({
+                status: 200,
+                service: 'requestBatchId',
+                body: { result: result },
+            });
+        } catch (e) {
+            console.log(e);
+        }
+    }
+
+    @ApiTags('Others')
+    @ApiBearerAuth('access-token')
+    @Post('/comment')
+    async analysisComment(@Body() bady: AnalysisCommentDTO, @Res() res: Response, @Req() req: Request) {
+        try {
+            let { batchId, comment } = bady;
+
+            this.batchAnalysis.analysisComment(Number(batchId), comment);
+
+            return res.status(200).json({
+                status: 200,
+                service: 'analysis/comment',
+                respone: 'Comment inserted',
+            });
+        } catch (e) {
+            throw new Error(e);
+        }
+    }
+
+    @ApiTags('Others')
+    @ApiBearerAuth('access-token')
+    @Delete('/deleteAnalysisData/:batch_id')
+    async deleteBatch(@Param('batch_id') batch_id: number, @Res() res: Response) {
+        try {
+            const result = await this.batchAnalysis.deleleBatch(batch_id);
+
+            return res.status(200).json({
+                status: 200,
+                type: 'DeleteAnalysisData',
+                message: 'Successfully Deleted.',
+            });
+        } catch (error) {
+            console.log(error);
+            return res.send({
+                status: 500,
+                type: 'InternalServerError',
+                message: 'Internal server error.',
+                error: error.message,
+            });
+        }
+    }
+
+    /*******
+     ************************ 미사용 API ************************
+     *******/
+
+    @ApiTags('미사용')
+    @ApiBearerAuth('access-token')
+    @ApiConsumes('multipart/form-data')
+    @ApiOperation({
+        summary: 'Single analysis, Expecting a single image per analysis.',
+        security: [{ bearerToken: [] }],
+    })
+    @ApiBody({ type: AlgoAnalysisDTO })
+    @Post('')
+    @HttpCode(200)
+    @UseInterceptors(FileInterceptor('image'))
+    async getcustomerHistory(@Body() data: any, @UploadedFile() image: Express.Multer.File, @Res() res: Response) {
+        if (!image)
+            return res.send({
+                status: 40002,
+                type: 'BadRequestError',
+                message: 'No file!',
+            });
+
+        data.batch_id = Number(data.batch_id);
+
+        const imageRecords = uuidv4();
+        const client = celery.createClient('redis://localhost', 'redis://');
+        let algoList = [
+            'keratin',
+            'pores',
+            'porphyrin',
+            'sebum',
+            'shine',
+            'spots',
+            'skintone',
+            'wrinkles',
+            'sensitivityscabs',
+            'sensitivityscaling',
+            'sensitivityredness',
+        ];
+        if (!algoList.includes(data.type)) {
+            throw new HttpException(`We don't have such type of algorithm -> ${data.type}`, 40001);
+        }
+        // console.time('celery');
+        const originalImage = image.buffer.toString('base64');
+
+        data.task = this.AlgoAnalysis.getTaskByAlgoType(data.type);
+
+        const task = client.createTask(data.task.taskName);
+
+        let result: any;
+
+        if (data.task.taskName === 'CNDP_SkinTone') {
+            result = task.applyAsync([
+                originalImage,
+                '/home/ubuntu/backendtestuser/repositories/cfa-python/CNDP/files/chart.png',
+            ]);
+        } else if (data.task.taskName === 'CNDP_FitzSG') {
+            result = task.applyAsync([
+                originalImage,
+                '/home/ubuntu/backendtestuser/repositories/cfa-python/CNDP/files/chart.png',
+            ]);
+        } else {
+            result = task.applyAsync([originalImage]);
+        }
+
+        const taskResponse = await result?.get();
+
+        if (taskResponse.err) {
+            // console.log(taskResponse.err, 'cndp-skin');
+            return res.send({
+                status: 40004,
+                service: `analysis - ${data.task.taskName}`,
+                message: 'Internal server error.',
+                error: taskResponse.err,
+            });
+        }
+        const imageArg = this.AlgoAnalysis.handleImageArg(data);
+
+        const result_ = await this.AlgoAnalysis.finalAnalysis(data, imageRecords, taskResponse, imageArg);
+        // const computation = this.computation.computationResult(data.type, data.answers, result_.score);
+        // result_.computation_score = computation['computation_score'];
+        // result_.questionnaire_score = computation['questionnaire_score'];
+
+        // result_.computation = computation;
+        let promise1 = new Promise(function (resolve, reject) {
+            resolve(res.send({ status: 200, message: 'Success', body: result_ }));
+        });
+        const coputaionResutl: any = {};
+
+        // coputaionResutl.computation_score = computation['computation_score'];
+        // coputaionResutl.questionnaire_score = computation['questionnaire_score'];
+        const saving = await this.AlgoAnalysis.finalSave(
+            coputaionResutl,
+            data,
+            image,
+            imageRecords,
+            taskResponse,
+            imageArg,
+        );
+        let promise2 = new Promise(function (resolve, resject) {
+            resolve(saving);
+        });
+
+        promise1
+            .then(function (value) {
+                return promise2;
+            })
+            .catch((error) => {
+                console.log(error);
+                return res.send({
+                    status: 500,
+                    type: 'InternalServerError',
+                    message: 'Internal server error.',
+                    error: error.message,
+                });
+            });
+    }
+    // Encrypted CBB
+    @ApiTags('미사용')
+    @ApiOperation({
+        summary: 'encryptedCBB, is the version of the CBB accepting encrypted score and decripts them',
+        security: [{ bearerToken: [] }],
+    })
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({ type: EncryptedCBBDTO })
+    @ApiBearerAuth('access-token')
+    @Post('encryptedCBB')
+    @HttpCode(200)
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'originalImage', maxCount: 5 },
+            { name: 'analyzedImage', maxCount: 5 },
+        ]),
+    )
+    async encryptionCBB(
+        @Body() data: any,
+        @UploadedFiles() files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
+        @Res() res: Response,
+    ) {
+        data.encryptedCBB = true;
+        try {
+            if (!files?.analyzedImage || !files?.originalImage) {
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'No file!',
+                });
+            }
+
+            if (files?.analyzedImage.length !== files?.originalImage.length) {
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'The number of analyzed images does not match number of original images',
+                });
+            }
+
+            data.label = Array.isArray(data.label)
+                ? data.label?.map((str: any) => str.trim())
+                : data.label?.split(',').map((str: string) => str.trim());
+
+            data.comment = Array.isArray(data.comment)
+                ? data.comment?.map((str: string) => str.trim())
+                : data.comment?.split(',').map((str: string) => str.trim());
+
+            data.xy_coordinates = Array.isArray(data.xy_coordinates)
+                ? data.xy_coordinates?.map((str: string) => str.trim())
+                : data.xy_coordinates?.split(',').map((str: string) => str.trim());
+
+            const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
+            new Promise(function (resolve, reject) {
+                resolve(
+                    res.send({
+                        status: 200,
+                        message: 'Success',
+                        body: {
+                            result,
+                        },
+                    }),
+                );
+            });
+
+            await this.AlgoAnalysis.updateData(data, '');
+        } catch (error) {
+            console.error(error);
+            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
+    }
+
+    @ApiTags('미사용')
+    @ApiOperation({
+        summary:
+            'CBB offline analysis, Expecting multiple originalImage and analyzedImage. The response will include score average, computation and questionnaire',
+        security: [{ bearerToken: [] }],
+    })
+    @ApiConsumes('multipart/form-data')
+    @ApiBody({ type: OfflineDataCBBDTO })
+    @ApiBearerAuth('access-token')
+    @Post('kheadspa-cbb')
+    @HttpCode(200)
+    @UseInterceptors(
+        FileFieldsInterceptor([
+            { name: 'originalImage', maxCount: 5 },
+            { name: 'analyzedImage', maxCount: 5 },
+        ]),
+    )
+    async kheadSpa(
+        @Body() data: any,
+        @UploadedFiles() files: { analyzedImage: Express.Multer.File[]; originalImage: Express.Multer.File[] },
+        @Res() res: Response,
+    ) {
+        data.kHeadSpa = true;
+        try {
+            if (!files?.analyzedImage || !files?.originalImage) {
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'No file!',
+                });
+            }
+
+            if (files?.analyzedImage.length !== files?.originalImage.length) {
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    status: 40002,
+                    type: 'BadRequestError',
+                    message: 'The number of analyzed images does not match number of original images',
+                });
+            }
+
+            data.label = Array.isArray(data.label)
+                ? data.label?.map((str: any) => str.trim())
+                : data.label?.split(',').map((str: string) => str.trim());
+
+            data.comment = Array.isArray(data.comment)
+                ? data.comment?.map((str: string) => str.trim())
+                : data.comment?.split(',').map((str: string) => str.trim());
+
+            data.xy_coordinates = Array.isArray(data.xy_coordinates)
+                ? data.xy_coordinates?.map((str: string) => str.trim())
+                : data.xy_coordinates?.split(',').map((str: string) => str.trim());
+
+            if (data.fineScore) {
+                data.fineScore = Array.isArray(data.fineScore)
+                    ? data.fineScore.map((str: string) => Number(str.trim()))
+                    : data.fineScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
+            if (data.ultraFineScore) {
+                data.ultraFineScore = Array.isArray(data.ultraFineScore)
+                    ? data.ultraFineScore.map((str: string) => Number(str.trim()))
+                    : data.ultraFineScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
+            if (data.deepScore) {
+                data.deepScore = Array.isArray(data.deepScore)
+                    ? data.deepScore.map((str: string) => Number(str.trim()))
+                    : data.deepScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
+            if (data.ultraDeepScore) {
+                data.ultraDeepScore = Array.isArray(data.ultraDeepScore)
+                    ? data.ultraDeepScore.map((str: string) => Number(str.trim()))
+                    : data.ultraDeepScore?.split(',').map((str: string) => Number(str.trim()));
+            }
+
+            const result = await this.AlgoAnalysis.offlineCbbOperation(data, files);
+            new Promise(function (resolve, reject) {
+                resolve(
+                    res.send({
+                        status: 200,
+                        message: 'Success',
+                        body: result,
+                    }),
+                );
+            });
+
+            await this.AlgoAnalysis.updateData(data, '');
+        } catch (error) {
+            console.error(error);
+            throw new HttpException('Internal server error', HttpStatus.INTERNAL_SERVER_ERROR);
+        }
     }
 }
 

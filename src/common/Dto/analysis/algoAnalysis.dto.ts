@@ -302,3 +302,4 @@ export class allCustomerDto {
     })
     month: string;
 }
+
